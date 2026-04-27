@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Mauris Movies</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body class="tv-mode">
+    <div id="app">
+        <header>
+            <div class="logo-container" id="logo-container">
+                <img src="mauritv.png" alt="MauriTV" id="app-logo" class="app-logo">
+            </div>
+            <div class="search-container">
+                <div class="search-bar" id="search-bar-container">
+                    <span class="material-icons search-icon">search</span>
+                    <input type="text" id="movie-input" placeholder="Buscar películas o series..." autocomplete="off" tabindex="1">
+                    <button id="mic-btn" class="navigable" title="Búsqueda por voz" tabindex="2">
+                        <span class="material-icons">mic</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div id="results-grid" class="results-grid">
+                <!-- Los resultados aparecerán aquí -->
+                <div class="empty-state">
+                    <p>Empieza a escribir para buscar películas...</p>
+                </div>
+            </div>
+        </main>
+
+        <footer id="voice-indicator" class="hidden">
+            <div class="voice-wave">
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <p>Escuchando...</p>
+        </footer>
+    </div>
+
+    <!-- Reproductor Integrado -->
+    <div id="player-modal" class="player-modal hidden">
+        <div class="player-controls">
+            <button id="close-player" class="close-btn">
+                <span class="material-icons">arrow_back</span>
+                Volver
+            </button>
+            <div class="server-selector">
+                <button class="server-btn active" data-server="vaplayer">Servidor 1</button>
+                <button class="server-btn" data-server="vidsrc_me">Servidor 2</button>
+                <button class="server-btn" data-server="vidsrc_to">Servidor 3</button>
+            </div>
+        </div>
+        <div class="player-container">
+            <div id="player-loader" class="player-loader hidden">
+                <div class="spinner"></div>
+                <p>Cargando fuente...</p>
+            </div>
+            <iframe id="player-iframe" src="" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

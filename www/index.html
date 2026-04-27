@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#141414">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Mauri TV - Netflix Mode</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body class="tv-mode">
+    <div id="app">
+        <header>
+            <div class="logo-container" id="logo-container">
+                <img src="mauritv.png" alt="MauriTV" id="app-logo" class="app-logo">
+            </div>
+            <div class="search-container">
+                <div class="search-bar" id="search-bar-container">
+                    <span class="material-icons search-icon">search</span>
+                    <input type="text" id="movie-input" placeholder="Buscar películas o series..." autocomplete="off" tabindex="1">
+                    <button id="mic-btn" class="navigable" title="Búsqueda por voz" tabindex="2">
+                        <span class="material-icons">mic</span>
+                    </button>
+                    <button id="clear-btn" class="navigable hidden" title="Limpiar búsqueda" tabindex="3">
+                        <span class="material-icons">close</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div id="results-grid" class="results-grid">
+                <!-- Los resultados aparecerán aquí -->
+                <div class="empty-state">
+                    <p>Empieza a escribir para buscar películas...</p>
+                </div>
+            </div>
+        </main>
+
+        <footer id="voice-indicator" class="hidden">
+            <div class="voice-wave">
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <p>Escuchando...</p>
+        </footer>
+    </div>
+
+    <!-- Reproductor Integrado -->
+    <div id="player-modal" class="player-modal hidden">
+        <div id="controls-sensor" class="controls-sensor"></div>
+        <div class="player-controls">
+            <button id="close-player" class="close-btn navigable">
+                <span class="material-icons">arrow_back</span>
+                Volver
+            </button>
+        </div>
+        <div class="player-container">
+            <div id="player-loader" class="player-loader hidden">
+                <div class="spinner"></div>
+                <p>Cargando fuente...</p>
+            </div>
+            <iframe id="player-iframe" src="" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer" sandbox="allow-scripts allow-forms allow-presentation allow-same-origin"></iframe>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
