@@ -1,5 +1,5 @@
 {
-  "name": "movies",
+  "name": "mauritv",
   "version": "1.0.0",
   "description": "Esta es una aplicación web optimizada para **Android TV y Dispositivos Móviles**. Para convertirla en un archivo APK instalable, sigue estos pasos recomendados usando **Capacitor**.",
   "main": "app.js",

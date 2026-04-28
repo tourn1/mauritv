@@ -1,6 +1,6 @@
 {
-  "name": "Mauris Movies",
-  "short_name": "MaurisMovies",
+  "name": "MauriTV",
+  "short_name": "MauriTV",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#0a0a0a",

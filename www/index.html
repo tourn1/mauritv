@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
-    <title>Mauri TV - Netflix Mode</title>
+    <title>MauriTV</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -56,7 +56,7 @@
     <div id="player-modal" class="player-modal hidden">
         <div id="controls-sensor" class="controls-sensor"></div>
         <div class="player-controls">
-            <button id="close-player" class="close-btn navigable">
+            <button id="close-player" class="close-btn navigable" tabindex="4">
                 <span class="material-icons">arrow_back</span>
                 Volver
             </button>
@@ -66,7 +66,7 @@
                 <div class="spinner"></div>
                 <p>Cargando fuente...</p>
             </div>
-            <iframe id="player-iframe" src="" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer" sandbox="allow-scripts allow-forms allow-presentation allow-same-origin"></iframe>
+            <iframe id="player-iframe" class="navigable" tabindex="5" src="" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer" sandbox="allow-scripts allow-forms allow-presentation allow-same-origin"></iframe>
         </div>
     </div>
 
