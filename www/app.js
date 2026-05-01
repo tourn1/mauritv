@@ -78,14 +78,14 @@ function hideLogo() {
 movieInput.addEventListener('input', (e) => {
     clearTimeout(debounceTimer);
     const query = e.target.value.trim();
-    
+
     // Mostrar/ocultar botón de limpiar
     if (query.length > 0) {
         clearBtn.classList.remove('hidden');
     } else {
         clearBtn.classList.add('hidden');
     }
-    
+
     if (query.length < 2) {
         resultsGrid.innerHTML = '<div class="empty-state"><p>Empieza a escribir para buscar películas...</p></div>';
         showLogo();
@@ -117,37 +117,106 @@ function showLoading() {
     `;
 }
 
+const TMDB_API_KEY = '12916916a032ac4a2da17601cbc119bd'; // <-- REEMPLAZAR CON TU API KEY DE TMDB (v3 auth)
+const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+
+async function fetchTMDB(endpoint, params = {}) {
+    const url = new URL(`${TMDB_BASE_URL}${endpoint}`);
+    url.searchParams.append('api_key', TMDB_API_KEY);
+    for (const [key, value] of Object.entries(params)) {
+        url.searchParams.append(key, value);
+    }
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`TMDb API Error: ${response.status}`);
+    return response.json();
+}
+
+async function getExternalIds(id, type) {
+    try {
+        const endpoint = type === 'tvSeries' ? `/tv/${id}/external_ids` : `/movie/${id}/external_ids`;
+        const data = await fetchTMDB(endpoint);
+        return data.imdb_id; // Puede ser null
+    } catch (e) {
+        console.warn('Error obteniendo external IDs', e);
+        return null;
+    }
+}
+
 async function searchMovies(query) {
-    console.log('Iniciando búsqueda OMDb para:', query);
+    console.log('Iniciando búsqueda TMDb para:', query);
     showLoading();
-    
+
     // Limpiar cola y observador anterior
     checkQueue.length = 0;
     availabilityObserver.disconnect();
 
+    if (TMDB_API_KEY === 'TU_API_KEY_AQUI') {
+        console.warn("ATENCIÓN: Debes reemplazar 'TU_API_KEY_AQUI' con una clave real de TMDb.");
+    }
+
     try {
-        const response = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(query)}&apikey=trilogy&page=1&type=`);
-        const data = await response.json();
-        
-        if (data.Response === 'True' && data.Search) {
-            // Convertir formato OMDb al formato interno
-            currentResults = data.Search
-                .filter(item => item.Type === 'movie' || item.Type === 'series')
-                .map(item => ({
-                    id: item.imdbID,
-                    l: item.Title,
-                    y: item.Year ? item.Year.split('–')[0] : '',
-                    qid: item.Type === 'series' ? 'tvSeries' : 'movie',
-                    i: { imageUrl: item.Poster !== 'N/A' ? item.Poster : null }
-                }));
-            renderResults(currentResults);
+        // 1. Buscar en español latino primero
+        let data = await fetchTMDB('/search/multi', {
+            query: query,
+            language: 'es-MX',
+            page: 1,
+            include_adult: false
+        });
+
+        let results = data.results || [];
+
+        // 2. Si no hay resultados en español, hacer fallback a inglés
+        if (results.length === 0) {
+            console.log('Sin resultados en español, buscando en inglés...');
+            data = await fetchTMDB('/search/multi', {
+                query: query,
+                language: 'en-US',
+                page: 1,
+                include_adult: false
+            });
+            results = data.results || [];
+        }
+
+        // Filtrar solo películas y series y ordenar por popularidad (TMDb ya lo hace por relevancia por defecto)
+        results = results.filter(item => item.media_type === 'movie' || item.media_type === 'tv');
+
+        if (results.length > 0) {
+            // Limitar a los 15 mejores resultados para no saturar con peticiones de external_ids
+            const topResults = results.slice(0, 15);
+
+            const mappedResultsPromises = topResults.map(async (item) => {
+                const type = item.media_type === 'tv' ? 'tvSeries' : 'movie';
+
+                // 3. Obtener el IMDb ID para mayor compatibilidad con vaplayer.ru
+                const imdbId = await getExternalIds(item.id, type);
+
+                const finalId = imdbId || item.id; // Fallback al ID de TMDb si no hay IMDb ID
+
+                return {
+                    id: finalId,
+                    l: item.title || item.name,
+                    y: item.release_date ? item.release_date.substring(0, 4) : (item.first_air_date ? item.first_air_date.substring(0, 4) : ''),
+                    qid: type,
+                    i: { imageUrl: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null },
+                    rating: item.vote_average ? item.vote_average.toFixed(1) : 'N/A'
+                };
+            });
+
+            currentResults = await Promise.all(mappedResultsPromises);
+
+            if (currentResults.length > 0) {
+                renderResults(currentResults);
+            } else {
+                resultsGrid.innerHTML = '<div class="empty-state"><p>No se encontraron resultados válidos para esta búsqueda.</p></div>';
+                showLogo();
+            }
         } else {
             resultsGrid.innerHTML = '<div class="empty-state"><p>No se encontraron resultados para esta búsqueda.</p></div>';
             showLogo();
         }
     } catch (error) {
-        console.error('Error en búsqueda OMDb:', error);
-        resultsGrid.innerHTML = '<div class="empty-state"><p>Error de conexión. Inténtalo de nuevo.</p></div>';
+        console.error('Error en búsqueda TMDb:', error);
+        resultsGrid.innerHTML = '<div class="empty-state"><p>Error de conexión o API Key inválida. Revisa la consola.</p></div>';
     }
 }
 
@@ -165,7 +234,7 @@ function renderResults(results) {
         if (movie.i) {
             imageUrl = Array.isArray(movie.i) ? movie.i[0] : movie.i.imageUrl || imageUrl;
         }
-        
+
         const title = movie.l || 'Sin título';
         const year = movie.y || movie.yr || '';
         const type = movie.qid === 'tvSeries' ? 'tv' : 'movie';
@@ -180,12 +249,15 @@ function renderResults(results) {
                 <img src="${imageUrl}" class="movie-poster" alt="${title}" loading="lazy">
                 <div class="movie-info">
                     <h3 class="movie-title">${title}</h3>
-                    <p class="movie-year">${year}</p>
+                    <div class="movie-meta">
+                        <span class="movie-year">${year}</span>
+                        <span class="movie-rating">★ ${movie.rating || 'N/A'}</span>
+                    </div>
                 </div>
             </div>
         `;
     }).join('');
-    
+
     // Iniciar observación para lazy checking
     document.querySelectorAll('.movie-card').forEach(card => {
         availabilityObserver.observe(card);
@@ -222,32 +294,32 @@ async function checkAvailability(card) {
 
     const checkUrl = `https://vaplayer.ru/embed/${type}/${id}`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000); 
-    
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
     try {
         // Usamos allorigins/get para detectar redirecciones vía data.url
         const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(checkUrl)}`, { signal: controller.signal });
         clearTimeout(timeoutId);
-        
+
         if (!response.ok) throw new Error('Proxy error');
-        
+
         const data = await response.json();
         const content = (data.contents || '').toLowerCase();
         const finalUrl = (data.url || '').toLowerCase();
-        
+
         // --- Heurísticas de "No Disponible" (Solo si estamos seguros) ---
-        
+
         // 1. Redirección confirmada al home (vaplayer.ru/)
         const isHomeRedirect = finalUrl.endsWith('vaplayer.ru/') || finalUrl.endsWith('vaplayer.ru');
 
         // 2. Contenido de la Landing Page
-        const isLandingPage = content.includes('playbox - stream & share videos') || 
-                             content.includes('stream it. share it.') ||
-                             content.includes('free cloud movie storage');
+        const isLandingPage = content.includes('playbox - stream & share videos') ||
+            content.includes('stream it. share it.') ||
+            content.includes('free cloud movie storage');
 
         // 3. Error explícito
-        const isExplicit404 = content.includes('404 not found') || 
-                             content.includes('video no encontrado');
+        const isExplicit404 = content.includes('404 not found') ||
+            content.includes('video no encontrado');
 
         // Solo marcamos como no disponible si alguna de estas es cierta
         const isDefinitelyNotFound = isHomeRedirect || isLandingPage || isExplicit404;
@@ -294,12 +366,12 @@ let controlsTimeout;
 function resetControlsTimer() {
     const controls = document.querySelector('.player-controls');
     if (!controls) return;
-    
+
     controls.classList.remove('hidden-controls');
     document.body.style.cursor = 'default';
-    
+
     clearTimeout(controlsTimeout);
-    
+
     if (!playerModal.classList.contains('hidden')) {
         controlsTimeout = setTimeout(() => {
             controls.classList.add('hidden-controls');
@@ -317,19 +389,19 @@ function playMovie(id, type) {
     if (!id) return;
     currentMovieId = id;
     currentMovieType = type;
-    
+
     console.log(`Reproduciendo ${type} con ID:`, id);
-    
+
     const playUrl = getPlayerUrl(id, type);
-    
+
     // Mostrar loader y modal
     playerLoader.classList.remove('hidden');
     playerIframe.classList.add('hidden');
     playerModal.classList.remove('hidden');
-    
+
     // Configurar iframe
     playerIframe.src = playUrl;
-    
+
     playerIframe.onload = () => {
         playerLoader.classList.add('hidden');
         playerIframe.classList.remove('hidden');
@@ -341,37 +413,37 @@ function playMovie(id, type) {
             const iframeWin = playerIframe.contentWindow;
             if (iframeWin) {
                 // Bloquear window.open (abre nuevas pestañas/ventanas)
-                iframeWin.open = function() {
+                iframeWin.open = function () {
                     console.warn('[Player Guard] window.open() bloqueado');
                     return null;
                 };
                 // Bloquear navegación de la ventana principal desde el iframe
                 Object.defineProperty(iframeWin, 'top', {
-                    get: function() { return iframeWin; }
+                    get: function () { return iframeWin; }
                 });
                 Object.defineProperty(iframeWin, 'parent', {
-                    get: function() { return iframeWin; }
+                    get: function () { return iframeWin; }
                 });
             }
-        } catch(e) {
+        } catch (e) {
             // Si el iframe es cross-origin estricto, el sandbox ya lo maneja
             console.log('[Player Guard] Protección JS aplicada vía sandbox (cross-origin)');
         }
     };
-    
+
     setTimeout(() => {
         closePlayerBtn.focus();
         resetControlsTimer();
     }, 100);
     document.body.style.overflow = 'hidden';
-    
+
     // Sensor de movimiento para mostrar controles
     const sensor = document.getElementById('controls-sensor');
     if (sensor) {
         sensor.addEventListener('mousemove', resetControlsTimer);
         sensor.addEventListener('touchstart', resetControlsTimer);
     }
-    
+
     // Listeners generales
     window.addEventListener('mousemove', resetControlsTimer);
     window.addEventListener('keydown', resetControlsTimer);
@@ -385,21 +457,21 @@ closePlayerBtn.addEventListener('click', () => {
     playerIframe.src = '';
     playerModal.classList.add('hidden');
     document.body.style.overflow = '';
-    
+
     // Limpiar listeners y timer
     const sensor = document.getElementById('controls-sensor');
     if (sensor) {
         sensor.removeEventListener('mousemove', resetControlsTimer);
         sensor.removeEventListener('touchstart', resetControlsTimer);
     }
-    
+
     window.removeEventListener('mousemove', resetControlsTimer);
     window.removeEventListener('keydown', resetControlsTimer);
     window.removeEventListener('touchstart', resetControlsTimer);
     window.removeEventListener('mousedown', resetControlsTimer);
     clearTimeout(controlsTimeout);
     document.body.style.cursor = 'default';
-    
+
     movieInput.focus();
 });
 
@@ -449,7 +521,7 @@ if (SpeechRecognition) {
 
 document.addEventListener('keydown', (e) => {
     const active = document.activeElement;
-    
+
     if (active === movieInput && e.key === 'Enter') {
         searchMovies(movieInput.value);
         return;
@@ -464,15 +536,15 @@ document.addEventListener('keydown', (e) => {
         return;
     }
 
-    const navigables = Array.from(document.querySelectorAll('.navigable, #movie-input')).filter(el => 
+    const navigables = Array.from(document.querySelectorAll('.navigable, #movie-input')).filter(el =>
         el.id === 'movie-input' || (el.classList.contains('navigable') && !el.classList.contains('unavailable'))
     );
-    
+
     const currentIndex = navigables.indexOf(active);
 
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
-        
+
         const rect = active.getBoundingClientRect();
         let closest = null;
         let minDistance = Infinity;
@@ -480,7 +552,7 @@ document.addEventListener('keydown', (e) => {
         navigables.forEach((el) => {
             if (el === active) return;
             const elRect = el.getBoundingClientRect();
-            
+
             let isCandidate = false;
             let dist = 0;
 

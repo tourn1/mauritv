@@ -217,9 +217,25 @@ button#clear-btn.hidden {
     text-overflow: ellipsis;
 }
 
+.movie-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+}
+
 .movie-year {
     font-size: 0.9rem;
     color: var(--text-secondary);
+}
+
+.movie-rating {
+    font-size: 0.9rem;
+    color: #f5c518;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 /* Voice Indicator */
