@@ -16,7 +16,7 @@ let debounceTimer;
 let currentResults = [];
 
 // --- Configuración y Caché ---
-const AVAILABILITY_CACHE_KEY = 'movie_availability_cache_v10';
+const AVAILABILITY_CACHE_KEY = 'movie_availability_cache_v11';
 let availabilityCache = JSON.parse(localStorage.getItem(AVAILABILITY_CACHE_KEY) || '{}');
 
 function saveToCache(id, status) {
@@ -196,6 +196,7 @@ async function searchMovies(query) {
                     id: finalId,
                     l: item.title || item.name,
                     y: item.release_date ? item.release_date.substring(0, 4) : (item.first_air_date ? item.first_air_date.substring(0, 4) : ''),
+                    releaseDate: item.release_date || item.first_air_date || '',
                     qid: type,
                     i: { imageUrl: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null },
                     rating: item.vote_average ? item.vote_average.toFixed(1) : 'N/A'
@@ -237,10 +238,11 @@ function renderResults(results) {
 
         const title = movie.l || 'Sin título';
         const year = movie.y || movie.yr || '';
+        const releaseDate = movie.releaseDate || '';
         const type = movie.qid === 'tvSeries' ? 'tv' : 'movie';
 
         return `
-            <div class="movie-card navigable" tabindex="${index + 3}" data-index="${index}" data-id="${movie.id}" data-type="${type}">
+            <div class="movie-card navigable" tabindex="${index + 3}" data-index="${index}" data-id="${movie.id}" data-type="${type}" data-year="${year}" data-release-date="${releaseDate}">
                 <div class="checking-overlay">
                     <div class="mini-spinner"></div>
                     <span class="checking-text">Verificando...</span>
@@ -282,14 +284,30 @@ async function checkAvailability(card) {
         return;
     }
 
-    // 2. Heurística de año: Si la película es del futuro, no está disponible
-    const movieYear = parseInt(card.dataset.year || year);
-    if (movieYear > currentYear) {
-        markAsUnavailable(card);
-        saveToCache(id, 'unavailable');
-        const overlay = card.querySelector('.checking-overlay');
-        if (overlay) overlay.classList.add('hidden');
-        return;
+    // 2. Heurística de año/fecha: Si la película es del futuro o muy reciente, no está disponible
+    const releaseDateStr = card.dataset.releaseDate;
+    if (releaseDateStr) {
+        const rDate = new Date(releaseDateStr);
+        const now = new Date();
+        // Si sale en el futuro o acaba de salir hoy, es casi seguro que no hay video pirateado en HD
+        // Agregamos un margen de un par de días para asegurar.
+        const marginDate = new Date(now.getTime() - (2 * 24 * 60 * 60 * 1000)); 
+        if (rDate > marginDate) {
+            markAsUnavailable(card);
+            saveToCache(id, 'unavailable');
+            const overlay = card.querySelector('.checking-overlay');
+            if (overlay) overlay.classList.add('hidden');
+            return;
+        }
+    } else {
+        const movieYear = parseInt(card.dataset.year || year);
+        if (movieYear > currentYear) {
+            markAsUnavailable(card);
+            saveToCache(id, 'unavailable');
+            const overlay = card.querySelector('.checking-overlay');
+            if (overlay) overlay.classList.add('hidden');
+            return;
+        }
     }
 
     const checkUrl = `https://vaplayer.ru/embed/${type}/${id}`;
@@ -318,7 +336,7 @@ async function checkAvailability(card) {
             content.includes('free cloud movie storage');
 
         // 3. Error explícito
-        const isExplicit404 = content.includes('404 not found') ||
+        let isExplicit404 = content.includes('404 not found') ||
             content.includes('video no encontrado');
 
         // Solo marcamos como no disponible si alguna de estas es cierta
