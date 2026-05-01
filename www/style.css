@@ -353,70 +353,42 @@ button#clear-btn.hidden {
     cursor: default;
 }
 
-/* Overlay de verificación individual */
-.checking-overlay {
-    position: absolute;
+/* --- Pre-Play Overlay --- */
+.pre-play-overlay {
+    position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.6);
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 20000;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    z-index: 10;
-    transition: opacity 0.4s ease, visibility 0.4s;
+    gap: 2rem;
+    animation: fadeIn 0.3s ease;
 }
 
-.checking-overlay.hidden {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
+.pre-play-logo {
+    max-height: 150px;
+    width: auto;
+    filter: drop-shadow(0 0 20px rgba(229, 9, 20, 0.5));
+    animation: pulse 1s infinite alternate ease-in-out;
 }
 
-.mini-spinner {
-    width: 30px;
-    height: 30px;
-    border: 3px solid rgba(255, 255, 255, 0.2);
-    border-top: 3px solid var(--accent-color);
+@keyframes pulse {
+    from { transform: scale(1); opacity: 0.8; }
+    to { transform: scale(1.1); opacity: 1; }
+}
+
+.pre-play-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-top: 4px solid var(--accent-color);
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin-bottom: 0.5rem;
-}
-
-.checking-text {
-    font-size: 0.7rem;
-    color: white;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    text-align: center;
-}
-
-/* Estado No Disponible */
-.status-badge {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(231, 76, 60, 0.95);
-    color: white;
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-    font-weight: 800;
-    z-index: 11;
-    display: none;
-    width: 100%;
-    text-align: center;
-}
-
-.movie-card.unavailable .status-badge {
-    display: block;
-}
-
-.movie-card.unavailable .checking-overlay {
-    display: none;
+    animation: spin 1s linear infinite;
 }
 
 /* Badge Tipo (Serie/Película) */

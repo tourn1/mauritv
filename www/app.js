@@ -19,56 +19,8 @@ let debounceTimer;
 let currentResults = [];
 let trendingMoviesCache = null;
 
-// --- Configuración y Caché ---
-const AVAILABILITY_CACHE_KEY = 'movie_availability_cache_v12';
 const HISTORY_KEY = 'movie_history_v1';
-let availabilityCache = JSON.parse(localStorage.getItem(AVAILABILITY_CACHE_KEY) || '{}');
 
-function saveToCache(id, status) {
-    availabilityCache[id] = { status, timestamp: Date.now() };
-    // Limpieza básica si el caché es muy grande
-    if (Object.keys(availabilityCache).length > 500) availabilityCache = {};
-    localStorage.setItem(AVAILABILITY_CACHE_KEY, JSON.stringify(availabilityCache));
-}
-
-function getFromCache(id) {
-    const entry = availabilityCache[id];
-    if (entry && (Date.now() - entry.timestamp < 1000 * 60 * 60 * 24)) { // 24 horas
-        return entry.status;
-    }
-    return null;
-}
-
-// --- Control de Concurrencia y Lazy Loading ---
-const checkQueue = [];
-let activeChecks = 0;
-const MAX_CONCURRENT = 3; // Aumentado ligeramente para mayor velocidad
-
-const availabilityObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            const card = entry.target;
-            // Solo encolar si no se está verificando o ya se verificó
-            if (!card.dataset.checkingStarted) {
-                card.dataset.checkingStarted = "true";
-                checkQueue.push(() => checkAvailability(card));
-                processQueue();
-                availabilityObserver.unobserve(card); // Dejar de observar una vez encolado
-            }
-        }
-    });
-}, { threshold: 0.1 });
-
-function processQueue() {
-    while (activeChecks < MAX_CONCURRENT && checkQueue.length > 0) {
-        const task = checkQueue.shift();
-        activeChecks++;
-        task().finally(() => {
-            activeChecks--;
-            processQueue();
-        });
-    }
-}
 
 function showLogo() {
     if (logoContainer) logoContainer.classList.remove('hidden');
@@ -147,13 +99,11 @@ async function getExternalIds(id, type) {
 
 async function searchMovies(query) {
     console.log('Iniciando búsqueda TMDb para:', query);
+    hideLogo(); // Ocultar logo al buscar
     showLoading();
     if (sectionTitle) sectionTitle.classList.add('hidden');
     if (historySection) historySection.classList.add('hidden');
 
-    // Limpiar cola y observador anterior
-    checkQueue.length = 0;
-    availabilityObserver.disconnect();
 
     if (TMDB_API_KEY === 'TU_API_KEY_AQUI') {
         console.warn("ATENCIÓN: Debes reemplazar 'TU_API_KEY_AQUI' con una clave real de TMDb.");
@@ -231,6 +181,7 @@ async function searchMovies(query) {
 }
 
 async function loadTrendingMovies() {
+    showLogo(); // Asegurar que el logo sea visible en trending
     if (sectionTitle) sectionTitle.classList.remove('hidden');
     loadHistory(); // Cargar historial al mismo tiempo
     if (trendingMoviesCache) {
@@ -241,9 +192,6 @@ async function loadTrendingMovies() {
     console.log('Cargando películas trending en streaming...');
     showLoading();
 
-    // Limpiar cola y observador anterior
-    checkQueue.length = 0;
-    availabilityObserver.disconnect();
 
     try {
         const sixtyDaysAgo = new Date();
@@ -337,7 +285,7 @@ function renderToGrid(results, gridElement, tabindexOffset) {
         }
         return;
     }
-    if (gridElement === resultsGrid) hideLogo();
+    // Ya no ocultamos el logo automáticamente al renderizar resultados genéricos
 
     gridElement.innerHTML = results.map((movie, index) => {
         let imageUrl = 'https://via.placeholder.com/300x450?text=No+Image';
@@ -354,11 +302,6 @@ function renderToGrid(results, gridElement, tabindexOffset) {
         return `
             <div class="movie-card navigable" tabindex="${index + 3 + tabindexOffset}" data-index="${index}" data-id="${movie.id}" data-type="${type}" data-year="${year}" data-release-date="${releaseDate}" data-movie-obj='${JSON.stringify(movie).replace(/'/g, "&apos;")}'>
                 <div class="type-badge">${typeDisplay}</div>
-                <div class="checking-overlay">
-                    <div class="mini-spinner"></div>
-                    <span class="checking-text">Verificando<br>si el contenido<br>esta disponible...</span>
-                </div>
-                <div class="status-badge">NO DISPONIBLE</div>
                 <img src="${imageUrl}" class="movie-poster" alt="${title}" loading="lazy">
                 <div class="movie-info">
                     <h3 class="movie-title">${title}</h3>
@@ -371,141 +314,8 @@ function renderToGrid(results, gridElement, tabindexOffset) {
         `;
     }).join('');
 
-    // Iniciar observación para lazy checking
-    gridElement.querySelectorAll('.movie-card').forEach(card => {
-        availabilityObserver.observe(card);
-    });
 }
 
-async function checkAvailability(card) {
-    const id = card.dataset.id;
-    const type = card.dataset.type;
-    const yearText = card.querySelector('.movie-year').textContent;
-    const year = parseInt(yearText);
-    const currentYear = new Date().getFullYear();
-
-    // 1. Verificar Caché
-    const cachedStatus = getFromCache(id);
-    if (cachedStatus !== null) {
-        const overlay = card.querySelector('.checking-overlay');
-        if (overlay) overlay.classList.add('hidden');
-        if (cachedStatus === 'unavailable') {
-            markAsUnavailable(card);
-        }
-        return;
-    }
-
-    // 2. Heurística de año/fecha: Si la película es del futuro o muy reciente, no está disponible
-    const releaseDateStr = card.dataset.releaseDate;
-    if (releaseDateStr) {
-        const rDate = new Date(releaseDateStr);
-        const now = new Date();
-        // Si sale en el futuro o acaba de salir hoy, es casi seguro que no hay video pirateado en HD
-        // Agregamos un margen de un par de días para asegurar.
-        const marginDate = new Date(now.getTime() - (2 * 24 * 60 * 60 * 1000));
-        if (rDate > marginDate) {
-            markAsUnavailable(card);
-            saveToCache(id, 'unavailable');
-            const overlay = card.querySelector('.checking-overlay');
-            if (overlay) overlay.classList.add('hidden');
-            return;
-        }
-    } else {
-        const movieYear = parseInt(card.dataset.year || year);
-        if (movieYear > currentYear) {
-            markAsUnavailable(card);
-            saveToCache(id, 'unavailable');
-            const overlay = card.querySelector('.checking-overlay');
-            if (overlay) overlay.classList.add('hidden');
-            return;
-        }
-    }
-
-    const checkUrl = `https://vaplayer.ru/embed/${type}/${id}?v=${new Date().getTime()}`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000); // Aumentado a 20s para dar tiempo a ambos chequeos
-
-    try {
-        // Usamos allorigins/get para detectar redirecciones vía data.url
-        const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(checkUrl)}&v=${new Date().getTime()}`, { signal: controller.signal });
-
-        if (!response.ok) throw new Error('Proxy error');
-
-        const data = await response.json();
-        const content = (data.contents || '').toLowerCase();
-        const finalUrl = (data.url || '').toLowerCase();
-
-        // --- Heurísticas de "No Disponible" ---
-
-        const isHomeRedirect = finalUrl.endsWith('vaplayer.ru/') || finalUrl.endsWith('vaplayer.ru') || finalUrl === 'https://vaplayer.ru';
-
-        const isLandingPage = content.includes('playbox') || 
-            content.includes('stream & share videos') ||
-            content.includes('free cloud movie storage') ||
-            content.includes('fastest way to upload');
-
-        let isExplicit404 = content.includes('404 not found') ||
-            content.includes('video no encontrado') ||
-            content.includes('cannot find') ||
-            content.includes('no disponible') ||
-            content.includes('error 404') ||
-            content.includes('file not found');
-
-        let isDefinitelyNotFound = isHomeRedirect || isLandingPage || isExplicit404;
-
-        // --- VALIDACIÓN SECUNDARIA ---
-        // Si vaplayer devuelve el shell 200 pero no estamos seguros, vidsrc.me es el desempate
-        if (!isDefinitelyNotFound) {
-            try {
-                const vidsrcUrl = `https://vidsrc.me/embed/${id}?v=${Date.now()}`;
-                const vResp = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(vidsrcUrl)}`, { signal: controller.signal });
-                
-                if (vResp.ok) {
-                    const vData = await vResp.json();
-                    const vContent = (vData.contents || '').toLowerCase();
-                    const vFinalUrl = (vData.url || '').toLowerCase();
-                    
-                    // vidsrc.me suele redirigir a una página de error o mostrar "404"
-                    if (vFinalUrl.includes('error') || vFinalUrl.includes('404') || 
-                        vContent.includes('404') || vContent.includes('not found') || 
-                        vContent.includes('video not found')) {
-                        console.log(`[Validation] vidsrc.me confirma que ${id} no existe.`);
-                        isDefinitelyNotFound = true;
-                    }
-                } else if (vResp.status === 404) {
-                    isDefinitelyNotFound = true;
-                }
-            } catch (secError) {
-                console.warn('Error en chequeo secundario:', secError);
-            }
-        }
-
-        clearTimeout(timeoutId);
-        console.log(`Chequeo ${id}:`, { isHomeRedirect, isLandingPage, isExplicit404, isDefinitelyNotFound });
-
-        const overlay = card.querySelector('.checking-overlay');
-        if (overlay) overlay.classList.add('hidden');
-
-        if (isDefinitelyNotFound) {
-            markAsUnavailable(card);
-            saveToCache(id, 'unavailable');
-        } else {
-            saveToCache(id, 'available');
-        }
-    } catch (error) {
-        console.warn('Error verificando (usando optimismo):', id, error);
-        // EN CASO DE ERROR DE PROXY: Somos optimistas y lo dejamos como disponible
-        // para que el usuario pueda intentar abrirlo (por si el proxy falla pero el sitio real no)
-        const overlay = card.querySelector('.checking-overlay');
-        if (overlay) overlay.classList.add('hidden');
-    }
-}
-
-function markAsUnavailable(card) {
-    card.classList.add('unavailable');
-    card.style.pointerEvents = 'none';
-    card.removeAttribute('tabindex');
-}
 
 // --- Reproducción ---
 
@@ -513,6 +323,7 @@ const playerModal = document.getElementById('player-modal');
 const playerIframe = document.getElementById('player-iframe');
 const closePlayerBtn = document.getElementById('close-player');
 const playerLoader = document.getElementById('player-loader');
+const prePlayOverlay = document.getElementById('pre-play-overlay');
 // const serverButtons = document.querySelectorAll('.server-btn'); // No longer needed
 
 let currentMovieId = '';
@@ -537,9 +348,25 @@ function resetControlsTimer() {
 }
 
 function getPlayerUrl(id, type) {
-    // We now only use vaplayer with Spanish subtitles by default
-    // Agregamos v=random para evitar cache del reproductor
     return `https://vaplayer.ru/embed/${type}/${id}?ds_lang=es&v=${new Date().getTime()}`;
+}
+
+async function playWithDelay(id, type, movieObj) {
+    if (!id) return;
+    
+    // Guardar en historial
+    if (movieObj) {
+        saveToHistory(movieObj);
+        loadHistory();
+    }
+
+    // Mostrar overlay de 1 segundo
+    if (prePlayOverlay) prePlayOverlay.classList.remove('hidden');
+    
+    setTimeout(() => {
+        if (prePlayOverlay) prePlayOverlay.classList.add('hidden');
+        playMovie(id, type);
+    }, 2000);
 }
 
 function playMovie(id, type) {
@@ -634,19 +461,11 @@ closePlayerBtn.addEventListener('click', () => {
 
 resultsGrid.addEventListener('click', (e) => {
     const card = e.target.closest('.movie-card');
-    if (card && !card.classList.contains('unavailable')) {
-        const overlay = card.querySelector('.checking-overlay');
-        if (overlay && !overlay.classList.contains('hidden')) return;
-
+    if (card) {
         const id = card.dataset.id;
         const type = card.dataset.type;
-        
-        // Guardar en historial
         const movieObj = JSON.parse(card.dataset.movieObj);
-        saveToHistory(movieObj);
-        loadHistory(); // Actualizar vista inmediatamente
-        
-        playMovie(id, type);
+        playWithDelay(id, type, movieObj);
     }
 });
 
@@ -694,20 +513,10 @@ document.addEventListener('keydown', (e) => {
     }
 
     if (active.classList.contains('movie-card') && (e.key === 'Enter' || e.key === 'Select' || e.keyCode === 23)) {
-        if (!active.classList.contains('unavailable')) {
-            const overlay = active.querySelector('.checking-overlay');
-            if (overlay && !overlay.classList.contains('hidden')) return;
-
-            const id = active.dataset.id;
-            const type = active.dataset.type;
-            
-            // Guardar en historial
-            const movieObj = JSON.parse(active.dataset.movieObj);
-            saveToHistory(movieObj);
-            loadHistory(); // Actualizar vista inmediatamente
-            
-            playMovie(id, type);
-        }
+        const id = active.dataset.id;
+        const type = active.dataset.type;
+        const movieObj = JSON.parse(active.dataset.movieObj);
+        playWithDelay(id, type, movieObj);
         return;
     }
 
