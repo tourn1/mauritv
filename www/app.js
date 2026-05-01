@@ -319,13 +319,11 @@ async function checkAvailability(card) {
 
     const checkUrl = `https://vaplayer.ru/embed/${type}/${id}?v=${new Date().getTime()}`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // Aumentado a 20s para dar tiempo a ambos chequeos
 
     try {
         // Usamos allorigins/get para detectar redirecciones vía data.url
-        // Agregamos timestamp también al proxy para evitar cache de AllOrigins
         const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(checkUrl)}&v=${new Date().getTime()}`, { signal: controller.signal });
-        clearTimeout(timeoutId);
 
         if (!response.ok) throw new Error('Proxy error');
 
@@ -333,23 +331,52 @@ async function checkAvailability(card) {
         const content = (data.contents || '').toLowerCase();
         const finalUrl = (data.url || '').toLowerCase();
 
-        // --- Heurísticas de "No Disponible" (Solo si estamos seguros) ---
+        // --- Heurísticas de "No Disponible" ---
 
-        // 1. Redirección confirmada al home (vaplayer.ru/)
-        const isHomeRedirect = finalUrl.endsWith('vaplayer.ru/') || finalUrl.endsWith('vaplayer.ru');
+        const isHomeRedirect = finalUrl.endsWith('vaplayer.ru/') || finalUrl.endsWith('vaplayer.ru') || finalUrl === 'https://vaplayer.ru';
 
-        // 2. Contenido de la Landing Page
-        const isLandingPage = content.includes('playbox - stream & share videos') ||
-            content.includes('stream it. share it.') ||
-            content.includes('free cloud movie storage');
+        const isLandingPage = content.includes('playbox') || 
+            content.includes('stream & share videos') ||
+            content.includes('free cloud movie storage') ||
+            content.includes('fastest way to upload');
 
-        // 3. Error explícito
         let isExplicit404 = content.includes('404 not found') ||
-            content.includes('video no encontrado');
+            content.includes('video no encontrado') ||
+            content.includes('cannot find') ||
+            content.includes('no disponible') ||
+            content.includes('error 404') ||
+            content.includes('file not found');
 
-        // Solo marcamos como no disponible si alguna de estas es cierta
-        const isDefinitelyNotFound = isHomeRedirect || isLandingPage || isExplicit404;
+        let isDefinitelyNotFound = isHomeRedirect || isLandingPage || isExplicit404;
 
+        // --- VALIDACIÓN SECUNDARIA ---
+        // Si vaplayer devuelve el shell 200 pero no estamos seguros, vidsrc.me es el desempate
+        if (!isDefinitelyNotFound) {
+            try {
+                const vidsrcUrl = `https://vidsrc.me/embed/${id}?v=${Date.now()}`;
+                const vResp = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(vidsrcUrl)}`, { signal: controller.signal });
+                
+                if (vResp.ok) {
+                    const vData = await vResp.json();
+                    const vContent = (vData.contents || '').toLowerCase();
+                    const vFinalUrl = (vData.url || '').toLowerCase();
+                    
+                    // vidsrc.me suele redirigir a una página de error o mostrar "404"
+                    if (vFinalUrl.includes('error') || vFinalUrl.includes('404') || 
+                        vContent.includes('404') || vContent.includes('not found') || 
+                        vContent.includes('video not found')) {
+                        console.log(`[Validation] vidsrc.me confirma que ${id} no existe.`);
+                        isDefinitelyNotFound = true;
+                    }
+                } else if (vResp.status === 404) {
+                    isDefinitelyNotFound = true;
+                }
+            } catch (secError) {
+                console.warn('Error en chequeo secundario:', secError);
+            }
+        }
+
+        clearTimeout(timeoutId);
         console.log(`Chequeo ${id}:`, { isHomeRedirect, isLandingPage, isExplicit404, isDefinitelyNotFound });
 
         const overlay = card.querySelector('.checking-overlay');
@@ -359,7 +386,6 @@ async function checkAvailability(card) {
             markAsUnavailable(card);
             saveToCache(id, 'unavailable');
         } else {
-            // Si el proxy responde y no parece ser un error, guardamos como disponible
             saveToCache(id, 'available');
         }
     } catch (error) {
