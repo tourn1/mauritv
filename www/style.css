@@ -167,6 +167,29 @@ button#clear-btn.hidden {
     padding: 1rem 0;
 }
 
+/* Section Title */
+.section-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: -0.5px;
+    border-left: 4px solid var(--accent-color);
+    padding-left: 1rem;
+    animation: fadeIn 0.8s ease;
+}
+
+.section-title.hidden {
+    display: none;
+}
+
+#history-section {
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 .movie-card {
     background: var(--card-bg);
     border-radius: 12px;

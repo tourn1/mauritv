@@ -4,6 +4,9 @@ const clearBtn = document.getElementById('clear-btn');
 const resultsGrid = document.getElementById('results-grid');
 const voiceIndicator = document.getElementById('voice-indicator');
 const logoContainer = document.getElementById('logo-container');
+const sectionTitle = document.getElementById('section-title');
+const historySection = document.getElementById('history-section');
+const historyGrid = document.getElementById('history-grid');
 
 // Registro de Service Worker para PWA/Android
 if ('serviceWorker' in navigator) {
@@ -14,9 +17,11 @@ if ('serviceWorker' in navigator) {
 
 let debounceTimer;
 let currentResults = [];
+let trendingMoviesCache = null;
 
 // --- Configuración y Caché ---
 const AVAILABILITY_CACHE_KEY = 'movie_availability_cache_v12';
+const HISTORY_KEY = 'movie_history_v1';
 let availabilityCache = JSON.parse(localStorage.getItem(AVAILABILITY_CACHE_KEY) || '{}');
 
 function saveToCache(id, status) {
@@ -87,8 +92,7 @@ movieInput.addEventListener('input', (e) => {
     }
 
     if (query.length < 2) {
-        resultsGrid.innerHTML = '<div class="empty-state"><p>Empieza a escribir para buscar películas...</p></div>';
-        showLogo();
+        loadTrendingMovies();
         return;
     }
 
@@ -101,10 +105,8 @@ movieInput.addEventListener('input', (e) => {
 clearBtn.addEventListener('click', () => {
     movieInput.value = '';
     clearBtn.classList.add('hidden');
-    resultsGrid.innerHTML = '<div class="empty-state"><p>Empieza a escribir para buscar películas...</p></div>';
-    showLogo();
-    checkQueue.length = 0;
-    availabilityObserver.disconnect();
+    loadTrendingMovies();
+    loadHistory();
     movieInput.focus();
 });
 
@@ -146,6 +148,8 @@ async function getExternalIds(id, type) {
 async function searchMovies(query) {
     console.log('Iniciando búsqueda TMDb para:', query);
     showLoading();
+    if (sectionTitle) sectionTitle.classList.add('hidden');
+    if (historySection) historySection.classList.add('hidden');
 
     // Limpiar cola y observador anterior
     checkQueue.length = 0;
@@ -226,16 +230,116 @@ async function searchMovies(query) {
     }
 }
 
-function renderResults(results) {
-    console.log('Renderizando resultados...', results.length);
-    if (results.length === 0) {
-        resultsGrid.innerHTML = '<div class="empty-state"><p>No se encontraron resultados para esta búsqueda.</p></div>';
-        showLogo();
+async function loadTrendingMovies() {
+    if (sectionTitle) sectionTitle.classList.remove('hidden');
+    loadHistory(); // Cargar historial al mismo tiempo
+    if (trendingMoviesCache) {
+        renderResults(trendingMoviesCache);
         return;
     }
-    hideLogo();
 
-    resultsGrid.innerHTML = results.map((movie, index) => {
+    console.log('Cargando películas trending en streaming...');
+    showLoading();
+
+    // Limpiar cola y observador anterior
+    checkQueue.length = 0;
+    availabilityObserver.disconnect();
+
+    try {
+        const sixtyDaysAgo = new Date();
+        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+        const dateStr = sixtyDaysAgo.toISOString().split('T')[0];
+
+        // Intentamos buscar películas que hayan salido en formato digital (streaming) recientemente
+        let data = await fetchTMDB('/discover/movie', {
+            sort_by: 'popularity.desc',
+            'primary_release_date.gte': dateStr,
+            with_release_type: '4', // 4 = Digital
+            language: 'es-MX',
+            page: 1
+        });
+
+        let results = data.results || [];
+        
+        // Si no hay suficientes con el filtro de Digital, usamos las populares generales como fallback
+        if (results.length < 5) {
+            console.log('Pocos resultados con release_type=4, usando populares generales...');
+            const fallbackData = await fetchTMDB('/movie/popular', {
+                language: 'es-MX',
+                page: 1
+            });
+            results = fallbackData.results || [];
+        }
+
+        // Filtrar y limitar a 10
+        results = results.filter(item => item.poster_path && item.vote_average > 0).slice(0, 10);
+
+        if (results.length > 0) {
+            const mappedResultsPromises = results.map(async (item) => {
+                const imdbId = await getExternalIds(item.id, 'movie');
+                return {
+                    id: imdbId || item.id,
+                    l: item.title,
+                    y: item.release_date ? item.release_date.substring(0, 4) : '',
+                    releaseDate: item.release_date || '',
+                    qid: 'movie',
+                    i: { imageUrl: `https://image.tmdb.org/t/p/w500${item.poster_path}` },
+                    rating: item.vote_average ? item.vote_average.toFixed(1) : 'N/A'
+                };
+            });
+
+            trendingMoviesCache = await Promise.all(mappedResultsPromises);
+            renderResults(trendingMoviesCache);
+        } else {
+            resultsGrid.innerHTML = '<div class="empty-state"><p>No se pudieron cargar sugerencias en este momento.</p></div>';
+            showLogo();
+        }
+    } catch (error) {
+        console.error('Error cargando trending movies:', error);
+        resultsGrid.innerHTML = '<div class="empty-state"><p>Error al cargar las películas sugeridas.</p></div>';
+        showLogo();
+    }
+}
+
+// --- Gestión de Historial ---
+
+function saveToHistory(movie) {
+    let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    // Evitar duplicados: eliminar si ya existe
+    history = history.filter(item => item.id !== movie.id);
+    // Agregar al inicio
+    history.unshift(movie);
+    // Limitar a 10
+    history = history.slice(0, 10);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
+
+function loadHistory() {
+    const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    if (history.length > 0) {
+        historySection.classList.remove('hidden');
+        renderToGrid(history, historyGrid, 100); // Offset de tabindex para no chocar
+    } else {
+        historySection.classList.add('hidden');
+    }
+}
+
+function renderResults(results) {
+    renderToGrid(results, resultsGrid, 0);
+}
+
+function renderToGrid(results, gridElement, tabindexOffset) {
+    console.log('Renderizando resultados en grid...', results.length);
+    if (results.length === 0) {
+        if (gridElement === resultsGrid) {
+            gridElement.innerHTML = '<div class="empty-state"><p>No se encontraron resultados.</p></div>';
+            showLogo();
+        }
+        return;
+    }
+    if (gridElement === resultsGrid) hideLogo();
+
+    gridElement.innerHTML = results.map((movie, index) => {
         let imageUrl = 'https://via.placeholder.com/300x450?text=No+Image';
         if (movie.i) {
             imageUrl = Array.isArray(movie.i) ? movie.i[0] : movie.i.imageUrl || imageUrl;
@@ -248,7 +352,7 @@ function renderResults(results) {
         const typeDisplay = type === 'tv' ? 'SERIE' : 'PELÍCULA';
 
         return `
-            <div class="movie-card navigable" tabindex="${index + 3}" data-index="${index}" data-id="${movie.id}" data-type="${type}" data-year="${year}" data-release-date="${releaseDate}">
+            <div class="movie-card navigable" tabindex="${index + 3 + tabindexOffset}" data-index="${index}" data-id="${movie.id}" data-type="${type}" data-year="${year}" data-release-date="${releaseDate}" data-movie-obj='${JSON.stringify(movie).replace(/'/g, "&apos;")}'>
                 <div class="type-badge">${typeDisplay}</div>
                 <div class="checking-overlay">
                     <div class="mini-spinner"></div>
@@ -268,7 +372,7 @@ function renderResults(results) {
     }).join('');
 
     // Iniciar observación para lazy checking
-    document.querySelectorAll('.movie-card').forEach(card => {
+    gridElement.querySelectorAll('.movie-card').forEach(card => {
         availabilityObserver.observe(card);
     });
 }
@@ -536,6 +640,12 @@ resultsGrid.addEventListener('click', (e) => {
 
         const id = card.dataset.id;
         const type = card.dataset.type;
+        
+        // Guardar en historial
+        const movieObj = JSON.parse(card.dataset.movieObj);
+        saveToHistory(movieObj);
+        loadHistory(); // Actualizar vista inmediatamente
+        
         playMovie(id, type);
     }
 });
@@ -590,6 +700,12 @@ document.addEventListener('keydown', (e) => {
 
             const id = active.dataset.id;
             const type = active.dataset.type;
+            
+            // Guardar en historial
+            const movieObj = JSON.parse(active.dataset.movieObj);
+            saveToHistory(movieObj);
+            loadHistory(); // Actualizar vista inmediatamente
+            
             playMovie(id, type);
         }
         return;
@@ -648,5 +764,6 @@ document.addEventListener('keydown', (e) => {
 
 window.onload = () => {
     movieInput.focus();
+    loadTrendingMovies();
 };
 
