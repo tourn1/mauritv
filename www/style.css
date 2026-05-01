@@ -366,6 +366,7 @@ button#clear-btn.hidden {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
+    text-align: center;
 }
 
 /* Estado No Disponible */

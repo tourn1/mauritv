@@ -16,7 +16,7 @@ let debounceTimer;
 let currentResults = [];
 
 // --- Configuración y Caché ---
-const AVAILABILITY_CACHE_KEY = 'movie_availability_cache_v11';
+const AVAILABILITY_CACHE_KEY = 'movie_availability_cache_v12';
 let availabilityCache = JSON.parse(localStorage.getItem(AVAILABILITY_CACHE_KEY) || '{}');
 
 function saveToCache(id, status) {
@@ -245,7 +245,7 @@ function renderResults(results) {
             <div class="movie-card navigable" tabindex="${index + 3}" data-index="${index}" data-id="${movie.id}" data-type="${type}" data-year="${year}" data-release-date="${releaseDate}">
                 <div class="checking-overlay">
                     <div class="mini-spinner"></div>
-                    <span class="checking-text">Verificando...</span>
+                    <span class="checking-text">Verificando<br>si el contenido<br>esta disponible...</span>
                 </div>
                 <div class="status-badge">NO DISPONIBLE</div>
                 <img src="${imageUrl}" class="movie-poster" alt="${title}" loading="lazy">
@@ -291,7 +291,7 @@ async function checkAvailability(card) {
         const now = new Date();
         // Si sale en el futuro o acaba de salir hoy, es casi seguro que no hay video pirateado en HD
         // Agregamos un margen de un par de días para asegurar.
-        const marginDate = new Date(now.getTime() - (2 * 24 * 60 * 60 * 1000)); 
+        const marginDate = new Date(now.getTime() - (2 * 24 * 60 * 60 * 1000));
         if (rDate > marginDate) {
             markAsUnavailable(card);
             saveToCache(id, 'unavailable');
@@ -496,6 +496,9 @@ closePlayerBtn.addEventListener('click', () => {
 resultsGrid.addEventListener('click', (e) => {
     const card = e.target.closest('.movie-card');
     if (card && !card.classList.contains('unavailable')) {
+        const overlay = card.querySelector('.checking-overlay');
+        if (overlay && !overlay.classList.contains('hidden')) return;
+
         const id = card.dataset.id;
         const type = card.dataset.type;
         playMovie(id, type);
@@ -547,6 +550,9 @@ document.addEventListener('keydown', (e) => {
 
     if (active.classList.contains('movie-card') && (e.key === 'Enter' || e.key === 'Select' || e.keyCode === 23)) {
         if (!active.classList.contains('unavailable')) {
+            const overlay = active.querySelector('.checking-overlay');
+            if (overlay && !overlay.classList.contains('hidden')) return;
+
             const id = active.dataset.id;
             const type = active.dataset.type;
             playMovie(id, type);
