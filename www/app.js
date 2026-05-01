@@ -177,8 +177,12 @@ async function searchMovies(query) {
             results = data.results || [];
         }
 
-        // Filtrar solo películas y series y ordenar por popularidad (TMDb ya lo hace por relevancia por defecto)
-        results = results.filter(item => item.media_type === 'movie' || item.media_type === 'tv');
+        // Filtrar solo películas y series que tengan póster y una calificación válida (mayor a 0)
+        results = results.filter(item => 
+            (item.media_type === 'movie' || item.media_type === 'tv') && 
+            item.poster_path && 
+            item.vote_average > 0
+        );
 
         if (results.length > 0) {
             // Limitar a los 15 mejores resultados para no saturar con peticiones de external_ids
@@ -240,9 +244,11 @@ function renderResults(results) {
         const year = movie.y || movie.yr || '';
         const releaseDate = movie.releaseDate || '';
         const type = movie.qid === 'tvSeries' ? 'tv' : 'movie';
+        const typeDisplay = type === 'tv' ? 'SERIE' : 'PELÍCULA';
 
         return `
             <div class="movie-card navigable" tabindex="${index + 3}" data-index="${index}" data-id="${movie.id}" data-type="${type}" data-year="${year}" data-release-date="${releaseDate}">
+                <div class="type-badge">${typeDisplay}</div>
                 <div class="checking-overlay">
                     <div class="mini-spinner"></div>
                     <span class="checking-text">Verificando<br>si el contenido<br>esta disponible...</span>
