@@ -18,9 +18,11 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+    // Estrategia: Network First (Red primero, luego Caché)
+    // Esto asegura que si hay conexión, siempre se cargue lo último.
     event.respondWith(
-        caches.match(event.request).then((response) => {
-            return response || fetch(event.request);
+        fetch(event.request).catch(() => {
+            return caches.match(event.request);
         })
     );
 });

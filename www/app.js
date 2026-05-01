@@ -123,6 +123,7 @@ const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 async function fetchTMDB(endpoint, params = {}) {
     const url = new URL(`${TMDB_BASE_URL}${endpoint}`);
     url.searchParams.append('api_key', TMDB_API_KEY);
+    url.searchParams.append('v', new Date().getTime()); // Cache busting para API
     for (const [key, value] of Object.entries(params)) {
         url.searchParams.append(key, value);
     }
@@ -316,13 +317,14 @@ async function checkAvailability(card) {
         }
     }
 
-    const checkUrl = `https://vaplayer.ru/embed/${type}/${id}`;
+    const checkUrl = `https://vaplayer.ru/embed/${type}/${id}?v=${new Date().getTime()}`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
 
     try {
         // Usamos allorigins/get para detectar redirecciones vía data.url
-        const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(checkUrl)}`, { signal: controller.signal });
+        // Agregamos timestamp también al proxy para evitar cache de AllOrigins
+        const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(checkUrl)}&v=${new Date().getTime()}`, { signal: controller.signal });
         clearTimeout(timeoutId);
 
         if (!response.ok) throw new Error('Proxy error');
@@ -406,7 +408,8 @@ function resetControlsTimer() {
 
 function getPlayerUrl(id, type) {
     // We now only use vaplayer with Spanish subtitles by default
-    return `https://vaplayer.ru/embed/${type}/${id}?ds_lang=es`;
+    // Agregamos v=random para evitar cache del reproductor
+    return `https://vaplayer.ru/embed/${type}/${id}?ds_lang=es&v=${new Date().getTime()}`;
 }
 
 function playMovie(id, type) {

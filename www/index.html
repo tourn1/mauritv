@@ -9,7 +9,23 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <title>MauriTV</title>
-    <link rel="stylesheet" href="style.css">
+    <script>
+        var version = new Date().getTime();
+        
+        // CSS con cache busting
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'style.css?v=' + version;
+        document.head.appendChild(link);
+
+        // Actualizar logo con cache busting cuando el DOM esté listo
+        window.addEventListener('DOMContentLoaded', function() {
+            var logo = document.getElementById('app-logo');
+            if (logo) {
+                logo.src = logo.src + '?v=' + version;
+            }
+        });
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -70,6 +86,11 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+        // JS con cache busting
+        var script = document.createElement('script');
+        script.src = 'app.js?v=' + version;
+        document.body.appendChild(script);
+    </script>
 </body>
 </html>
