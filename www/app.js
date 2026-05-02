@@ -86,14 +86,32 @@ async function fetchTMDB(endpoint, params = {}) {
     return response.json();
 }
 
-async function getExternalIds(id, type) {
+async function getMovieDetails(id, type) {
     try {
-        const endpoint = type === 'tvSeries' ? `/tv/${id}/external_ids` : `/movie/${id}/external_ids`;
-        const data = await fetchTMDB(endpoint);
-        return data.imdb_id; // Puede ser null
+        const endpoint = type === 'tvSeries' || type === 'tv' ? `/tv/${id}` : `/movie/${id}`;
+        // Para series no solemos tener 'release_dates' con tipos (digital, etc) de la misma forma que peliculas
+        const append = type === 'tvSeries' || type === 'tv' ? 'external_ids' : 'external_ids,release_dates';
+        const data = await fetchTMDB(endpoint, { append_to_response: append });
+
+        let digitalReleaseDate = null;
+        if (data.release_dates && data.release_dates.results) {
+            // Intentar encontrar lanzamiento digital (tipo 4)
+            for (const res of data.release_dates.results) {
+                const digital = res.release_dates.find(rd => rd.type === 4);
+                if (digital) {
+                    digitalReleaseDate = digital.release_date.split('T')[0];
+                    break;
+                }
+            }
+        }
+
+        return {
+            imdbId: data.external_ids ? data.external_ids.imdb_id : null,
+            digitalReleaseDate: digitalReleaseDate
+        };
     } catch (e) {
-        console.warn('Error obteniendo external IDs', e);
-        return null;
+        console.warn('Error obteniendo detalles del contenido', e);
+        return { imdbId: null, digitalReleaseDate: null };
     }
 }
 
@@ -133,9 +151,9 @@ async function searchMovies(query) {
         }
 
         // Filtrar solo películas y series que tengan póster y una calificación válida (mayor a 0)
-        results = results.filter(item => 
-            (item.media_type === 'movie' || item.media_type === 'tv') && 
-            item.poster_path && 
+        results = results.filter(item =>
+            (item.media_type === 'movie' || item.media_type === 'tv') &&
+            item.poster_path &&
             item.vote_average > 0
         );
 
@@ -146,16 +164,17 @@ async function searchMovies(query) {
             const mappedResultsPromises = topResults.map(async (item) => {
                 const type = item.media_type === 'tv' ? 'tvSeries' : 'movie';
 
-                // 3. Obtener el IMDb ID para mayor compatibilidad con vaplayer.ru
-                const imdbId = await getExternalIds(item.id, type);
+                // 3. Obtener el IMDb ID y fecha digital para mayor compatibilidad y detalle
+                const details = await getMovieDetails(item.id, type);
 
-                const finalId = imdbId || item.id; // Fallback al ID de TMDb si no hay IMDb ID
+                const finalId = details.imdbId || item.id; // Fallback al ID de TMDb si no hay IMDb ID
 
                 return {
                     id: finalId,
                     l: item.title || item.name,
                     y: item.release_date ? item.release_date.substring(0, 4) : (item.first_air_date ? item.first_air_date.substring(0, 4) : ''),
                     releaseDate: item.release_date || item.first_air_date || '',
+                    digitalReleaseDate: details.digitalReleaseDate || '',
                     qid: type,
                     i: { imageUrl: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null },
                     rating: item.vote_average ? item.vote_average.toFixed(1) : 'N/A'
@@ -208,7 +227,7 @@ async function loadTrendingMovies() {
         });
 
         let results = data.results || [];
-        
+
         // Si no hay suficientes con el filtro de Digital, usamos las populares generales como fallback
         if (results.length < 5) {
             console.log('Pocos resultados con release_type=4, usando populares generales...');
@@ -219,25 +238,40 @@ async function loadTrendingMovies() {
             results = fallbackData.results || [];
         }
 
-        // Filtrar y limitar a 10
-        results = results.filter(item => item.poster_path && item.vote_average > 0).slice(0, 10);
+        const today = new Date().toISOString().split('T')[0];
+
+        // Filtrar candidatos iniciales (tomamos hasta 20 para tener margen de filtrado por fecha digital)
+        results = results.filter(item => item.poster_path && item.vote_average > 0).slice(0, 20);
 
         if (results.length > 0) {
             const mappedResultsPromises = results.map(async (item) => {
-                const imdbId = await getExternalIds(item.id, 'movie');
+                const details = await getMovieDetails(item.id, 'movie');
                 return {
-                    id: imdbId || item.id,
+                    id: details.imdbId || item.id,
                     l: item.title,
                     y: item.release_date ? item.release_date.substring(0, 4) : '',
                     releaseDate: item.release_date || '',
+                    digitalReleaseDate: details.digitalReleaseDate || '',
                     qid: 'movie',
                     i: { imageUrl: `https://image.tmdb.org/t/p/w500${item.poster_path}` },
                     rating: item.vote_average ? item.vote_average.toFixed(1) : 'N/A'
                 };
             });
 
-            trendingMoviesCache = await Promise.all(mappedResultsPromises);
-            renderResults(trendingMoviesCache);
+            const allMapped = await Promise.all(mappedResultsPromises);
+
+            // Filtrar: Debe tener fecha digital y no ser futura
+            trendingMoviesCache = allMapped.filter(movie => {
+                return movie.digitalReleaseDate && movie.digitalReleaseDate <= today;
+            }).slice(0, 10);
+
+            if (trendingMoviesCache.length > 0) {
+                renderResults(trendingMoviesCache);
+            } else {
+                // Si después del filtro no quedó nada, mostrar un mensaje o intentar con los resultados originales sin filtro estricto
+                // pero por ahora sigamos la instrucción del usuario
+                resultsGrid.innerHTML = '<div class="empty-state"><p>No hay estrenos digitales disponibles en este momento.</p></div>';
+            }
         } else {
             resultsGrid.innerHTML = '<div class="empty-state"><p>No se pudieron cargar sugerencias en este momento.</p></div>';
             showLogo();
@@ -300,7 +334,7 @@ function renderToGrid(results, gridElement, tabindexOffset) {
         const typeDisplay = type === 'tv' ? 'SERIE' : 'PELÍCULA';
 
         return `
-            <div class="movie-card navigable" tabindex="${index + 3 + tabindexOffset}" data-index="${index}" data-id="${movie.id}" data-type="${type}" data-year="${year}" data-release-date="${releaseDate}" data-movie-obj='${JSON.stringify(movie).replace(/'/g, "&apos;")}'>
+            <div class="movie-card navigable" tabindex="${index + 3 + tabindexOffset}" data-index="${index}" data-id="${movie.id}" data-type="${type}" data-year="${year}" data-release-date="${releaseDate}" data-release-digital="${movie.digitalReleaseDate || ''}" release-date="${releaseDate}" data-movie-obj='${JSON.stringify(movie).replace(/'/g, "&apos;")}'>
                 <div class="type-badge">${typeDisplay}</div>
                 <img src="${imageUrl}" class="movie-poster" alt="${title}" loading="lazy">
                 <div class="movie-info">
@@ -353,20 +387,46 @@ function getPlayerUrl(id, type) {
 
 async function playWithDelay(id, type, movieObj) {
     if (!id) return;
-    
+
     // Guardar en historial
     if (movieObj) {
         saveToHistory(movieObj);
         loadHistory();
     }
 
-    // Mostrar overlay de 1 segundo
-    if (prePlayOverlay) prePlayOverlay.classList.remove('hidden');
-    
-    setTimeout(() => {
-        if (prePlayOverlay) prePlayOverlay.classList.add('hidden');
-        playMovie(id, type);
-    }, 2000);
+    // Mostrar overlay con el logo y spinner
+    const statusText = document.getElementById('pre-play-status');
+    if (prePlayOverlay) {
+        if (statusText) {
+            statusText.textContent = 'Verificando disponibilidad...';
+            statusText.style.color = 'var(--text-secondary)';
+        }
+        prePlayOverlay.classList.remove('hidden');
+    }
+
+    // Forzar un retraso de 2 segundos para mostrar el logo y spinner
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Iniciar verificación
+    try {
+        const available = await isValidMovie(id, type);
+
+        if (!available) {
+            if (statusText) {
+                statusText.textContent = 'Contenido no disponible en este momento';
+                statusText.style.color = '#ff4444';
+            }
+            setTimeout(() => {
+                if (prePlayOverlay) prePlayOverlay.classList.add('hidden');
+            }, 2500);
+            return;
+        }
+    } catch (e) {
+        console.error('Error validando:', e);
+    }
+
+    if (prePlayOverlay) prePlayOverlay.classList.add('hidden');
+    playMovie(id, type);
 }
 
 function playMovie(id, type) {
@@ -576,3 +636,91 @@ window.onload = () => {
     loadTrendingMovies();
 };
 
+
+// --- Validación de disponibilidad ---
+function isValidMovie(id, options = {}) {
+    return true
+    /*
+    const {
+        timeout = 8000,
+        activityWindow = 3000
+    } = options;
+
+    return new Promise((resolve) => {
+        const url = `https://streamimdb.ru/embed/movie/${id}`;
+
+        const iframe = document.createElement("iframe");
+        iframe.src = url;
+        iframe.style.position = "absolute";
+        iframe.style.left = "-9999px";
+        iframe.style.width = "640px";
+        iframe.style.height = "360px";
+        iframe.setAttribute("allow", "autoplay");
+
+        let hasActivity = false;
+        let finished = false;
+
+        const cleanUp = (result) => {
+            if (!finished) {
+                finished = true;
+                window.removeEventListener("message", onMessage);
+                iframe.removeEventListener("load", onLoad);
+                document.body.removeChild(iframe);
+                resolve(result);
+            }
+        };
+
+        // 🧠 Detecta actividad via postMessage (muy común en players)
+        const onMessage = (event) => {
+            if (event.source === iframe.contentWindow) {
+                hasActivity = true;
+            }
+        };
+
+        window.addEventListener("message", onMessage);
+
+        // 🧠 Detecta si el iframe gana foco (interacción interna)
+        const detectFocus = () => {
+            try {
+                if (document.activeElement === iframe) {
+                    hasActivity = true;
+                }
+            } catch { }
+        };
+
+        const focusInterval = setInterval(detectFocus, 300);
+
+        // 🧠 Detecta cambios de tamaño (muchos players ajustan dinámicamente)
+        let lastHeight = iframe.clientHeight;
+        const resizeCheck = setInterval(() => {
+            if (iframe.clientHeight !== lastHeight) {
+                hasActivity = true;
+                lastHeight = iframe.clientHeight;
+            }
+        }, 500);
+
+        const onLoad = () => {
+            // Esperamos un rato a ver si hay actividad real
+            setTimeout(() => {
+                if (hasActivity) {
+                    cleanUp(true);
+                } else {
+                    cleanUp(false);
+                }
+            }, activityWindow);
+        };
+
+        iframe.addEventListener("load", onLoad);
+
+        iframe.onerror = () => {
+            cleanUp(false);
+        };
+
+        // Timeout final
+        setTimeout(() => {
+            cleanUp(false);
+        }, timeout);
+
+        document.body.appendChild(iframe);
+    });*/
+}

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validador de ID - MauriTV</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            color: #e2e8f0;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            resize: vertical;
+            transition: all 0.2s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        button {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Validador Dinámico</h1>
+        <p class="subtitle">Prueba tu lógica de validación en tiempo real.</p>
+
+        <div class="form-group">
+            <label for="idInput">ID a Validar</label>
+            <input type="text" id="idInput" placeholder="Ej: tt1234567" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label for="codeTextarea">Función validar(id)</label>
+            <textarea id="codeTextarea" spellcheck="false">return true;</textarea>
+            <p class="hint">Escribe el cuerpo de la función. El parámetro <code>id</code> está disponible.</p>
+        </div>
+
+        <div id="resultContainer" class="result-container" style="display: none;">
+            <label>Resultado:</label>
+            <div id="resultOutput" class="result-output"></div>
+        </div>
+
+        <button id="validateBtn" onclick="ejecutarValidacion()">Validar</button>
+    </div>
+
+    <style>
+        /* Estilos adicionales para el contenedor de resultados */
+        .result-container {
+            margin-bottom: 24px;
+            padding: 16px;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 12px;
+            border: 1px dashed rgba(99, 102, 241, 0.3);
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-output {
+            margin-top: 8px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.95rem;
+            color: #10b981; /* Un color verde esmeralda para el éxito */
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+
+        .result-output pre {
+            margin: 0;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        .error-text {
+            color: #ef4444;
+        }
+    </style>
+
+    <script>
+        function ejecutarValidacion() {
+            const id = document.getElementById('idInput').value;
+            const cuerpoFuncion = document.getElementById('codeTextarea').value;
+            const resultContainer = document.getElementById('resultContainer');
+            const resultOutput = document.getElementById('resultOutput');
+            
+            try {
+                const validar = new Function('id', cuerpoFuncion);
+                const resultado = validar(id);
+                
+                resultContainer.style.display = 'block';
+                
+                if (resultado === null) {
+                    resultOutput.textContent = 'null';
+                } else if (typeof resultado === 'object') {
+                    resultOutput.innerHTML = `<pre>${JSON.stringify(resultado, null, 2)}</pre>`;
+                } else {
+                    resultOutput.textContent = String(resultado);
+                }
+                
+                resultOutput.classList.remove('error-text');
+            } catch (error) {
+                resultContainer.style.display = 'block';
+                resultOutput.innerHTML = `<span class="error-text">Error en la ejecución: ${error.message}</span>`;
+                resultOutput.classList.add('error-text');
+            }
+        }
+    </script>
+</body>
+</html>
