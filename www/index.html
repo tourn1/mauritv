@@ -103,6 +103,10 @@
 
     <script>
         // JS con cache busting
+        var vScript = document.createElement('script');
+        vScript.src = 'validation.js?v=' + version;
+        document.body.appendChild(vScript);
+
         var script = document.createElement('script');
         script.src = 'app.js?v=' + version;
         document.body.appendChild(script);
