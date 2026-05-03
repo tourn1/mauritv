@@ -263,7 +263,7 @@ async function loadTrendingMovies() {
                     const details = await getMovieDetails(item.id, 'movie');
                     const finalId = details.imdbId || item.id;
                     const disponible = await validarPeliculaFinal(finalId);
-                    
+
                     if (disponible) {
                         return {
                             id: finalId,
@@ -281,7 +281,7 @@ async function loadTrendingMovies() {
                 });
 
                 const batchResults = await Promise.all(batchPromises);
-                
+
                 for (const res of batchResults) {
                     if (res && validMovies.length < 10) {
                         // Verificamos que no esté duplicado por id
@@ -291,7 +291,7 @@ async function loadTrendingMovies() {
                     }
                 }
             }
-            
+
             page++;
         }
 
@@ -387,30 +387,13 @@ function renderToGrid(results, gridElement, tabindexOffset) {
 const playerModal = document.getElementById('player-modal');
 const playerIframe = document.getElementById('player-iframe');
 const closePlayerBtn = document.getElementById('close-player');
+const downloadPlayerBtn = document.getElementById('download-player');
 const playerLoader = document.getElementById('player-loader');
 const prePlayOverlay = document.getElementById('pre-play-overlay');
 // const serverButtons = document.querySelectorAll('.server-btn'); // No longer needed
 
 let currentMovieId = '';
 let currentMovieType = '';
-let controlsTimeout;
-
-function resetControlsTimer() {
-    const controls = document.querySelector('.player-controls');
-    if (!controls) return;
-
-    controls.classList.remove('hidden-controls');
-    document.body.style.cursor = 'default';
-
-    clearTimeout(controlsTimeout);
-
-    if (!playerModal.classList.contains('hidden')) {
-        controlsTimeout = setTimeout(() => {
-            controls.classList.add('hidden-controls');
-            document.body.style.cursor = 'none';
-        }, 2000);
-    }
-}
 
 function getPlayerUrl(id, type) {
     return `https://vaplayer.ru/embed/${type}/${id}?ds_lang=spa&v=${new Date().getTime()}`;
@@ -474,6 +457,14 @@ function playMovie(id, type) {
 
     const playUrl = getPlayerUrl(id, type);
 
+    if (downloadPlayerBtn) {
+        if (type === 'movie') {
+            downloadPlayerBtn.classList.remove('hidden');
+        } else {
+            downloadPlayerBtn.classList.add('hidden');
+        }
+    }
+
     // Mostrar loader y modal
     playerLoader.classList.remove('hidden');
     playerIframe.classList.add('hidden');
@@ -513,45 +504,25 @@ function playMovie(id, type) {
 
     setTimeout(() => {
         closePlayerBtn.focus();
-        resetControlsTimer();
     }, 100);
     document.body.style.overflow = 'hidden';
-
-    // Sensor de movimiento para mostrar controles
-    const sensor = document.getElementById('controls-sensor');
-    if (sensor) {
-        sensor.addEventListener('mousemove', resetControlsTimer);
-        sensor.addEventListener('touchstart', resetControlsTimer);
-    }
-
-    // Listeners generales
-    window.addEventListener('mousemove', resetControlsTimer);
-    window.addEventListener('keydown', resetControlsTimer);
-    window.addEventListener('touchstart', resetControlsTimer);
-    window.addEventListener('mousedown', resetControlsTimer);
 }
 
 // Server button listeners removed as the buttons were deleted from HTML
+
+if (downloadPlayerBtn) {
+    downloadPlayerBtn.addEventListener('click', () => {
+        if (currentMovieId && currentMovieType === 'movie') {
+            window.location.href = `https://imobiledeals.com/service/download?id=${currentMovieId}`;
+        }
+    });
+}
 
 closePlayerBtn.addEventListener('click', () => {
     playerIframe.src = '';
     playerModal.classList.add('hidden');
     document.body.style.overflow = '';
-
-    // Limpiar listeners y timer
-    const sensor = document.getElementById('controls-sensor');
-    if (sensor) {
-        sensor.removeEventListener('mousemove', resetControlsTimer);
-        sensor.removeEventListener('touchstart', resetControlsTimer);
-    }
-
-    window.removeEventListener('mousemove', resetControlsTimer);
-    window.removeEventListener('keydown', resetControlsTimer);
-    window.removeEventListener('touchstart', resetControlsTimer);
-    window.removeEventListener('mousedown', resetControlsTimer);
-    clearTimeout(controlsTimeout);
     document.body.style.cursor = 'default';
-
     movieInput.focus();
 });
 
@@ -689,7 +660,7 @@ window.addEventListener('message', (e) => {
     if (playerIframe && e.source === playerIframe.contentWindow) {
         const d = e.data;
         if (!d || typeof d !== 'object') return;
-        
+
         if (d.type === 'STORAGE_GET_ALL') {
             const subStyle = {
                 color: "#f7eeee",

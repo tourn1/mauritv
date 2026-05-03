@@ -477,6 +477,32 @@ button#clear-btn.hidden {
     button#mic-btn .material-icons, button#clear-btn .material-icons {
         font-size: 1.3rem;
     }
+
+    /* Player bar en mobile */
+    .player-controls {
+        padding: 10px 12px;
+    }
+
+    .close-btn {
+        padding: 7px 12px;
+        font-size: 0.8rem;
+        gap: 5px;
+    }
+
+    .close-btn .material-icons {
+        font-size: 1rem;
+    }
+}
+
+/* Ocultar texto del botón en pantallas muy pequeñas (solo ícono) */
+@media (max-width: 380px) {
+    .close-btn span:not(.material-icons) {
+        display: none;
+    }
+    .close-btn {
+        padding: 8px;
+        border-radius: 50%;
+    }
 }
 
 /* --- Reproductor Integrado (App Mode) --- */
@@ -493,51 +519,54 @@ button#clear-btn.hidden {
     animation: fadeIn 0.3s ease;
 }
 
+/* --- Barra Superior del Reproductor --- */
 .player-controls {
-    padding: 15px 20px;
-    background: transparent;
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: auto;
-    z-index: 10001;
+    width: 100%;
+    flex-shrink: 0;
     display: flex;
-    justify-content: flex-end;
-    transition: opacity 0.3s ease, visibility 0.3s;
-    pointer-events: none; /* No bloquea el iframe */
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: #1a1a1a;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-sizing: border-box;
+    z-index: 10001;
+    min-height: 54px;
 }
 
-.player-controls.hidden-controls {
-    opacity: 0;
-    visibility: hidden;
-}
-
+/* Sensor no necesario cuando la barra está fuera del video */
 .controls-sensor {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 250px;
-    height: 150px;
-    z-index: 10000;
-    background: transparent;
-    pointer-events: auto;
+    display: none;
+}
+
+/* TODO: Funcionalidad de descarga pendiente - quitar este bloque para reactivar el botón */
+#download-player {
+    display: none;
 }
 
 .close-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     color: white;
-    padding: 10px 20px;
+    padding: 9px 18px;
     border-radius: 50px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     cursor: pointer;
     font-weight: 600;
+    font-size: 0.9rem;
     font-family: 'Outfit', sans-serif;
     transition: all 0.2s ease;
-    backdrop-filter: blur(10px);
-    pointer-events: auto; /* El botón sí es clickeable */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    white-space: nowrap;
+    pointer-events: auto;
+}
+
+.close-btn .material-icons {
+    font-size: 1.1rem;
 }
 
 .close-btn:hover, .close-btn:focus {
