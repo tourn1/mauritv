@@ -82,7 +82,7 @@ header {
     padding: 0.5rem 1.5rem;
     border: 2px solid transparent;
     transition: all var(--transition-speed);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .search-bar:focus-within {
@@ -128,7 +128,8 @@ button#mic-btn {
     flex-shrink: 0;
 }
 
-button#mic-btn:focus, .navigable:focus {
+button#mic-btn:focus,
+.navigable:focus {
     background: var(--accent-color);
     color: black;
     transform: scale(1.1);
@@ -206,13 +207,13 @@ button#clear-btn.hidden {
     border-color: #ffffff;
     transform: scale(1.1);
     z-index: 100;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
 }
 
 .movie-card:hover {
     transform: scale(1.08);
     z-index: 90;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
 }
 
 .movie-poster {
@@ -228,7 +229,7 @@ button#clear-btn.hidden {
     left: 0;
     right: 0;
     padding: 1.5rem 1rem 1rem;
-    background: linear-gradient(transparent, rgba(0,0,0,0.9));
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
     transform: translateY(0);
     transition: transform var(--transition-speed);
 }
@@ -269,7 +270,7 @@ button#clear-btn.hidden {
     bottom: 0;
     left: 0;
     width: 100%;
-    background: rgba(0,0,0,0.95);
+    background: rgba(0, 0, 0, 0.95);
     padding: 2rem;
     display: flex;
     flex-direction: column;
@@ -297,14 +298,32 @@ button#clear-btn.hidden {
     animation: wave 1s infinite ease-in-out;
 }
 
-.voice-wave span:nth-child(2) { animation-delay: 0.2s; }
-.voice-wave span:nth-child(3) { animation-delay: 0.4s; }
-.voice-wave span:nth-child(4) { animation-delay: 0.6s; }
-.voice-wave span:nth-child(5) { animation-delay: 0.8s; }
+.voice-wave span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.voice-wave span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+.voice-wave span:nth-child(4) {
+    animation-delay: 0.6s;
+}
+
+.voice-wave span:nth-child(5) {
+    animation-delay: 0.8s;
+}
 
 @keyframes wave {
-    0%, 100% { height: 10px; }
-    50% { height: 40px; }
+
+    0%,
+    100% {
+        height: 10px;
+    }
+
+    50% {
+        height: 40px;
+    }
 }
 
 /* Empty State */
@@ -336,8 +355,13 @@ button#clear-btn.hidden {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .loading-text {
@@ -381,8 +405,15 @@ button#clear-btn.hidden {
 }
 
 @keyframes pulse {
-    from { transform: scale(1); opacity: 0.8; }
-    to { transform: scale(1.1); opacity: 1; }
+    from {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+
+    to {
+        transform: scale(1.1);
+        opacity: 1;
+    }
 }
 
 .pre-play-spinner {
@@ -455,27 +486,65 @@ button#clear-btn.hidden {
 
 /* Mobile Adjustments */
 @media (max-width: 600px) {
-    #app { padding: 1rem; }
-    .results-grid { grid-template-columns: repeat(2, 1fr); }
-    input#movie-input { font-size: 1rem; padding: 0.5rem 0; }
-    
+    #app {
+        padding: 1rem;
+    }
+
+    .results-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    input#movie-input {
+        font-size: 1rem;
+        padding: 0.5rem 0;
+    }
+
     .search-bar {
         padding: 0.4rem 1rem;
         gap: 0.3rem;
     }
-    
+
     .search-icon {
         font-size: 1.5rem;
         margin-right: 0.2rem;
     }
-    
-    button#mic-btn, button#clear-btn {
+
+    button#mic-btn,
+    button#clear-btn {
         width: 38px;
         height: 38px;
     }
-    
-    button#mic-btn .material-icons, button#clear-btn .material-icons {
+
+    button#mic-btn .material-icons,
+    button#clear-btn .material-icons {
         font-size: 1.3rem;
+    }
+
+    /* Player bar en mobile */
+    .player-controls {
+        padding: 10px 12px;
+    }
+
+    .close-btn {
+        padding: 7px 12px;
+        font-size: 0.8rem;
+        gap: 5px;
+    }
+
+    .close-btn .material-icons {
+        font-size: 1rem;
+    }
+}
+
+/* Ocultar texto del botón en pantallas muy pequeñas (solo ícono) */
+@media (max-width: 380px) {
+    .close-btn span:not(.material-icons) {
+        display: none;
+    }
+
+    .close-btn {
+        padding: 8px;
+        border-radius: 50%;
     }
 }
 
@@ -493,54 +562,58 @@ button#clear-btn.hidden {
     animation: fadeIn 0.3s ease;
 }
 
+/* --- Barra Superior del Reproductor --- */
 .player-controls {
-    padding: 15px 20px;
-    background: transparent;
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: auto;
-    z-index: 10001;
+    width: 100%;
+    flex-shrink: 0;
     display: flex;
-    justify-content: flex-end;
-    transition: opacity 0.3s ease, visibility 0.3s;
-    pointer-events: none; /* No bloquea el iframe */
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: #1a1a1a;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-sizing: border-box;
+    z-index: 10001;
+    min-height: 54px;
 }
 
-.player-controls.hidden-controls {
-    opacity: 0;
-    visibility: hidden;
-}
-
+/* Sensor no necesario cuando la barra está fuera del video */
 .controls-sensor {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 250px;
-    height: 150px;
-    z-index: 10000;
-    background: transparent;
-    pointer-events: auto;
+    display: none;
+}
+
+/* TODO: Funcionalidad de descarga pendiente - quitar este bloque para reactivar el botón */
+#download-player {
+    display: none;
 }
 
 .close-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     color: white;
-    padding: 10px 20px;
+    padding: 9px 18px;
     border-radius: 50px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     cursor: pointer;
     font-weight: 600;
+    font-size: 0.9rem;
     font-family: 'Outfit', sans-serif;
     transition: all 0.2s ease;
-    backdrop-filter: blur(10px);
-    pointer-events: auto; /* El botón sí es clickeable */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    white-space: nowrap;
+    pointer-events: auto;
 }
 
-.close-btn:hover, .close-btn:focus {
+.close-btn .material-icons {
+    font-size: 1.1rem;
+}
+
+.close-btn:hover,
+.close-btn:focus {
     background: var(--accent-color);
     border-color: var(--accent-color);
     transform: scale(1.05);
@@ -563,7 +636,8 @@ button#clear-btn.hidden {
     width: 100%;
     height: 100%;
     z-index: 999;
-    pointer-events: none; /* El contenedor no bloquea */
+    pointer-events: none;
+    /* El contenedor no bloquea */
 }
 
 /* Capa que bloquea los clics en la zona superior y media (donde suelen estar los anuncios) */
@@ -573,8 +647,10 @@ button#clear-btn.hidden {
     top: 0;
     left: 0;
     width: 100%;
-    height: 80%; /* Bloquea el 80% superior */
-    pointer-events: auto; /* Bloquea los clics */
+    height: 80%;
+    /* Bloquea el 80% superior */
+    pointer-events: auto;
+    /* Bloquea los clics */
     background: transparent;
 }
 
@@ -590,8 +666,13 @@ button#clear-btn.hidden {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 /* --- Selector de Servidores --- */
