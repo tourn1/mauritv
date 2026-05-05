@@ -599,6 +599,19 @@ document.addEventListener('keydown', (e) => {
         return;
     }
 
+    // Cerrar reproductor con tecla Atrás/Escape/Backspace
+    if (!playerModal.classList.contains('hidden')) {
+        const backKeys = ['Escape', 'Backspace', 'Back', 'BrowserBack', 'GoBack'];
+        if (backKeys.includes(e.key) || e.keyCode === 8 || e.keyCode === 27 || e.keyCode === 10009 || e.keyCode === 461) {
+            // Si el foco está en el input, no cerrar el player (aunque el player debería estar encima)
+            if (active !== movieInput) {
+                e.preventDefault();
+                closePlayerBtn.click();
+                return;
+            }
+        }
+    }
+
     const navigables = Array.from(document.querySelectorAll('.navigable, #movie-input')).filter(el =>
         el.id === 'movie-input' || (el.classList.contains('navigable') && !el.classList.contains('unavailable'))
     );

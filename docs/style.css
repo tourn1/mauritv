@@ -520,9 +520,9 @@ button#clear-btn.hidden {
         font-size: 1.3rem;
     }
 
-    /* Player bar en mobile */
+    /* Player bar en mobile - oculto por petición */
     .player-controls {
-        padding: 10px 12px;
+        display: none !important;
     }
 
     .close-btn {
@@ -566,7 +566,7 @@ button#clear-btn.hidden {
 .player-controls {
     width: 100%;
     flex-shrink: 0;
-    display: flex;
+    display: none !important; /* Oculto por defecto (Mobile/TV) */
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
@@ -576,6 +576,13 @@ button#clear-btn.hidden {
     box-sizing: border-box;
     z-index: 10001;
     min-height: 54px;
+}
+
+/* Mostrar solo en PC (Puntero fino y pantalla de escritorio) */
+@media (min-width: 1024px) and (pointer: fine) {
+    .player-controls {
+        display: flex !important;
+    }
 }
 
 /* Sensor no necesario cuando la barra está fuera del video */
