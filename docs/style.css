@@ -477,6 +477,29 @@ button#clear-btn.hidden {
     white-space: normal;
 }
 
+/* Badge de Información Extra (Fuente y Resolución combinadas) */
+.info-badge {
+    position: absolute;
+    top: 42px;
+    /* Debajo del type-badge */
+    right: 10px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    z-index: 12;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    background: rgb(229 9 20 / 17%);
+    /* rgba(229, 9, 20, 0.85);  Rojo Netflix/MauriTV */
+    color: white;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    animation: fadeIn 0.5s ease;
+}
+
 /* TV Specific Adjustments */
 @media (min-aspect-ratio: 16/9) {
     .results-grid {
@@ -566,7 +589,8 @@ button#clear-btn.hidden {
 .player-controls {
     width: 100%;
     flex-shrink: 0;
-    display: none !important; /* Oculto por defecto (Mobile/TV) */
+    display: none !important;
+    /* Oculto por defecto (Mobile/TV) */
     flex-direction: row;
     justify-content: space-between;
     align-items: center;

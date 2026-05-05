@@ -142,6 +142,48 @@ function consultarAPI($url) {
     
     $disponible = $isSuccess && ($tieneStreams || $tieneEpisodios);
     
+    $firstStream = $tieneStreams ? $data['data']['stream_urls'][0] : null;
+    $resolution = null;
+    $source = null;
+
+    if ($firstStream) {
+        if (is_array($firstStream)) {
+            $resolution = $firstStream['quality'] ?? $firstStream['res'] ?? null;
+            $source = $firstStream['source'] ?? $firstStream['provider'] ?? $firstStream['name'] ?? null;
+        } else if (is_string($firstStream)) {
+            // Intentar extraer de la URL si es un string
+            $url = $firstStream;
+            
+            // Extraer resolución (buscando patrones como 1080p, 720p, etc)
+            if (preg_match('/(\d{3,4}p)/i', $url, $matches)) {
+                $resolution = $matches[1];
+            }
+            
+            // Extraer fuente (dominio principal)
+            $host = parse_url($url, PHP_URL_HOST);
+            if ($host) {
+                $parts = explode('.', $host);
+                if (count($parts) >= 2) {
+                    $source = $parts[count($parts) - 2]; // Tomar el nombre principal del dominio
+                } else {
+                    $source = $host;
+                }
+            }
+        }
+    }
+
+    // Prioridad a quality_info si existe en la data
+    $qualityInfo = $data['data']['quality_info'] ?? null;
+    if ($qualityInfo && is_array($qualityInfo)) {
+        if (!empty($qualityInfo['resolucion'])) $resolution = $qualityInfo['resolucion'];
+        if (!empty($qualityInfo['fuente'])) $source = $qualityInfo['fuente'];
+    }
+
+    // Fallback: si no hay resolución pero hay streams, poner HD por defecto si parece serlo
+    if (!$resolution && $tieneStreams) {
+        $resolution = "HD";
+    }
+
     return [
         'disponible' => $disponible,
         'httpCode' => $httpCode,
@@ -152,6 +194,9 @@ function consultarAPI($url) {
         'num_temporadas' => $tieneEpisodios ? count($data['data']['eps']) : 0,
         'title' => $data['data']['title'] ?? null,
         'media_type' => $data['data']['type'] ?? ($tieneEpisodios ? 'tv' : 'movie'),
+        'resolution' => $resolution,
+        'source' => $source,
+        'quality_info' => $qualityInfo,
         'error' => null,
         'raw_data' => $data['data'] ?? null
     ];
@@ -162,8 +207,8 @@ $resultado['id'] = $id;
 $resultado['timestamp'] = date('Y-m-d H:i:s');
 $resultado['url_verificada'] = "https://streamimdb.ru/embed/movie/$id";
 
-// Limpiar datos crudos para no sobrecargar la respuesta
-unset($resultado['raw_data']);
+// Limpiar datos crudos para no sobrecargar la respuesta si no se desea
+// unset($resultado['raw_data']); 
 
 http_response_code(200);
 echo json_encode($resultado, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);

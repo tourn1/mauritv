@@ -168,12 +168,14 @@ async function searchMovies(query) {
                 const details = await getMovieDetails(item.id, type);
 
                 const finalId = details.imdbId || item.id; // Fallback al ID de TMDb si no hay IMDb ID
-                const disponible = await validarPeliculaFinal(finalId);
+                const validationData = await validarPeliculaFinal(finalId);
 
                 return {
                     id: finalId,
                     l: item.title || item.name,
-                    disponible: disponible,
+                    disponible: validationData.disponible,
+                    resolution: validationData.resolution,
+                    source: validationData.source,
                     y: item.release_date ? item.release_date.substring(0, 4) : (item.first_air_date ? item.first_air_date.substring(0, 4) : ''),
                     releaseDate: item.release_date || item.first_air_date || '',
                     digitalReleaseDate: details.digitalReleaseDate || '',
@@ -262,13 +264,15 @@ async function loadTrendingMovies() {
                 const batchPromises = batch.map(async (item) => {
                     const details = await getMovieDetails(item.id, 'movie');
                     const finalId = details.imdbId || item.id;
-                    const disponible = await validarPeliculaFinal(finalId);
+                    const validationData = await validarPeliculaFinal(finalId);
 
-                    if (disponible) {
+                    if (validationData.disponible) {
                         return {
                             id: finalId,
                             l: item.title,
                             disponible: true,
+                            resolution: validationData.resolution,
+                            source: validationData.source,
                             y: item.release_date ? item.release_date.substring(0, 4) : '',
                             releaseDate: item.release_date || '',
                             digitalReleaseDate: details.digitalReleaseDate || '',
@@ -363,9 +367,19 @@ function renderToGrid(results, gridElement, tabindexOffset) {
         const disponibleBadge = movie.disponible === false ? '<div class="availability-badge unavailable">No disponible</div>' : '';
         const unavailableClass = movie.disponible === false ? ' unavailable' : '';
 
+        // Badge de información (Fuente y Resolución combinadas)
+        let extraBadges = '';
+        if (movie.disponible !== false) {
+            if (movie.source || movie.resolution) {
+                const badgeText = [movie.source, movie.resolution].filter(Boolean).join(' ');
+                extraBadges = `<div class="info-badge">${badgeText}</div>`;
+            }
+        }
+
         return `
             <div class="movie-card navigable${unavailableClass}" tabindex="${index + 3 + tabindexOffset}" data-index="${index}" data-id="${movie.id}" data-type="${type}" data-year="${year}" data-release-date="${releaseDate}" data-release-digital="${movie.digitalReleaseDate || ''}" release-date="${releaseDate}" data-movie-obj='${JSON.stringify(movie).replace(/'/g, "&apos;")}'>
                 <div class="type-badge">${typeDisplay}</div>
+                ${extraBadges}
                 ${disponibleBadge}
                 <img src="${imageUrl}" class="movie-poster" alt="${title}" loading="lazy">
                 <div class="movie-info">
@@ -427,7 +441,8 @@ async function playWithDelay(id, type, movieObj) {
         if (movieObj && movieObj.disponible !== undefined) {
             available = movieObj.disponible;
         } else {
-            available = await validarPeliculaFinal(id);
+            const vData = await validarPeliculaFinal(id);
+            available = vData.disponible;
         }
 
         if (!available) {
@@ -706,19 +721,47 @@ function isValidMovie(id, options = {}) {
  * Valida la disponibilidad de la película consultando al servicio de imobiledeals.
  */
 async function validarPeliculaFinal(id) {
+    if (!id) return { disponible: false };
+    
     try {
-        const url = `https://imobiledeals.com/service/verify?id=${id}`;
-        const response = await fetch(url);
+        // Usar verify.php local con cache busting
+        const url = `verify.php?id=${encodeURIComponent(id)}&v=${Date.now()}`;
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            cache: 'no-store',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
 
         if (!response.ok) {
-            console.warn(`Error HTTP al verificar ${id}: ${response.status}`);
-            return false;
+            throw new Error(`HTTP ${response.status}`);
         }
 
         const data = await response.json();
-        return data.disponible === true;
+        return data; 
     } catch (error) {
-        console.error(`Error en validación API para ${id}:`, error);
-        return false;
+        console.warn(`Verificación local fallida para ${id}, intentando fallback...`);
+        
+        try {
+            // Intentar con el servicio externo si el local falla
+            const fallbackUrl = `https://imobiledeals.com/service/verify?id=${encodeURIComponent(id)}`;
+            const fbResponse = await fetch(fallbackUrl);
+            
+            if (fbResponse.ok) {
+                const fbData = await fbResponse.json();
+                const q = fbData.quality_info || {};
+                return {
+                    disponible: fbData.disponible === true,
+                    resolution: q.resolucion || fbData.resolution || "HD",
+                    source: q.fuente || fbData.source || "EXT"
+                };
+            }
+        } catch (fbError) {
+            console.error(`Error total en validación para ${id}:`, fbError);
+        }
+        
+        return { disponible: false };
     }
 }
