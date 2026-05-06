@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#141414">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>MauriTV - Reproductor</title>
+    <script>
+        var version = new Date().getTime();
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'style.css?v=' + version;
+        document.head.appendChild(link);
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; background-color: #000; overflow: hidden; }
+        .player-modal { display: flex !important; visibility: visible !important; opacity: 1 !important; z-index: 1000; }
+    </style>
+</head>
+<body class="tv-mode">
+    <div id="player-modal" class="player-modal">
+        <div id="controls-sensor" class="controls-sensor"></div>
+        <div class="player-controls">
+            <button id="close-player" class="close-btn navigable" tabindex="1">
+                <span class="material-icons">arrow_back</span>
+                Volver
+            </button>
+            <button id="download-player" class="close-btn navigable hidden" tabindex="2">
+                <span class="material-icons">download</span>
+                Descargar
+            </button>
+        </div>
+        <div class="player-container">
+            <div id="player-loader" class="player-loader">
+                <div class="spinner"></div>
+                <p>Cargando fuente...</p>
+            </div>
+            <iframe id="player-iframe" class="navigable" tabindex="3" src="" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer" sandbox="allow-scripts allow-forms allow-presentation allow-same-origin"></iframe>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
+        const type = urlParams.get('type');
+        
+        const playerIframe = document.getElementById('player-iframe');
+        const playerLoader = document.getElementById('player-loader');
+        const closePlayerBtn = document.getElementById('close-player');
+        const downloadPlayerBtn = document.getElementById('download-player');
+        const controlsSensor = document.getElementById('controls-sensor');
+        const playerControls = document.querySelector('.player-controls');
+
+        if (!id || !type) {
+            window.location.href = 'index.html';
+        } else {
+            const playUrl = `https://vaplayer.ru/embed/${type}/${id}?ds_lang=spa&v=${new Date().getTime()}`;
+            
+            if (type === 'movie') {
+                downloadPlayerBtn.classList.remove('hidden');
+                downloadPlayerBtn.addEventListener('click', () => {
+                    window.location.href = `https://imobiledeals.com/service/download?id=${id}`;
+                });
+            }
+
+            playerIframe.src = playUrl;
+
+            playerIframe.onload = () => {
+                playerLoader.classList.add('hidden');
+                playerIframe.focus();
+                
+                try {
+                    const iframeWin = playerIframe.contentWindow;
+                    if (iframeWin) {
+                        iframeWin.open = function () { return null; };
+                        Object.defineProperty(iframeWin, 'top', { get: function () { return iframeWin; } });
+                        Object.defineProperty(iframeWin, 'parent', { get: function () { return iframeWin; } });
+                    }
+                } catch (e) {}
+
+                // Simular clic en el centro del video a los 5 segundos
+                setTimeout(() => {
+                    try {
+                        const rect = playerIframe.getBoundingClientRect();
+                        const x = rect.left + (rect.width / 2);
+                        const y = rect.top + (rect.height / 2);
+                        
+                        // Intentar hacer click directamente en el elemento
+                        playerIframe.click();
+                        
+                        // Disparar evento de ratón simulando coordenadas
+                        const clickEvent = new MouseEvent('click', {
+                            view: window,
+                            bubbles: true,
+                            cancelable: true,
+                            clientX: x,
+                            clientY: y
+                        });
+                        playerIframe.dispatchEvent(clickEvent);
+                        console.log('Clic simulado en el centro del reproductor.');
+                    } catch (err) {
+                        console.warn('No se pudo simular el clic:', err);
+                    }
+                }, 5000);
+            };
+
+            // Mostrar controles al mover el mouse en la parte superior
+            if (controlsSensor && playerControls) {
+                controlsSensor.addEventListener('mouseenter', () => {
+                    playerControls.classList.add('visible');
+                });
+                playerControls.addEventListener('mouseleave', () => {
+                    playerControls.classList.remove('visible');
+                });
+            }
+
+            // Navegación espacial y botones
+            document.addEventListener('keydown', (e) => {
+                const backKeys = ['Escape', 'Backspace', 'Back', 'BrowserBack', 'GoBack'];
+                if (backKeys.includes(e.key) || e.keyCode === 8 || e.keyCode === 27 || e.keyCode === 10009 || e.keyCode === 461) {
+                    closePlayerBtn.click();
+                    return;
+                }
+                
+                const active = document.activeElement;
+                const navigables = Array.from(document.querySelectorAll('.navigable')).filter(el => {
+                    const r = el.getBoundingClientRect();
+                    return r.width > 0 && r.height > 0 && !el.classList.contains('hidden');
+                });
+                
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                    e.preventDefault();
+                    if (playerControls) {
+                        playerControls.classList.add('visible');
+                        setTimeout(() => playerControls.classList.remove('visible'), 3000);
+                    }
+                    const currentIndex = navigables.indexOf(active);
+                    
+                    if (currentIndex === -1) {
+                        navigables[0].focus();
+                        return;
+                    }
+                    
+                    if (e.key === 'ArrowRight' && currentIndex < navigables.length - 1) navigables[currentIndex + 1].focus();
+                    else if (e.key === 'ArrowLeft' && currentIndex > 0) navigables[currentIndex - 1].focus();
+                    else if (e.key === 'ArrowDown') playerIframe.focus();
+                    else if (e.key === 'ArrowUp') navigables[0].focus();
+                }
+                
+                if (e.key === 'Enter' && active !== playerIframe) {
+                    active.click();
+                }
+            });
+
+            closePlayerBtn.addEventListener('click', () => {
+                window.location.href = 'index.html';
+            });
+            
+            window.addEventListener('message', (e) => {
+                if (playerIframe && e.source === playerIframe.contentWindow) {
+                    const d = e.data;
+                    if (!d || typeof d !== 'object') return;
+                    if (d.type === 'STORAGE_GET_ALL') {
+                        const subStyle = { color: "#f7eeee", bg: "#000000", bgAlpha: 80, size: 180, font: "inherit" };
+                        playerIframe.contentWindow.postMessage({ type: 'STORAGE_INIT', data: { 'playerSubStyle': JSON.stringify(subStyle) } }, '*');
+                    }
+                }
+            });
+            
+            // Foco inicial
+            setTimeout(() => { playerIframe.focus(); }, 1000);
+        }
+    </script>
+</body>
+</html>

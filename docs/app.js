@@ -398,13 +398,7 @@ function renderToGrid(results, gridElement, tabindexOffset) {
 
 // --- Reproducción ---
 
-const playerModal = document.getElementById('player-modal');
-const playerIframe = document.getElementById('player-iframe');
-const closePlayerBtn = document.getElementById('close-player');
-const downloadPlayerBtn = document.getElementById('download-player');
-const playerLoader = document.getElementById('player-loader');
 const prePlayOverlay = document.getElementById('pre-play-overlay');
-// const serverButtons = document.querySelectorAll('.server-btn'); // No longer needed
 
 let currentMovieId = '';
 let currentMovieType = '';
@@ -469,77 +463,8 @@ function playMovie(id, type) {
     currentMovieType = type;
 
     console.log(`Reproduciendo ${type} con ID:`, id);
-
-    const playUrl = getPlayerUrl(id, type);
-
-    if (downloadPlayerBtn) {
-        if (type === 'movie') {
-            downloadPlayerBtn.classList.remove('hidden');
-        } else {
-            downloadPlayerBtn.classList.add('hidden');
-        }
-    }
-
-    // Mostrar loader y modal
-    playerLoader.classList.remove('hidden');
-    playerIframe.classList.add('hidden');
-    playerModal.classList.remove('hidden');
-
-    // Configurar iframe
-    playerIframe.src = playUrl;
-
-    playerIframe.onload = () => {
-        playerLoader.classList.add('hidden');
-        playerIframe.classList.remove('hidden');
-
-        // === BLOQUEO DE POPUPS Y NAVEGACIÓN EXTERNA ===
-        // Sobreescribimos window.open en el contexto del iframe para evitar
-        // que cualquier anuncio o enlace abra una ventana nueva
-        try {
-            const iframeWin = playerIframe.contentWindow;
-            if (iframeWin) {
-                // Bloquear window.open (abre nuevas pestañas/ventanas)
-                iframeWin.open = function () {
-                    console.warn('[Player Guard] window.open() bloqueado');
-                    return null;
-                };
-                // Bloquear navegación de la ventana principal desde el iframe
-                Object.defineProperty(iframeWin, 'top', {
-                    get: function () { return iframeWin; }
-                });
-                Object.defineProperty(iframeWin, 'parent', {
-                    get: function () { return iframeWin; }
-                });
-            }
-        } catch (e) {
-            // Si el iframe es cross-origin estricto, el sandbox ya lo maneja
-            console.log('[Player Guard] Protección JS aplicada vía sandbox (cross-origin)');
-        }
-    };
-
-    setTimeout(() => {
-        playerIframe.focus();
-    }, 100);
-    document.body.style.overflow = 'hidden';
+    window.location.href = `player.html?id=${id}&type=${type}`;
 }
-
-// Server button listeners removed as the buttons were deleted from HTML
-
-if (downloadPlayerBtn) {
-    downloadPlayerBtn.addEventListener('click', () => {
-        if (currentMovieId && currentMovieType === 'movie') {
-            window.location.href = `https://imobiledeals.com/service/download?id=${currentMovieId}`;
-        }
-    });
-}
-
-closePlayerBtn.addEventListener('click', () => {
-    playerIframe.src = '';
-    playerModal.classList.add('hidden');
-    document.body.style.overflow = '';
-    document.body.style.cursor = 'default';
-    movieInput.focus();
-});
 
 resultsGrid.addEventListener('click', (e) => {
     const card = e.target.closest('.movie-card');
@@ -614,18 +539,7 @@ document.addEventListener('keydown', (e) => {
         return;
     }
 
-    // Cerrar reproductor con tecla Atrás/Escape/Backspace
-    if (!playerModal.classList.contains('hidden')) {
-        const backKeys = ['Escape', 'Backspace', 'Back', 'BrowserBack', 'GoBack'];
-        if (backKeys.includes(e.key) || e.keyCode === 8 || e.keyCode === 27 || e.keyCode === 10009 || e.keyCode === 461) {
-            // Si el foco está en el input, no cerrar el player (aunque el player debería estar encima)
-            if (active !== movieInput) {
-                e.preventDefault();
-                closePlayerBtn.click();
-                return;
-            }
-        }
-    }
+    // Cerrar reproductor eliminado (ahora en player.html)
 
     const navigables = Array.from(document.querySelectorAll('.navigable, #movie-input')).filter(el => {
         if (el.id !== 'movie-input' && (!el.classList.contains('navigable') || el.classList.contains('unavailable'))) return false;
@@ -694,29 +608,7 @@ window.onload = () => {
     loadTrendingMovies();
 };
 
-// --- Configuración del reproductor ---
-window.addEventListener('message', (e) => {
-    if (playerIframe && e.source === playerIframe.contentWindow) {
-        const d = e.data;
-        if (!d || typeof d !== 'object') return;
-
-        if (d.type === 'STORAGE_GET_ALL') {
-            const subStyle = {
-                color: "#f7eeee",
-                bg: "#000000",
-                bgAlpha: 80,
-                size: 180,
-                font: "inherit"
-            };
-            playerIframe.contentWindow.postMessage({
-                type: 'STORAGE_INIT',
-                data: {
-                    'playerSubStyle': JSON.stringify(subStyle)
-                }
-            }, '*');
-        }
-    }
-});
+// --- Configuración del reproductor movida a player.html ---
 
 
 // --- Validación de disponibilidad ---

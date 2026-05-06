@@ -602,12 +602,7 @@ button#clear-btn.hidden {
     min-height: 54px;
 }
 
-/* Mostrar solo en PC (Puntero fino y pantalla de escritorio) */
-@media (min-width: 1024px) and (pointer: fine) {
-    .player-controls {
-        display: flex !important;
-    }
-}
+/* El menú superior del reproductor ha sido ocultado globalmente (Mobile, TV y PC) */
 
 /* Sensor no necesario cuando la barra está fuera del video */
 .controls-sensor {
@@ -755,4 +750,43 @@ button#clear-btn.hidden {
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 15px;
+}
+
+/* --- Resaltado Global de Foco (Estilo Netflix) --- */
+.navigable:focus,
+[tabindex]:focus,
+button:focus,
+iframe:focus {
+    outline: var(--focus-border) !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Excepciones para mantener bordes redondeados y diseño original */
+.movie-card:focus {
+    outline: none !important;
+    border-color: #ffffff !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 15px rgba(255, 255, 255, 0.3) !important;
+}
+
+.search-bar:focus-within {
+    outline: none !important;
+    border-color: #ffffff !important;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3) !important;
+}
+
+input#movie-input:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+button#mic-btn:focus,
+button#clear-btn:focus,
+.close-btn:focus {
+    outline: var(--focus-border) !important;
+    outline-offset: 4px !important;
+}
+
+#player-iframe:focus {
+    outline-offset: -4px !important;
 }
