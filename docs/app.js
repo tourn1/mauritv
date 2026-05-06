@@ -518,7 +518,7 @@ function playMovie(id, type) {
     };
 
     setTimeout(() => {
-        closePlayerBtn.focus();
+        playerIframe.focus();
     }, 100);
     document.body.style.overflow = 'hidden';
 }
@@ -627,9 +627,11 @@ document.addEventListener('keydown', (e) => {
         }
     }
 
-    const navigables = Array.from(document.querySelectorAll('.navigable, #movie-input')).filter(el =>
-        el.id === 'movie-input' || (el.classList.contains('navigable') && !el.classList.contains('unavailable'))
-    );
+    const navigables = Array.from(document.querySelectorAll('.navigable, #movie-input')).filter(el => {
+        if (el.id !== 'movie-input' && (!el.classList.contains('navigable') || el.classList.contains('unavailable'))) return false;
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+    });
 
     const currentIndex = navigables.indexOf(active);
 
@@ -663,7 +665,16 @@ document.addEventListener('keydown', (e) => {
             }
 
             if (isCandidate) {
-                dist = Math.pow(elCenterX - centerX, 2) + Math.pow(elCenterY - centerY, 2);
+                const dx = Math.abs(elCenterX - centerX);
+                const dy = Math.abs(elCenterY - centerY);
+                
+                // Penalizar el eje opuesto para evitar saltos diagonales
+                if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                    dist = dy + (dx * 5);
+                } else {
+                    dist = dx + (dy * 5);
+                }
+
                 if (dist < minDistance) {
                     minDistance = dist;
                     closest = el;
