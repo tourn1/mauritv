@@ -1,5 +1,9 @@
 {
-   "appId": "com.mauritv.movies",
+  "appId": "com.mauritv.movies",
   "appName": "MauriTV",
-  "webDir": "www"
+  "webDir": "docs",
+  "server": {
+    "url": "https://mauritv.tourn1.com/",
+    "cleartext": true
+  }
 }

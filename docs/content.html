@@ -473,10 +473,20 @@
 
             const params = new URLSearchParams(window.location.search);
 
-            const id = params.get('id') || '278';
-            const type = params.get('type') || 'movie';
+                const id = params.get('id') || '278';
+                const type = params.get('type') || 'movie';
 
-            try {
+                // Simulación de fallo aleatorio (para pruebas): con 30% de probabilidad
+                // mostramos el mensaje de error y abortamos la carga del trailer.
+                // Cambia RANDOM_ERROR_RATE a 0 para desactivar la simulación.
+                const RANDOM_ERROR_RATE = 0.3;
+                if (Math.random() < RANDOM_ERROR_RATE) {
+                    document.getElementById('title').textContent = 'Contenido no disponible';
+                    mostrarErrorTrailer();
+                    return;
+                }
+
+                try {
 
                 const response = await fetch(
                     `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=es-MX&append_to_response=videos,images,external_ids`
