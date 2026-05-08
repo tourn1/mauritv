@@ -172,6 +172,7 @@ async function searchMovies(query) {
 
                 return {
                     id: finalId,
+                    tmdbId: item.id,
                     l: item.title || item.name,
                     disponible: validationData.disponible,
                     resolution: validationData.resolution,
@@ -269,6 +270,7 @@ async function loadTrendingMovies() {
                     if (validationData.disponible) {
                         return {
                             id: finalId,
+                            tmdbId: item.id,
                             l: item.title,
                             disponible: true,
                             resolution: validationData.resolution,
@@ -466,13 +468,17 @@ function playMovie(id, type) {
     window.location.href = `player.html?id=${id}&type=${type}`;
 }
 
+function openContentPage(movieObj) {
+    const type = movieObj.qid === 'tvSeries' ? 'tv' : 'movie';
+    const id = movieObj.tmdbId || movieObj.id;
+    window.location.href = `content.html?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}`;
+}
+
 resultsGrid.addEventListener('click', (e) => {
     const card = e.target.closest('.movie-card');
     if (card) {
-        const id = card.dataset.id;
-        const type = card.dataset.type;
         const movieObj = JSON.parse(card.dataset.movieObj);
-        playWithDelay(id, type, movieObj);
+        openContentPage(movieObj);
     }
 });
 
@@ -480,10 +486,8 @@ if (historyGrid) {
     historyGrid.addEventListener('click', (e) => {
         const card = e.target.closest('.movie-card');
         if (card) {
-            const id = card.dataset.id;
-            const type = card.dataset.type;
             const movieObj = JSON.parse(card.dataset.movieObj);
-            playWithDelay(id, type, movieObj);
+            openContentPage(movieObj);
         }
     });
 }
@@ -532,10 +536,8 @@ document.addEventListener('keydown', (e) => {
     }
 
     if (active.classList.contains('movie-card') && (e.key === 'Enter' || e.key === 'Select' || e.keyCode === 23)) {
-        const id = active.dataset.id;
-        const type = active.dataset.type;
         const movieObj = JSON.parse(active.dataset.movieObj);
-        playWithDelay(id, type, movieObj);
+        openContentPage(movieObj);
         return;
     }
 

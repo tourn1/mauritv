@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#141414" />
+
+    <title>MauriTV</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!-- Video.js - El reproductor más compatible -->
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.min.css" rel="stylesheet">
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    
+    <!-- Plugin de YouTube para Video.js -->
+    <script src="https://cdn.jsdelivr.net/npm/videojs-youtube@3.0.1/dist/Youtube.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #141414;
+            --bg-secondary: #1b1b1b;
+            --card: rgba(255,255,255,0.06);
+
+            --text: #ffffff;
+            --text-secondary: #b3b3b3;
+
+            --accent: #e50914;
+            --accent-hover: #ff1f29;
+
+            --shadow: 0 20px 60px rgba(0,0,0,0.45);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            min-height: 100vh;
+        }
+
+        main {
+            width: 100%;
+        }
+
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+
+            width: 52px;
+            height: 52px;
+
+            border: none;
+            border-radius: 50%;
+
+            background: rgba(0,0,0,0.5);
+
+            backdrop-filter: blur(12px);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            color: white;
+
+            cursor: pointer;
+
+            z-index: 100;
+
+            transition: 0.25s;
+        }
+
+        .back-button:hover {
+            background: rgba(255,255,255,0.15);
+            transform: scale(1.05);
+        }
+
+        .hero-section {
+            position: relative;
+
+            width: 100%;
+            min-height: 65vh;
+
+            display: flex;
+            align-items: flex-end;
+
+            padding: 80px 80px 30px;
+
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
+        }
+
+        .hero-overlay {
+            position: absolute;
+            inset: 0;
+
+            background:
+                linear-gradient(to top, #141414 5%, rgba(20,20,20,0.35) 40%, rgba(20,20,20,0.2) 100%),
+                linear-gradient(to right, rgba(20,20,20,0.96) 15%, rgba(20,20,20,0.7) 40%, transparent 70%);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+
+            max-width: 720px;
+
+            animation: fadeUp 0.8s ease;
+        }
+
+        .hero-title {
+            font-size: clamp(3rem, 7vw, 5.5rem);
+            font-weight: 900;
+            line-height: 0.95;
+
+            margin-bottom: 1.5rem;
+
+            text-shadow: 0 8px 40px rgba(0,0,0,0.7);
+        }
+
+        .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+
+            margin-bottom: 1.8rem;
+        }
+
+        .hero-meta span {
+            background: rgba(255,255,255,0.08);
+
+            border: 1px solid rgba(255,255,255,0.08);
+
+            backdrop-filter: blur(12px);
+
+            padding: 10px 16px;
+
+            border-radius: 999px;
+
+            font-size: 0.95rem;
+            font-weight: 500;
+
+            color: var(--text-secondary);
+        }
+
+        .hero-synopsis {
+            font-size: 1.08rem;
+            line-height: 1.9;
+
+            color: #e8e8e8;
+
+            margin-bottom: 2rem;
+
+            max-width: 650px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            margin-bottom: 1rem;
+        }
+
+        .play-button,
+        .secondary-button {
+            border: none;
+
+            border-radius: 8px;
+
+            padding: 14px 26px;
+
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            font-size: 1rem;
+            font-weight: 700;
+
+            cursor: pointer;
+
+            transition: 0.25s;
+        }
+
+        .play-button {
+            background: var(--accent);
+            color: white;
+        }
+
+        .play-button:hover,
+        .play-button.selected,
+        .play-button:focus {
+            background: var(--accent-hover);
+            transform: scale(1.04);
+            box-shadow: 0 0 0 4px rgba(229, 9, 20, 0.25);
+        }
+
+        .secondary-button {
+            background: rgba(255,255,255,0.12);
+
+            color: white;
+
+            backdrop-filter: blur(10px);
+        }
+
+        .secondary-button:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .content-section {
+            padding: 30px 80px 80px;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 800;
+
+            margin-bottom: 24px;
+        }
+
+        .trailer-container {
+            position: relative;
+
+            width: 100%;
+
+            overflow: hidden;
+
+            border-radius: 24px;
+
+            background: #0a0a0a;
+
+            box-shadow: var(--shadow);
+            margin-top: 0;
+        }
+        
+        /* Estilos para Video.js */
+        .video-js {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16 / 9;
+            background-color: #0a0a0a;
+        }
+        
+        .video-js .vjs-big-play-button {
+            background-color: #e50914;
+            border: none;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            line-height: 80px;
+            margin-left: -40px;
+            margin-top: -40px;
+        }
+        
+        .video-js .vjs-big-play-button:hover {
+            background-color: #ff1f29;
+        }
+        
+        .trailer-error {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+            background: #0a0a0a;
+            border-radius: 24px;
+        }
+        
+        .trailer-error .material-icons {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: #e50914;
+        }
+        
+        .trailer-error a {
+            color: #e50914;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 16px;
+            padding: 10px 20px;
+            background: rgba(229, 9, 20, 0.2);
+            border-radius: 8px;
+            transition: 0.25s;
+        }
+        
+        .trailer-error a:hover {
+            background: rgba(229, 9, 20, 0.4);
+        }
+
+        .carousel {
+            display: flex;
+            gap: 18px;
+
+            overflow-x: auto;
+
+            margin-top: 40px;
+
+            padding-bottom: 10px;
+        }
+
+        .carousel::-webkit-scrollbar {
+            display: none;
+        }
+
+        .carousel img {
+            width: 260px;
+            height: 150px;
+
+            object-fit: cover;
+
+            border-radius: 14px;
+
+            flex-shrink: 0;
+
+            transition: 0.3s;
+
+            cursor: pointer;
+        }
+
+        .carousel img:hover {
+            transform: scale(1.07);
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            min-height: 100vh;
+
+            font-size: 1.2rem;
+            color: #aaa;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+
+            .hero-section {
+                padding: 120px 24px 40px 24px;
+                min-height: 90vh;
+            }
+
+            .content-section {
+                padding: 40px 20px;
+            }
+
+            .hero-title {
+                font-size: 2.8rem;
+            }
+
+            .hero-synopsis {
+                font-size: 1rem;
+                line-height: 1.7;
+            }
+
+            .hero-buttons {
+                width: 100%;
+            }
+
+            .play-button,
+            .secondary-button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .carousel img {
+                width: 200px;
+                height: 120px;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+            
+            .video-js .vjs-big-play-button {
+                width: 60px;
+                height: 60px;
+                line-height: 60px;
+                margin-left: -30px;
+                margin-top: -30px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <main>
+
+        <button class="back-button" id="backBtn" onclick="history.back()" aria-label="Volver">
+            <span class="material-icons">arrow_back</span>
+        </button>
+
+        <section
+            class="hero-section"
+            id="hero"
+            style="background-image:url('https://image.tmdb.org/t/p/original/xDMIl84Qo5Tsu62c9DGWhmPI67A.jpg')"
+        >
+            <div class="hero-overlay"></div>
+
+            <div class="hero-content">
+
+                <h1 class="hero-title" id="title">
+                    Cargando...
+                </h1>
+
+                <div class="hero-meta" id="meta"></div>
+
+                <p class="hero-synopsis" id="overview"></p>
+
+                <div class="hero-buttons">
+
+                    <button class="play-button" id="playBtn">
+                        <span class="material-icons">play_arrow</span>
+                        Reproducir
+                    </button>
+
+                </div>
+
+            </div>
+        </section>
+
+        <section class="content-section">
+
+            <h2 class="section-title">
+                Trailer Oficial
+            </h2>
+
+            <div class="trailer-container" id="trailerContainer">
+                <div style="text-align:center; padding:40px; color:#888;">
+                    <span class="material-icons" style="font-size:48px;">hourglass_empty</span>
+                    <p>Cargando trailer...</p>
+                </div>
+            </div>
+
+            <div class="carousel" id="carousel"></div>
+
+        </section>
+
+    </main>
+
+    <script>
+        const TMDB_API_KEY = '12916916a032ac4a2da17601cbc119bd';
+        let currentPlayer = null;
+
+        async function loadContent() {
+
+            const params = new URLSearchParams(window.location.search);
+
+            const id = params.get('id') || '278';
+            const type = params.get('type') || 'movie';
+
+            try {
+
+                const response = await fetch(
+                    `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=es-MX&append_to_response=videos,images,external_ids`
+                );
+
+                const data = await response.json();
+
+                const title =
+                    data.title ||
+                    data.name ||
+                    'Sin título';
+
+                document.title = `${title} - MauriTV`;
+
+                document.getElementById('title').textContent = title;
+
+                document.getElementById('overview').textContent =
+                    data.overview ||
+                    'Sinopsis no disponible.';
+
+                const year =
+                    data.release_date?.substring(0,4) ||
+                    data.first_air_date?.substring(0,4) ||
+                    'N/A';
+
+                const rating =
+                    data.vote_average ?
+                    data.vote_average.toFixed(1)
+                    : 'N/A';
+
+                document.getElementById('meta').innerHTML = `
+                    <span>${year}</span>
+                    <span>⭐ ${rating}</span>
+                    <span>${data.runtime || 'HD'} min</span>
+                    <span>${type === 'movie' ? 'Película' : 'Serie'}</span>
+                `;
+
+                const imdbId = data.external_ids?.imdb_id;
+
+                if (data.backdrop_path) {
+
+                    document.getElementById('hero').style.backgroundImage =
+                        `url('https://image.tmdb.org/t/p/original${data.backdrop_path}')`;
+
+                }
+
+                // TRAILER CON VIDEO.JS - Máxima compatibilidad
+                let trailerKey = null;
+                
+                if (data.videos?.results?.length) {
+                    const priorityList = [
+                        data.videos.results.find(v => v.site === 'YouTube' && v.type === 'Trailer' && v.official === true),
+                        data.videos.results.find(v => v.site === 'YouTube' && v.type === 'Trailer'),
+                        data.videos.results.find(v => v.site === 'YouTube' && v.type === 'Teaser'),
+                        data.videos.results.find(v => v.site === 'YouTube')
+                    ];
+                    
+                    const selectedTrailer = priorityList.find(v => v !== undefined);
+                    if (selectedTrailer && selectedTrailer.key) {
+                        trailerKey = selectedTrailer.key;
+                    }
+                }
+                
+                const container = document.getElementById('trailerContainer');
+                
+                if (trailerKey) {
+                    // Limpiar el contenedor
+                    container.innerHTML = '';
+                    
+                    // Crear el elemento video
+                    const videoElement = document.createElement('video');
+                    videoElement.id = 'trailer-video';
+                    videoElement.className = 'video-js vjs-big-play-centered';
+                    videoElement.setAttribute('data-setup', '{}');
+                    
+                    container.appendChild(videoElement);
+                    
+                    // Configurar el reproductor con soporte nativo para YouTube
+                    const player = videojs('trailer-video', {
+                        techOrder: ['youtube'],
+                        sources: [{
+                            type: 'video/youtube',
+                            src: `https://www.youtube.com/watch?v=${trailerKey}`
+                        }],
+                        autoplay: false,
+                        controls: true,
+                        responsive: true,
+                        fluid: true,
+                        youtube: {
+                            rel: 0,
+                            modestbranding: 1,
+                            controls: 1,
+                            iv_load_policy: 3,
+                            fs: 1,
+                            playsinline: 1
+                        }
+                    }, function() {
+                        // Callback cuando el reproductor está listo
+                        console.log('Reproductor Video.js listo');
+                        currentPlayer = this;
+                        
+                        // Manejar errores
+                        this.on('error', function(e) {
+                            console.error('Error en Video.js:', e);
+                            mostrarErrorTrailer(title);
+                        });
+                    });
+                    
+                } else {
+                    mostrarErrorTrailer(title);
+                }
+
+                // IMAGES
+                const carousel = document.getElementById('carousel');
+                const posters = data.images?.backdrops?.slice(0, 10) || [];
+
+                carousel.innerHTML = posters.map(img => `
+                    <img
+                        src="https://image.tmdb.org/t/p/w780${img.file_path}"
+                        loading="lazy"
+                        alt="Imagen"
+                    >
+                `).join('');
+
+                // PLAY
+                const playBtn = document.getElementById('playBtn');
+                playBtn.onclick = () => {
+                    window.location.href =
+                        `player.html?id=${id}&type=${type}${imdbId ? `&imdb=${imdbId}` : ''}`;
+                };
+
+                playBtn.classList.add('selected');
+                playBtn.focus();
+
+                const backBtn = document.getElementById('backBtn');
+                backBtn.setAttribute('tabindex', '0');
+
+            } catch (err) {
+
+                console.error(err);
+
+                document.getElementById('title').textContent =
+                    'Error cargando contenido';
+                
+                mostrarErrorTrailer();
+            }
+        }
+        
+        function mostrarErrorTrailer(titulo = '') {
+            const container = document.getElementById('trailerContainer');
+            const busqueda = titulo ? `https://www.youtube.com/results?search_query=${encodeURIComponent(titulo + ' trailer')}` : '#';
+            
+            container.innerHTML = `
+                <div class="trailer-error">
+                    <span class="material-icons">error_outline</span>
+                    <p style="margin-bottom: 8px;">No se pudo cargar el trailer</p>
+                    <p style="font-size: 0.9rem;">El reproductor no está disponible</p>
+                    ${titulo ? `<a href="${busqueda}" target="_blank" rel="noopener noreferrer">▶ Ver trailer en YouTube</a>` : ''}
+                </div>
+            `;
+        }
+
+        function setupKeyboardNavigation() {
+            const backBtn = document.getElementById('backBtn');
+            const playBtn = document.getElementById('playBtn');
+            const trailerContainer = document.getElementById('trailerContainer');
+
+            if (!backBtn || !playBtn) return;
+
+            document.addEventListener('keydown', (e) => {
+                const active = document.activeElement;
+
+                if (e.key === 'ArrowUp') {
+                    if (active === playBtn || active === trailerContainer || active === document.body) {
+                        e.preventDefault();
+                        backBtn.focus();
+                    }
+                }
+
+                if (e.key === 'ArrowDown') {
+                    if (active === backBtn) {
+                        e.preventDefault();
+                        playBtn.focus();
+                    } else if (active === playBtn) {
+                        e.preventDefault();
+                        if (trailerContainer) trailerContainer.focus();
+                    }
+                }
+            });
+        }
+
+        loadContent();
+        setupKeyboardNavigation();
+
+    </script>
+
+</body>
+</html>

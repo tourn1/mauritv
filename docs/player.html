@@ -43,14 +43,16 @@
                 <div class="spinner"></div>
                 <p>Cargando fuente...</p>
             </div>
-            <iframe id="player-iframe" class="navigable" tabindex="3" src="" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer" sandbox="allow-scripts allow-forms allow-presentation allow-same-origin"></iframe>
+            <iframe id="player-iframe" class="navigable" tabindex="3" src="" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
         </div>
     </div>
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const id = urlParams.get('id');
+        const imdb = urlParams.get('imdb');
         const type = urlParams.get('type');
+        const finalId = imdb || id;
         
         const playerIframe = document.getElementById('player-iframe');
         const playerLoader = document.getElementById('player-loader');
@@ -59,15 +61,15 @@
         const controlsSensor = document.getElementById('controls-sensor');
         const playerControls = document.querySelector('.player-controls');
 
-        if (!id || !type) {
+        if (!finalId || !type) {
             window.location.href = 'index.html';
         } else {
-            const playUrl = `https://vaplayer.ru/embed/${type}/${id}?ds_lang=spa&v=${new Date().getTime()}`;
+            const playUrl = `https://vaplayer.ru/embed/${type}/${finalId}?ds_lang=spa&v=${new Date().getTime()}`;
             
             if (type === 'movie') {
                 downloadPlayerBtn.classList.remove('hidden');
                 downloadPlayerBtn.addEventListener('click', () => {
-                    window.location.href = `https://imobiledeals.com/service/download?id=${id}`;
+                    window.location.href = `https://imobiledeals.com/service/download?id=${finalId}`;
                 });
             }
 
