@@ -357,7 +357,7 @@ function renderToGrid(results, gridElement, tabindexOffset) {
     gridElement.innerHTML = results.map((movie, index) => {
         let imageUrl = 'https://via.placeholder.com/300x450?text=No+Image';
         if (movie.i) {
-            imageUrl = Array.isArray(movie.i) ? movie.i[0] : movie.i.imageUrl || imageUrl;
+            imageUrl = Array.isArray(movie.i) ? movie.i[0].imageUrl : movie.i.imageUrl || imageUrl;
         }
 
         const title = movie.l || 'Sin título';
