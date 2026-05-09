@@ -208,6 +208,28 @@ async function loadTrendingMovies() {
     showLogo(); // Asegurar que el logo sea visible en trending
     if (sectionTitle) sectionTitle.classList.remove('hidden');
     loadHistory(); // Cargar historial al mismo tiempo
+    
+    const CACHE_KEY = 'trendingMoviesCache_v1';
+    const CACHE_TIME_KEY = 'trendingMoviesCacheTime_v1';
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+
+    if (!trendingMoviesCache) {
+        const storedCache = localStorage.getItem(CACHE_KEY);
+        const storedTime = localStorage.getItem(CACHE_TIME_KEY);
+        if (storedCache && storedTime) {
+            if (new Date().getTime() - parseInt(storedTime) < ONE_DAY) {
+                try {
+                    trendingMoviesCache = JSON.parse(storedCache);
+                } catch (e) {
+                    console.warn('Error parsing cache', e);
+                }
+            } else {
+                localStorage.removeItem(CACHE_KEY);
+                localStorage.removeItem(CACHE_TIME_KEY);
+            }
+        }
+    }
+
     if (trendingMoviesCache) {
         renderResults(trendingMoviesCache);
         return;
@@ -302,6 +324,13 @@ async function loadTrendingMovies() {
         }
 
         trendingMoviesCache = validMovies;
+        
+        try {
+            localStorage.setItem('trendingMoviesCache_v1', JSON.stringify(trendingMoviesCache));
+            localStorage.setItem('trendingMoviesCacheTime_v1', new Date().getTime().toString());
+        } catch (e) {
+            console.warn('Error saving to local storage', e);
+        }
 
         if (trendingMoviesCache.length > 0) {
             renderResults(trendingMoviesCache);
