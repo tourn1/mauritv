@@ -191,6 +191,34 @@ button#clear-btn.hidden {
     border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+/* Header for sections with actions (e.g., history + delete) */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+#clear-history-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.12s ease, color 0.12s ease;
+}
+
+#clear-history-btn:hover,
+#clear-history-btn:focus {
+    color: var(--accent-color);
+    transform: scale(1.05);
+}
+
 .movie-card {
     background: var(--card-bg);
     border-radius: 12px;

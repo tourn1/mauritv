@@ -339,6 +339,29 @@ function loadHistory() {
     }
 }
 
+// --- Limpieza de historial y cookies relacionadas ---
+function clearHistory() {
+    try {
+        // Borrar historial en localStorage
+        localStorage.removeItem(HISTORY_KEY);
+
+        // Borrar cookies que posiblemente guarden información de 'watched' o 'movie'
+        const cookies = document.cookie ? document.cookie.split(';').map(c => c.trim()) : [];
+        cookies.forEach(c => {
+            const eq = c.indexOf('=');
+            const name = eq > -1 ? c.substring(0, eq) : c;
+            if (/movie|watched/i.test(name)) {
+                document.cookie = `${name}=; Max-Age=0; path=/;`;
+            }
+        });
+
+        // Recargar la sección de historial en la UI
+        loadHistory();
+    } catch (e) {
+        console.error('Error al borrar historial:', e);
+    }
+}
+
 function renderResults(results) {
     renderToGrid(results, resultsGrid, 0);
 }
@@ -609,6 +632,24 @@ window.onload = () => {
     movieInput.focus();
     loadTrendingMovies();
 };
+
+// Al volver a la página (por ejemplo desde content.html o player.html) actualizar historial
+window.addEventListener('pageshow', () => {
+    loadHistory();
+});
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') loadHistory();
+});
+
+// Conectar el botón de borrar historial (si está presente)
+const clearHistoryBtn = document.getElementById('clear-history-btn');
+if (clearHistoryBtn) {
+    clearHistoryBtn.addEventListener('click', () => {
+        // Borrar directamente sin pedir confirmación
+        clearHistory();
+    });
+}
 
 // --- Configuración del reproductor movida a player.html ---
 
