@@ -601,7 +601,7 @@ let currentMovieId = '';
 let currentMovieType = '';
 
 function getPlayerUrl(id, type) {
-    return `https://vaplayer.ru/embed/${type}/${id}?ds_lang=spa&v=${new Date().getTime()}`;
+    return `https://vaplayer.ru/embed/${type}/${id}?sub_lang=es&v=${new Date().getTime()}`;
 }
 
 async function playWithDelay(id, type, movieObj) {

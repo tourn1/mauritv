@@ -70,7 +70,7 @@
         const type = urlParams.get('type');
         const s = urlParams.get('s');
         const e = urlParams.get('e');
-        const lang = urlParams.get('lang') || 'spa';
+        const lang = urlParams.get('lang') || 'es';
         const finalId = imdb || id;
 
         const playerIframe = document.getElementById('player-iframe');
@@ -83,10 +83,10 @@
         if (!finalId || !type) {
             window.location.href = 'index.html';
         } else {
-            let playUrl = `https://vaplayer.ru/embed/${type}/${finalId}?ds_lang=${lang}&v=${new Date().getTime()}`;
+            let playUrl = `https://vaplayer.ru/embed/${type}/${finalId}?sub_lang=${lang}&v=${new Date().getTime()}`;
 
             if (type === 'tv' && s && e) {
-                playUrl = `https://vaplayer.ru/embed/tv/${finalId}/${s}/${e}/?ds_lang=${lang}&v=${new Date().getTime()}`;
+                playUrl = `https://vaplayer.ru/embed/tv/${finalId}/${s}/${e}/?sub_lang=${lang}&v=${new Date().getTime()}`;
             }
 
             if (type === 'movie') {
