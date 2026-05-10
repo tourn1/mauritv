@@ -4,6 +4,10 @@
   "webDir": "docs",
   "server": {
     "url": "https://mauritv.tourn1.com/",
-    "cleartext": true
+    "cleartext": true,
+    "allowNavigation": [
+      "mauritv.tourn1.com",
+      "*.tourn1.com"
+    ]
   }
 }
