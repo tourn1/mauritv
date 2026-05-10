@@ -147,7 +147,7 @@
             margin-bottom: 2rem;
             max-width: 650px;
         }
-        
+
         .hero-cast-director strong {
             color: var(--text);
         }
@@ -180,6 +180,31 @@
             background: var(--accent-hover);
             transform: scale(1.04);
             box-shadow: 0 0 0 4px rgba(229, 9, 20, 0.25);
+        }
+
+        .tv-select {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: 0.25s;
+        }
+
+        .tv-select:focus,
+        .tv-select:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .tv-select option {
+            background: #1b1b1b;
+            color: white;
         }
 
         .content-section {
@@ -489,6 +514,17 @@
                 <div class="hero-meta" id="meta"></div>
                 <p class="hero-synopsis" id="overview"></p>
                 <div class="hero-cast-director" id="castDirector"></div>
+                <div id="media-selectors"
+                    style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 15px;">
+                    <select id="season-select" class="tv-select" tabindex="0" aria-label="Seleccionar temporada"
+                        style="display: none;"></select>
+                    <select id="episode-select" class="tv-select" tabindex="0" aria-label="Seleccionar capítulo"
+                        style="display: none;"></select>
+                    <select id="lang-select" class="tv-select" tabindex="0" aria-label="Seleccionar idioma">
+                        <option value="spa" selected>Español</option>
+                        <option value="en">Inglés</option>
+                    </select>
+                </div>
                 <div class="hero-buttons">
                     <button class="play-button" id="playBtn">
                         <span class="material-icons">play_arrow</span>
@@ -736,7 +772,7 @@
                         director = data.created_by.map(c => c.name).join(', ');
                     }
                 }
-                
+
                 let cast = 'N/A';
                 if (data.credits && data.credits.cast && data.credits.cast.length > 0) {
                     cast = data.credits.cast.slice(0, 5).map(c => c.name).join(', ');
@@ -835,10 +871,48 @@
 
                 carousel.setAttribute('aria-label', type === 'movie' ? 'Películas relacionadas' : 'Series relacionadas');
 
+                // Configurar selectores de serie
+                const seasonSelect = document.getElementById('season-select');
+                const episodeSelect = document.getElementById('episode-select');
+
+                if (type === 'tv' && data.seasons) {
+                    document.getElementById('season-select').style.display = 'inline-block';
+                    document.getElementById('episode-select').style.display = 'inline-block';
+
+                    const validSeasons = data.seasons.filter(s => s.season_number > 0);
+
+                    if (validSeasons.length > 0) {
+                        seasonSelect.innerHTML = validSeasons.map(s => `<option value="${s.season_number}" data-episodes="${s.episode_count}">Temporada ${s.season_number}</option>`).join('');
+
+                        const updateEpisodes = () => {
+                            const selectedOption = seasonSelect.options[seasonSelect.selectedIndex];
+                            const episodeCount = parseInt(selectedOption.getAttribute('data-episodes')) || 1;
+
+                            let episodesHtml = '';
+                            for (let i = 1; i <= episodeCount; i++) {
+                                episodesHtml += `<option value="${i}">Capítulo ${i}</option>`;
+                            }
+                            episodeSelect.innerHTML = episodesHtml;
+                        };
+
+                        seasonSelect.addEventListener('change', updateEpisodes);
+                        updateEpisodes();
+                    }
+                }
+
                 // Configurar botón de reproducción
                 const playBtn = document.getElementById('playBtn');
                 playBtn.onclick = () => {
-                    window.location.href = `player.html?id=${id}&type=${type}${imdbId ? `&imdb=${imdbId}` : ''}`;
+                    const lang = document.getElementById('lang-select').value;
+                    let url = `player.html?id=${id}&type=${type}${imdbId ? `&imdb=${imdbId}` : ''}&lang=${lang}`;
+                    if (type === 'tv') {
+                        const s = seasonSelect.value;
+                        const e = episodeSelect.value;
+                        if (s && e) {
+                            url += `&s=${s}&e=${e}`;
+                        }
+                    }
+                    window.location.href = url;
                 };
                 playBtn.classList.add('selected');
                 playBtn.focus();
@@ -855,6 +929,9 @@
             const playBtn = document.getElementById('playBtn');
             const trailerContainer = document.getElementById('trailerContainer');
             const carousel = document.getElementById('carousel');
+            const seasonSelect = document.getElementById('season-select');
+            const episodeSelect = document.getElementById('episode-select');
+            const langSelect = document.getElementById('lang-select');
 
             if (!backBtn || !playBtn || !trailerContainer || !carousel) return;
 
@@ -862,15 +939,81 @@
                 const active = document.activeElement;
                 const cards = Array.from(carousel.querySelectorAll('.movie-card'));
                 const activeIndex = cards.indexOf(active);
+                const isTv = seasonSelect && seasonSelect.style.display !== 'none';
 
-                if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key)) {
+                    return;
+                }
+
+                if (e.key === 'Enter' && active.tagName === 'SELECT') {
+                    try {
+                        if (typeof active.showPicker === 'function') {
+                            active.showPicker();
+                        } else {
+                            const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window });
+                            active.dispatchEvent(event);
+                        }
+                    } catch (err) {}
                     return;
                 }
 
                 if (active === backBtn) {
                     if (e.key === 'ArrowDown') {
                         e.preventDefault();
+                        if (isTv) seasonSelect.focus();
+                        else langSelect.focus();
+                    }
+                    return;
+                }
+
+                if (active === seasonSelect) {
+                    if (e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        episodeSelect.focus();
+                    }
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
                         playBtn.focus();
+                    }
+                    if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        backBtn.focus();
+                    }
+                    return;
+                }
+
+                if (active === episodeSelect) {
+                    if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        seasonSelect.focus();
+                    }
+                    if (e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        langSelect.focus();
+                    }
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        playBtn.focus();
+                    }
+                    if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        backBtn.focus();
+                    }
+                    return;
+                }
+
+                if (active === langSelect) {
+                    if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        if (isTv) episodeSelect.focus();
+                    }
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        playBtn.focus();
+                    }
+                    if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        backBtn.focus();
                     }
                     return;
                 }
@@ -878,7 +1021,8 @@
                 if (active === playBtn) {
                     if (e.key === 'ArrowUp') {
                         e.preventDefault();
-                        backBtn.focus();
+                        if (isTv) seasonSelect.focus();
+                        else langSelect.focus();
                     }
                     if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
                         e.preventDefault();
