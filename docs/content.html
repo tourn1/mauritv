@@ -196,7 +196,14 @@
             transition: 0.25s;
         }
 
-        .tv-select:focus,
+        .tv-select:focus {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: #ffffff;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
         .tv-select:hover {
             background: rgba(255, 255, 255, 0.2);
             border-color: rgba(255, 255, 255, 0.4);
@@ -399,6 +406,18 @@
             overflow: hidden;
             text-overflow: ellipsis;
             color: #ffffff;
+            background: rgba(229, 9, 20, 0.17);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .movie-card:focus .movie-title {
+            color: white !important;
         }
 
         .movie-meta {
