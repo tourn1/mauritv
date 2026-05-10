@@ -269,12 +269,12 @@ button#clear-btn.hidden {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    background: rgba(229, 9, 20, 0.17);
-    backdrop-filter: blur(8px);
+    /*background: rgba(229, 9, 20, 0.17);*/
+    /*backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     padding: 4px 10px;
     border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.15);*/
     display: inline-block;
     max-width: 100%;
     color: white;
@@ -831,6 +831,7 @@ button#clear-btn:focus,
 #player-iframe:focus {
     outline-offset: -4px !important;
 }
+
 /* --- Tabs --- */
 .tabs-container {
     display: flex;
