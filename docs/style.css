@@ -818,3 +818,56 @@ button#clear-btn:focus,
 #player-iframe:focus {
     outline-offset: -4px !important;
 }
+/* --- Tabs --- */
+.tabs-container {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.tabs-container.hidden {
+    display: none !important;
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: -0.5px;
+    padding: 5px 15px;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+    border-radius: 8px;
+    outline: none;
+    position: relative;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    color: var(--text-primary);
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 15px;
+    right: 15px;
+    height: 4px;
+    background: var(--accent-color);
+    border-radius: 2px;
+}
+
+.tab-btn:focus,
+.tab-btn.navigable:focus {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+    outline: var(--focus-border) !important;
+    outline-offset: 2px !important;
+}

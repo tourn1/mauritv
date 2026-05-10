@@ -52,7 +52,11 @@
         </header>
 
         <main>
-            <h2 id="section-title" class="section-title hidden">Top 10 nuevas películas disponibles</h2>
+            <div id="tabs-container" class="tabs-container hidden" style="margin-bottom: 1.5rem;">
+                <button id="tab-movies" class="tab-btn navigable active" tabindex="4">Top 10 Películas</button>
+                <button id="tab-series" class="tab-btn navigable" tabindex="5">Top 10 Series</button>
+            </div>
+            <h2 id="section-title" class="section-title hidden" style="display:none;">Top 10 nuevas películas disponibles</h2>
             <div id="results-grid" class="results-grid">
                 <!-- Los resultados aparecerán aquí -->
                 <div class="empty-state">

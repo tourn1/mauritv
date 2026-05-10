@@ -398,7 +398,15 @@
 
         function saveToHistory(movie) {
             let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-            history = history.filter(item => item.id !== movie.id);
+            const existingIndex = history.findIndex(item => String(item.id) === String(movie.id) || (item.tmdbId && String(item.tmdbId) === String(movie.tmdbId)));
+            
+            if (existingIndex !== -1) {
+                movie = { ...history[existingIndex], ...movie };
+                history.splice(existingIndex, 1);
+            } else {
+                history = history.filter(item => String(item.id) !== String(movie.id));
+            }
+            
             history.unshift(movie);
             history = history.slice(0, 10);
             localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
@@ -605,17 +613,19 @@
                     <span>${type === 'movie' ? 'Película' : 'Serie'}</span>
                 `;
 
+                const imdbId = data.external_ids?.imdb_id;
+
                 // Guardar en historial
                 const movieObj = {
-                    id: id,
+                    id: imdbId || id,
+                    tmdbId: id,
                     l: title,
                     y: year,
+                    rating: data.vote_average ? data.vote_average.toFixed(1) : 'N/A',
                     qid: type === 'movie' ? 'movie' : 'tvSeries',
-                    i: data.poster_path ? [{ imageUrl: `https://image.tmdb.org/t/p/w300${data.poster_path}` }] : null
+                    i: data.poster_path ? { imageUrl: `https://image.tmdb.org/t/p/w500${data.poster_path}` } : null
                 };
                 saveToHistory(movieObj);
-
-                const imdbId = data.external_ids?.imdb_id;
 
                 if (data.backdrop_path) {
                     document.getElementById('hero').style.backgroundImage = `url('https://image.tmdb.org/t/p/original${data.backdrop_path}')`;

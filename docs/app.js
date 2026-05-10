@@ -18,6 +18,25 @@ if ('serviceWorker' in navigator) {
 let debounceTimer;
 let currentResults = [];
 let trendingMoviesCache = null;
+let trendingSeriesCache = null;
+
+const tabsContainer = document.getElementById('tabs-container');
+const tabMovies = document.getElementById('tab-movies');
+const tabSeries = document.getElementById('tab-series');
+
+if (tabMovies && tabSeries) {
+    tabMovies.addEventListener('click', () => {
+        tabMovies.classList.add('active');
+        tabSeries.classList.remove('active');
+        loadTrendingMovies();
+    });
+
+    tabSeries.addEventListener('click', () => {
+        tabSeries.classList.add('active');
+        tabMovies.classList.remove('active');
+        loadTrendingSeries();
+    });
+}
 
 const HISTORY_KEY = 'movie_history_v1';
 
@@ -120,6 +139,7 @@ async function searchMovies(query) {
     hideLogo(); // Ocultar logo al buscar
     showLoading();
     if (sectionTitle) sectionTitle.classList.add('hidden');
+    if (tabsContainer) tabsContainer.classList.add('hidden');
     if (historySection) historySection.classList.add('hidden');
 
 
@@ -206,7 +226,12 @@ async function searchMovies(query) {
 
 async function loadTrendingMovies() {
     showLogo(); // Asegurar que el logo sea visible en trending
-    if (sectionTitle) sectionTitle.classList.remove('hidden');
+    if (sectionTitle) sectionTitle.classList.add('hidden');
+    if (tabsContainer) tabsContainer.classList.remove('hidden');
+    if (tabMovies) {
+        tabMovies.classList.add('active');
+        if (tabSeries) tabSeries.classList.remove('active');
+    }
     loadHistory(); // Cargar historial al mismo tiempo
     
     const CACHE_KEY = 'trendingMoviesCache_v1';
@@ -345,12 +370,130 @@ async function loadTrendingMovies() {
     }
 }
 
+async function loadTrendingSeries() {
+    showLogo(); // Asegurar que el logo sea visible en trending
+    if (sectionTitle) sectionTitle.classList.add('hidden');
+    if (tabsContainer) tabsContainer.classList.remove('hidden');
+    if (tabSeries) {
+        tabSeries.classList.add('active');
+        if (tabMovies) tabMovies.classList.remove('active');
+    }
+    loadHistory(); // Cargar historial al mismo tiempo
+    
+    const CACHE_KEY = 'trendingSeriesCache_v1';
+    const CACHE_TIME_KEY = 'trendingSeriesCacheTime_v1';
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+
+    if (!trendingSeriesCache) {
+        const storedCache = localStorage.getItem(CACHE_KEY);
+        const storedTime = localStorage.getItem(CACHE_TIME_KEY);
+        if (storedCache && storedTime) {
+            if (new Date().getTime() - parseInt(storedTime) < ONE_DAY) {
+                try {
+                    trendingSeriesCache = JSON.parse(storedCache);
+                } catch (e) {
+                    console.warn('Error parsing cache', e);
+                }
+            } else {
+                localStorage.removeItem(CACHE_KEY);
+                localStorage.removeItem(CACHE_TIME_KEY);
+            }
+        }
+    }
+
+    if (trendingSeriesCache) {
+        renderResults(trendingSeriesCache);
+        return;
+    }
+
+    console.log('Cargando series trending...');
+    showLoading();
+
+    try {
+        let validSeries = [];
+        let page = 1;
+        const maxPages = 3;
+
+        while (validSeries.length < 10 && page <= maxPages) {
+            let data = await fetchTMDB('/tv/popular', {
+                language: 'es-MX',
+                page: page
+            });
+
+            let results = data.results || [];
+
+            if (results.length === 0) break;
+
+            results = results.filter(item => item.poster_path && item.vote_average > 0);
+
+            for (let i = 0; i < results.length && validSeries.length < 10; i += 5) {
+                const batch = results.slice(i, i + 5);
+                const batchPromises = batch.map(async (item) => {
+                    const details = await getMovieDetails(item.id, 'tv');
+                    const finalId = details.imdbId || item.id;
+                    const validationData = await validarPeliculaFinal(finalId);
+
+                    if (validationData.disponible) {
+                        return {
+                            id: finalId,
+                            tmdbId: item.id,
+                            l: item.name,
+                            disponible: true,
+                            resolution: validationData.resolution,
+                            source: validationData.source,
+                            y: item.first_air_date ? item.first_air_date.substring(0, 4) : '',
+                            releaseDate: item.first_air_date || '',
+                            digitalReleaseDate: details.digitalReleaseDate || '',
+                            qid: 'tvSeries',
+                            i: { imageUrl: `https://image.tmdb.org/t/p/w500${item.poster_path}` },
+                            rating: item.vote_average ? item.vote_average.toFixed(1) : 'N/A'
+                        };
+                    }
+                    return null;
+                });
+
+                const batchResults = await Promise.all(batchPromises);
+
+                for (const res of batchResults) {
+                    if (res && validSeries.length < 10) {
+                        if (!validSeries.some(v => v.id === res.id)) {
+                            validSeries.push(res);
+                        }
+                    }
+                }
+            }
+
+            page++;
+        }
+
+        trendingSeriesCache = validSeries;
+        
+        try {
+            localStorage.setItem('trendingSeriesCache_v1', JSON.stringify(trendingSeriesCache));
+            localStorage.setItem('trendingSeriesCacheTime_v1', new Date().getTime().toString());
+        } catch (e) {
+            console.warn('Error saving to local storage', e);
+        }
+
+        if (trendingSeriesCache.length > 0) {
+            renderResults(trendingSeriesCache);
+        } else {
+            resultsGrid.innerHTML = '<div class="empty-state"><p>No hay series nuevas disponibles en este momento.</p></div>';
+            showLogo();
+        }
+    } catch (error) {
+        console.error('Error cargando trending series:', error);
+        resultsGrid.innerHTML = '<div class="empty-state"><p>Error al cargar las series sugeridas.</p></div>';
+        showLogo();
+    }
+}
+
 // --- Gestión de Historial ---
 
 function saveToHistory(movie) {
     let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
     // Evitar duplicados: eliminar si ya existe
-    history = history.filter(item => item.id !== movie.id);
+    history = history.filter(item => String(item.id) !== String(movie.id) && !(item.tmdbId && String(item.tmdbId) === String(movie.tmdbId)));
     // Agregar al inicio
     history.unshift(movie);
     // Limitar a 10
@@ -521,6 +664,7 @@ function playMovie(id, type) {
 }
 
 function openContentPage(movieObj) {
+    saveToHistory(movieObj);
     const type = movieObj.qid === 'tvSeries' ? 'tv' : 'movie';
     const id = movieObj.tmdbId || movieObj.id;
     window.location.href = `content.html?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}`;
@@ -590,6 +734,11 @@ document.addEventListener('keydown', (e) => {
     if (active.classList.contains('movie-card') && (e.key === 'Enter' || e.key === 'Select' || e.keyCode === 23)) {
         const movieObj = JSON.parse(active.dataset.movieObj);
         openContentPage(movieObj);
+        return;
+    }
+
+    if (active.classList.contains('tab-btn') && (e.key === 'Enter' || e.key === 'Select' || e.keyCode === 23)) {
+        active.click();
         return;
     }
 
