@@ -201,7 +201,7 @@ async function searchMovies(query) {
                     releaseDate: item.release_date || item.first_air_date || '',
                     digitalReleaseDate: details.digitalReleaseDate || '',
                     qid: type,
-                    i: { imageUrl: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null },
+                    i: { imageUrl: item.poster_path ? `https://image.tmdb.org/t/p/w200${item.poster_path}` : null },
                     rating: item.vote_average ? item.vote_average.toFixed(1) : 'N/A'
                 };
             });
@@ -233,7 +233,7 @@ async function loadTrendingMovies() {
         if (tabSeries) tabSeries.classList.remove('active');
     }
     loadHistory(); // Cargar historial al mismo tiempo
-    
+
     const CACHE_KEY = 'trendingMoviesCache_v1';
     const CACHE_TIME_KEY = 'trendingMoviesCacheTime_v1';
     const ONE_DAY = 24 * 60 * 60 * 1000;
@@ -326,7 +326,7 @@ async function loadTrendingMovies() {
                             releaseDate: item.release_date || '',
                             digitalReleaseDate: details.digitalReleaseDate || '',
                             qid: 'movie',
-                            i: { imageUrl: `https://image.tmdb.org/t/p/w500${item.poster_path}` },
+                            i: { imageUrl: `https://image.tmdb.org/t/p/w200${item.poster_path}` },
                             rating: item.vote_average ? item.vote_average.toFixed(1) : 'N/A'
                         };
                     }
@@ -349,7 +349,7 @@ async function loadTrendingMovies() {
         }
 
         trendingMoviesCache = validMovies;
-        
+
         try {
             localStorage.setItem('trendingMoviesCache_v1', JSON.stringify(trendingMoviesCache));
             localStorage.setItem('trendingMoviesCacheTime_v1', new Date().getTime().toString());
@@ -379,7 +379,7 @@ async function loadTrendingSeries() {
         if (tabMovies) tabMovies.classList.remove('active');
     }
     loadHistory(); // Cargar historial al mismo tiempo
-    
+
     const CACHE_KEY = 'trendingSeriesCache_v1';
     const CACHE_TIME_KEY = 'trendingSeriesCacheTime_v1';
     const ONE_DAY = 24 * 60 * 60 * 1000;
@@ -445,7 +445,7 @@ async function loadTrendingSeries() {
                             releaseDate: item.first_air_date || '',
                             digitalReleaseDate: details.digitalReleaseDate || '',
                             qid: 'tvSeries',
-                            i: { imageUrl: `https://image.tmdb.org/t/p/w500${item.poster_path}` },
+                            i: { imageUrl: `https://image.tmdb.org/t/p/w200${item.poster_path}` },
                             rating: item.vote_average ? item.vote_average.toFixed(1) : 'N/A'
                         };
                     }
@@ -467,7 +467,7 @@ async function loadTrendingSeries() {
         }
 
         trendingSeriesCache = validSeries;
-        
+
         try {
             localStorage.setItem('trendingSeriesCache_v1', JSON.stringify(trendingSeriesCache));
             localStorage.setItem('trendingSeriesCacheTime_v1', new Date().getTime().toString());
@@ -784,7 +784,7 @@ document.addEventListener('keydown', (e) => {
             if (isCandidate) {
                 const dx = Math.abs(elCenterX - centerX);
                 const dy = Math.abs(elCenterY - centerY);
-                
+
                 // Penalizar el eje opuesto para evitar saltos diagonales
                 if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
                     dist = dy + (dx * 5);
@@ -846,11 +846,11 @@ function isValidMovie(id, options = {}) {
  */
 async function validarPeliculaFinal(id) {
     if (!id) return { disponible: false };
-    
+
     try {
         // Usar verify.php local con cache busting
         const url = `verify.php?id=${encodeURIComponent(id)}&v=${Date.now()}`;
-        
+
         const response = await fetch(url, {
             method: 'GET',
             cache: 'no-store',
@@ -864,15 +864,15 @@ async function validarPeliculaFinal(id) {
         }
 
         const data = await response.json();
-        return data; 
+        return data;
     } catch (error) {
         console.warn(`Verificación local fallida para ${id}, intentando fallback...`);
-        
+
         try {
             // Intentar con el servicio externo si el local falla
             const fallbackUrl = `https://imobiledeals.com/service/verify?id=${encodeURIComponent(id)}`;
             const fbResponse = await fetch(fallbackUrl);
-            
+
             if (fbResponse.ok) {
                 const fbData = await fbResponse.json();
                 const q = fbData.quality_info || {};
@@ -885,7 +885,7 @@ async function validarPeliculaFinal(id) {
         } catch (fbError) {
             console.error(`Error total en validación para ${id}:`, fbError);
         }
-        
+
         return { disponible: false };
     }
 }

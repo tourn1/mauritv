@@ -406,12 +406,12 @@
             overflow: hidden;
             text-overflow: ellipsis;
             color: #ffffff;
-            background: rgba(229, 9, 20, 0.17);
+            /*background: rgba(229, 9, 20, 0.17);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             padding: 4px 10px;
             border-radius: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.15);*/
             display: inline-block;
             max-width: 100%;
         }
@@ -825,7 +825,7 @@
                     y: year,
                     rating: data.vote_average ? data.vote_average.toFixed(1) : 'N/A',
                     qid: type === 'movie' ? 'movie' : 'tvSeries',
-                    i: data.poster_path ? { imageUrl: `https://image.tmdb.org/t/p/w500${data.poster_path}` } : null
+                    i: data.poster_path ? { imageUrl: `https://image.tmdb.org/t/p/w200${data.poster_path}` } : null
                 };
                 saveToHistory(movieObj);
 
@@ -864,7 +864,7 @@
                     carousel.innerHTML = similares.map((item, index) => {
                         const itemTitle = item.title || item.name || 'Sin título';
                         const imageUrl = item.poster_path
-                            ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
+                            ? `https://image.tmdb.org/t/p/w200${item.poster_path}`
                             : 'https://via.placeholder.com/500x750?text=No+Image';
                         const year = item.release_date ? item.release_date.substring(0, 4) : (item.first_air_date ? item.first_air_date.substring(0, 4) : '');
                         const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
@@ -972,7 +972,7 @@
                             const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window });
                             active.dispatchEvent(event);
                         }
-                    } catch (err) {}
+                    } catch (err) { }
                     return;
                 }
 
