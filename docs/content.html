@@ -194,6 +194,7 @@
             cursor: pointer;
             backdrop-filter: blur(10px);
             transition: 0.25s;
+            max-width: 500px;
         }
 
         .tv-select:focus {
@@ -532,7 +533,9 @@
                 <h1 class="hero-title" id="title">Cargando...</h1>
                 <div class="hero-meta" id="meta"></div>
                 <p class="hero-synopsis" id="overview"></p>
-                <div id="filename-display" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem; font-style: italic; opacity: 0.8;"></div>
+                <div id="filename-display"
+                    style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem; font-style: italic; opacity: 0.8;">
+                </div>
                 <div class="hero-cast-director" id="castDirector"></div>
                 <div id="media-selectors"
                     style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 15px;">
@@ -765,14 +768,14 @@
                 subSelect.style.display = 'none';
                 return;
             }
-            
+
             subSelect.innerHTML = '<option value="">Buscando subtítulos...</option>';
             subSelect.style.display = 'inline-block';
 
             try {
                 const subLang = 'es'; // Español (España)
                 let url = `https://api.opensubtitles.com/api/v1/subtitles?languages=${subLang}`;
-                
+
                 if (type === 'tv' && season && episode) {
                     url += `&imdb_id=${imdbId.replace('tt', '')}&season_number=${season}&episode_number=${episode}`;
                 } else {
@@ -789,7 +792,7 @@
 
                 const data = await response.json();
                 if (data.data && data.data.length > 0) {
-                    let options = '<option value="">Sin subtítulos externos</option>';
+                    let options = '<option value="">Seleccionar subtítulos externos</option>';
                     data.data.forEach(item => {
                         const fileId = item.attributes.files[0].file_id;
                         const fileName = item.attributes.release || item.attributes.files[0].file_name;
@@ -797,7 +800,7 @@
                     });
                     subSelect.innerHTML = options;
                 } else {
-                    subSelect.innerHTML = '<option value="">Sin subtítulos externos</option>';
+                    subSelect.innerHTML = '<option value="">Seleccionar subtítulos externos</option>';
                     // Si es película y no hay, lo ocultamos. Si es serie, mejor dejarlo por si cambian de cap.
                     if (type === 'movie') subSelect.style.display = 'none';
                 }

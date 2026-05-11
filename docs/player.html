@@ -88,7 +88,8 @@
             controlsParam = "&controls=false";
         }
 
-        const defaultConfig = `skin=netflix&ds_lang=es&title=false&sub_lang=${lang}${controlsParam}`;
+        //const defaultConfig = `skin=netflix&ds_lang=AR_EXT&title=false${controlsParam}&sub_lang=AR_EXT&sub_default=true`;
+        const defaultConfig = `skin=netflix${controlsParam}`;
 
         //api/documentacion del player
         //https://vidapi.ru/api
@@ -129,18 +130,12 @@
                     if (statusText) statusText.textContent = 'Cargando subtítulos externos...';
                     const subUrl = await getDownloadLink(subId);
                     if (subUrl) {
-                        playUrl += `&sub_url=${encodeURIComponent(subUrl)}`;
+                        playUrl += `&sub_url=${encodeURIComponent(subUrl)}&sub_label=Español&sub_lang=es&sub_default=true`;
                     }
                 }
-
-                if (type === 'movie') {
-                    downloadPlayerBtn.classList.remove('hidden');
-                    downloadPlayerBtn.addEventListener('click', () => {
-                        window.location.href = `https://imobiledeals.com/service/download?id=${finalId}`;
-                    });
-                }
-
+                //window.location.href = playUrl;
                 playerIframe.src = playUrl;
+
             }
 
             initPlayer();
