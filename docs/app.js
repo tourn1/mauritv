@@ -197,6 +197,7 @@ async function searchMovies(query) {
                     disponible: validationData.disponible,
                     resolution: validationData.resolution,
                     source: validationData.source,
+                    file_name: validationData.file_name || validationData.filename || '',
                     y: item.release_date ? item.release_date.substring(0, 4) : (item.first_air_date ? item.first_air_date.substring(0, 4) : ''),
                     releaseDate: item.release_date || item.first_air_date || '',
                     digitalReleaseDate: details.digitalReleaseDate || '',
@@ -322,6 +323,7 @@ async function loadTrendingMovies() {
                             disponible: true,
                             resolution: validationData.resolution,
                             source: validationData.source,
+                            file_name: validationData.file_name || validationData.filename || '',
                             y: item.release_date ? item.release_date.substring(0, 4) : '',
                             releaseDate: item.release_date || '',
                             digitalReleaseDate: details.digitalReleaseDate || '',
@@ -441,6 +443,7 @@ async function loadTrendingSeries() {
                             disponible: true,
                             resolution: validationData.resolution,
                             source: validationData.source,
+                            file_name: validationData.file_name || validationData.filename || '',
                             y: item.first_air_date ? item.first_air_date.substring(0, 4) : '',
                             releaseDate: item.first_air_date || '',
                             digitalReleaseDate: details.digitalReleaseDate || '',
@@ -574,7 +577,7 @@ function renderToGrid(results, gridElement, tabindexOffset) {
         }
 
         return `
-            <div class="movie-card navigable${unavailableClass}" tabindex="${index + 3 + tabindexOffset}" data-index="${index}" data-id="${movie.id}" data-type="${type}" data-year="${year}" data-release-date="${releaseDate}" data-release-digital="${movie.digitalReleaseDate || ''}" release-date="${releaseDate}" data-movie-obj='${JSON.stringify(movie).replace(/'/g, "&apos;")}'>
+            <div class="movie-card navigable${unavailableClass}" tabindex="${index + 3 + tabindexOffset}" data-index="${index}" data-id="${movie.id}" data-type="${type}" data-year="${year}" data-release-date="${releaseDate}" data-release-digital="${movie.digitalReleaseDate || ''}" data-file-name="${movie.file_name || ''}" release-date="${releaseDate}" data-movie-obj='${JSON.stringify(movie).replace(/'/g, "&apos;")}'>
                 <div class="type-badge">${typeDisplay}</div>
                 ${extraBadges}
                 ${disponibleBadge}
@@ -667,7 +670,8 @@ function openContentPage(movieObj) {
     saveToHistory(movieObj);
     const type = movieObj.qid === 'tvSeries' ? 'tv' : 'movie';
     const id = movieObj.tmdbId || movieObj.id;
-    window.location.href = `content.html?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}`;
+    const file_name = movieObj.file_name || movieObj.filename || '';
+    window.location.href = `content.html?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}${file_name ? `&file_name=${encodeURIComponent(file_name)}` : ''}`;
 }
 
 resultsGrid.addEventListener('click', (e) => {
@@ -879,7 +883,8 @@ async function validarPeliculaFinal(id) {
                 return {
                     disponible: fbData.disponible === true,
                     resolution: q.resolucion || fbData.resolution || "HD",
-                    source: q.fuente || fbData.source || "EXT"
+                    source: q.fuente || fbData.source || "EXT",
+                    file_name: fbData.file_name || fbData.filename || ""
                 };
             }
         } catch (fbError) {

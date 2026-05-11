@@ -532,6 +532,7 @@
                 <h1 class="hero-title" id="title">Cargando...</h1>
                 <div class="hero-meta" id="meta"></div>
                 <p class="hero-synopsis" id="overview"></p>
+                <div id="filename-display" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem; font-style: italic; opacity: 0.8;"></div>
                 <div class="hero-cast-director" id="castDirector"></div>
                 <div id="media-selectors"
                     style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 15px;">
@@ -539,10 +540,6 @@
                         style="display: none;"></select>
                     <select id="episode-select" class="tv-select" tabindex="0" aria-label="Seleccionar capítulo"
                         style="display: none;"></select>
-                    <select id="lang-select" class="tv-select" tabindex="0" aria-label="Seleccionar idioma">
-                        <option value="es" selected>Español</option>
-                        <option value="en">Inglés</option>
-                    </select>
                     <select id="sub-select" class="tv-select" tabindex="0" aria-label="Seleccionar subtítulo"
                         style="display: none;"></select>
                 </div>
@@ -807,6 +804,11 @@
             } catch (e) {
                 console.error("Error cargando subtítulos", e);
                 subSelect.innerHTML = '<option value="">Error en subtítulos</option>';
+            } finally {
+                // Seleccionar el primero por defecto si hay opciones (y no es el de "Sin subtítulos")
+                if (subSelect.options.length > 1) {
+                    subSelect.selectedIndex = 1;
+                }
             }
         }
 
@@ -814,6 +816,7 @@
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id') || '278';
             const type = params.get('type') || 'movie';
+            const file_name = params.get('file_name') || params.get('filename') || '';
 
             try {
                 const response = await fetch(
@@ -852,6 +855,15 @@
                     <p><strong>Elenco:</strong> ${cast}</p>
                 `;
 
+                // Mostrar nombre de archivo si existe
+                const filenameDisplay = document.getElementById('filename-display');
+                if (file_name) {
+                    filenameDisplay.textContent = `(${file_name})`;
+                    filenameDisplay.style.display = 'block';
+                } else {
+                    filenameDisplay.style.display = 'none';
+                }
+
                 const year = data.release_date?.substring(0, 4) || data.first_air_date?.substring(0, 4) || 'N/A';
                 const rating = data.vote_average ? data.vote_average.toFixed(1) : 'N/A';
                 const seasonsLabel = type === 'tv' && data.number_of_seasons
@@ -875,6 +887,7 @@
                     y: year,
                     rating: data.vote_average ? data.vote_average.toFixed(1) : 'N/A',
                     qid: type === 'movie' ? 'movie' : 'tvSeries',
+                    file_name: file_name,
                     i: data.poster_path ? { imageUrl: `https://image.tmdb.org/t/p/w200${data.poster_path}` } : null
                 };
                 saveToHistory(movieObj);
@@ -981,9 +994,8 @@
                 // Configurar botón de reproducción
                 const playBtn = document.getElementById('playBtn');
                 playBtn.onclick = () => {
-                    const lang = document.getElementById('lang-select').value;
                     const subId = document.getElementById('sub-select').value;
-                    let url = `player.html?id=${id}&type=${type}${imdbId ? `&imdb=${imdbId}` : ''}&lang=${lang}`;
+                    let url = `player.html?id=${id}&type=${type}${imdbId ? `&imdb=${imdbId}` : ''}&lang=es`;
                     if (subId) url += `&sub_id=${subId}`;
                     if (type === 'tv') {
                         const s = seasonSelect.value;
@@ -1011,7 +1023,6 @@
             const carousel = document.getElementById('carousel');
             const seasonSelect = document.getElementById('season-select');
             const episodeSelect = document.getElementById('episode-select');
-            const langSelect = document.getElementById('lang-select');
             const subSelect = document.getElementById('sub-select');
 
             if (!backBtn || !playBtn || !trailerContainer || !carousel) return;
@@ -1042,7 +1053,8 @@
                     if (e.key === 'ArrowDown') {
                         e.preventDefault();
                         if (isTv) seasonSelect.focus();
-                        else langSelect.focus();
+                        else if (subSelect.style.display !== 'none') subSelect.focus();
+                        else playBtn.focus();
                     }
                     return;
                 }
@@ -1070,27 +1082,8 @@
                     }
                     if (e.key === 'ArrowRight') {
                         e.preventDefault();
-                        langSelect.focus();
-                    }
-                    if (e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        playBtn.focus();
-                    }
-                    if (e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        backBtn.focus();
-                    }
-                    return;
-                }
-
-                if (active === langSelect) {
-                    if (e.key === 'ArrowLeft') {
-                        e.preventDefault();
-                        if (isTv) episodeSelect.focus();
-                    }
-                    if (e.key === 'ArrowRight') {
-                        e.preventDefault();
                         if (subSelect.style.display !== 'none') subSelect.focus();
+                        else playBtn.focus();
                     }
                     if (e.key === 'ArrowDown') {
                         e.preventDefault();
@@ -1106,7 +1099,7 @@
                 if (active === subSelect) {
                     if (e.key === 'ArrowLeft') {
                         e.preventDefault();
-                        langSelect.focus();
+                        if (isTv) episodeSelect.focus();
                     }
                     if (e.key === 'ArrowDown') {
                         e.preventDefault();
@@ -1123,8 +1116,8 @@
                     if (e.key === 'ArrowUp') {
                         e.preventDefault();
                         if (subSelect.style.display !== 'none') subSelect.focus();
-                        else if (langSelect.style.display !== 'none') langSelect.focus();
                         else if (isTv) episodeSelect.focus();
+                        else backBtn.focus();
                     }
                     if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
                         e.preventDefault();
