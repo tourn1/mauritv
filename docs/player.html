@@ -82,14 +82,27 @@
         const controlsSensor = document.getElementById('controls-sensor');
         const playerControls = document.querySelector('.player-controls');
 
+        let controlsParam = "";
+        const ua = navigator.userAgent.toLowerCase();
+        if (ua.includes('android') && (ua.includes('tv') || ua.includes('large screen') || ua.includes('atv'))) {
+            controlsParam = "&controls=false";
+        }
+
+        const defaultConfig = `skin=netflix&ds_lang=es&title=false&sub_lang=${lang}${controlsParam}`;
+
+        //api/documentacion del player
+        //https://vidapi.ru/api
+
         if (!finalId || !type) {
             window.location.href = 'index.html';
         } else {
-            let playUrl = `https://vaplayer.ru/embed/${type}/${finalId}?ds_lang=${lang}&v=${new Date().getTime()}`;
+            let playUrl = `https://vaplayer.ru/embed/movie/${finalId}?${defaultConfig}`;
 
             if (type === 'tv' && s && e) {
-                playUrl = `https://vaplayer.ru/embed/tv/${finalId}/${s}/${e}/?ds_lang=${lang}&v=${new Date().getTime()}`;
+                playUrl = `https://vaplayer.ru/embed/tv/${finalId}/${s}/${e}/?${defaultConfig}`;
             }
+
+            //alert(playUrl);
 
             if (type === 'movie') {
                 downloadPlayerBtn.classList.remove('hidden');
