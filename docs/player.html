@@ -93,25 +93,57 @@
         //api/documentacion del player
         //https://vidapi.ru/api
 
+        async function getDownloadLink(fileId) {
+            try {
+                const response = await fetch('https://api.opensubtitles.com/api/v1/download', {
+                    method: 'POST',
+                    headers: {
+                        'Api-Key': 'SQMOf8KwHb06tmTZjKFAOEACEbKSQ25G',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ file_id: fileId })
+                });
+                const data = await response.json();
+                return data.link;
+            } catch (e) {
+                console.error("Error al obtener link de descarga", e);
+                return null;
+            }
+        }
+
         if (!finalId || !type) {
             window.location.href = 'index.html';
         } else {
-            let playUrl = `https://vaplayer.ru/embed/movie/${finalId}?${defaultConfig}`;
+            const subId = urlParams.get('sub_id');
 
-            if (type === 'tv' && s && e) {
-                playUrl = `https://vaplayer.ru/embed/tv/${finalId}/${s}/${e}/?${defaultConfig}`;
+            async function initPlayer() {
+                let playUrl = `https://vaplayer.ru/embed/movie/${finalId}?${defaultConfig}`;
+
+                if (type === 'tv' && s && e) {
+                    playUrl = `https://vaplayer.ru/embed/tv/${finalId}/${s}/${e}/?${defaultConfig}`;
+                }
+
+                if (subId) {
+                    const statusText = playerLoader.querySelector('p');
+                    if (statusText) statusText.textContent = 'Cargando subtítulos externos...';
+                    const subUrl = await getDownloadLink(subId);
+                    if (subUrl) {
+                        playUrl += `&sub_url=${encodeURIComponent(subUrl)}`;
+                    }
+                }
+
+                if (type === 'movie') {
+                    downloadPlayerBtn.classList.remove('hidden');
+                    downloadPlayerBtn.addEventListener('click', () => {
+                        window.location.href = `https://imobiledeals.com/service/download?id=${finalId}`;
+                    });
+                }
+
+                playerIframe.src = playUrl;
             }
 
-            //alert(playUrl);
-
-            if (type === 'movie') {
-                downloadPlayerBtn.classList.remove('hidden');
-                downloadPlayerBtn.addEventListener('click', () => {
-                    window.location.href = `https://imobiledeals.com/service/download?id=${finalId}`;
-                });
-            }
-
-            playerIframe.src = playUrl;
+            initPlayer();
 
             playerIframe.onload = () => {
                 playerLoader.classList.add('hidden');

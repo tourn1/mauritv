@@ -543,6 +543,8 @@
                         <option value="es" selected>Español</option>
                         <option value="en">Inglés</option>
                     </select>
+                    <select id="sub-select" class="tv-select" tabindex="0" aria-label="Seleccionar subtítulo"
+                        style="display: none;"></select>
                 </div>
                 <div class="hero-buttons">
                     <button class="play-button" id="playBtn">
@@ -760,6 +762,54 @@
             return null;
         }
 
+        async function fetchSubtitles(imdbId, type, season, episode) {
+            const subSelect = document.getElementById('sub-select');
+            if (!imdbId) {
+                subSelect.style.display = 'none';
+                return;
+            }
+            
+            subSelect.innerHTML = '<option value="">Buscando subtítulos...</option>';
+            subSelect.style.display = 'inline-block';
+
+            try {
+                const subLang = 'es'; // Español (España)
+                let url = `https://api.opensubtitles.com/api/v1/subtitles?languages=${subLang}`;
+                
+                if (type === 'tv' && season && episode) {
+                    url += `&imdb_id=${imdbId.replace('tt', '')}&season_number=${season}&episode_number=${episode}`;
+                } else {
+                    url += `&imdb_id=${imdbId.replace('tt', '')}`;
+                }
+
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Api-Key': 'SQMOf8KwHb06tmTZjKFAOEACEbKSQ25G',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                if (data.data && data.data.length > 0) {
+                    let options = '<option value="">Sin subtítulos externos</option>';
+                    data.data.forEach(item => {
+                        const fileId = item.attributes.files[0].file_id;
+                        const fileName = item.attributes.release || item.attributes.files[0].file_name;
+                        options += `<option value="${fileId}">${fileName}</option>`;
+                    });
+                    subSelect.innerHTML = options;
+                } else {
+                    subSelect.innerHTML = '<option value="">Sin subtítulos externos</option>';
+                    // Si es película y no hay, lo ocultamos. Si es serie, mejor dejarlo por si cambian de cap.
+                    if (type === 'movie') subSelect.style.display = 'none';
+                }
+            } catch (e) {
+                console.error("Error cargando subtítulos", e);
+                subSelect.innerHTML = '<option value="">Error en subtítulos</option>';
+            }
+        }
+
         async function loadContent() {
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id') || '278';
@@ -914,16 +964,27 @@
                             episodeSelect.innerHTML = episodesHtml;
                         };
 
-                        seasonSelect.addEventListener('change', updateEpisodes);
+                        seasonSelect.addEventListener('change', () => {
+                            updateEpisodes();
+                            fetchSubtitles(imdbId, type, seasonSelect.value, episodeSelect.value);
+                        });
+                        episodeSelect.addEventListener('change', () => {
+                            fetchSubtitles(imdbId, type, seasonSelect.value, episodeSelect.value);
+                        });
                         updateEpisodes();
+                        fetchSubtitles(imdbId, type, seasonSelect.value, episodeSelect.value);
                     }
+                } else {
+                    fetchSubtitles(imdbId, type);
                 }
 
                 // Configurar botón de reproducción
                 const playBtn = document.getElementById('playBtn');
                 playBtn.onclick = () => {
                     const lang = document.getElementById('lang-select').value;
+                    const subId = document.getElementById('sub-select').value;
                     let url = `player.html?id=${id}&type=${type}${imdbId ? `&imdb=${imdbId}` : ''}&lang=${lang}`;
+                    if (subId) url += `&sub_id=${subId}`;
                     if (type === 'tv') {
                         const s = seasonSelect.value;
                         const e = episodeSelect.value;
@@ -951,6 +1012,7 @@
             const seasonSelect = document.getElementById('season-select');
             const episodeSelect = document.getElementById('episode-select');
             const langSelect = document.getElementById('lang-select');
+            const subSelect = document.getElementById('sub-select');
 
             if (!backBtn || !playBtn || !trailerContainer || !carousel) return;
 
@@ -1026,6 +1088,26 @@
                         e.preventDefault();
                         if (isTv) episodeSelect.focus();
                     }
+                    if (e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        if (subSelect.style.display !== 'none') subSelect.focus();
+                    }
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        playBtn.focus();
+                    }
+                    if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        backBtn.focus();
+                    }
+                    return;
+                }
+
+                if (active === subSelect) {
+                    if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        langSelect.focus();
+                    }
                     if (e.key === 'ArrowDown') {
                         e.preventDefault();
                         playBtn.focus();
@@ -1040,8 +1122,9 @@
                 if (active === playBtn) {
                     if (e.key === 'ArrowUp') {
                         e.preventDefault();
-                        if (isTv) seasonSelect.focus();
-                        else langSelect.focus();
+                        if (subSelect.style.display !== 'none') subSelect.focus();
+                        else if (langSelect.style.display !== 'none') langSelect.focus();
+                        else if (isTv) episodeSelect.focus();
                     }
                     if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
                         e.preventDefault();
