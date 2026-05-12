@@ -58,12 +58,14 @@ movieInput.addEventListener('input', (e) => {
     clearTimeout(autocompleteDebounceTimer);
     const query = e.target.value.trim();
 
-    // Mostrar/ocultar botón de limpiar
+    // Mostrar/ocultar botón de limpiar e imagen de logo
     if (query.length > 0) {
         clearBtn.classList.remove('hidden');
+        hideLogo();
     } else {
         clearBtn.classList.add('hidden');
         autocompleteResults.classList.add('hidden');
+        showLogo();
     }
 
     if (query.length < 2) {

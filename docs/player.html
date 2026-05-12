@@ -130,7 +130,7 @@
                     if (statusText) statusText.textContent = 'Cargando subtítulos externos...';
                     const subUrl = await getDownloadLink(subId);
                     if (subUrl) {
-                        playUrl += `&sub_url=${encodeURIComponent(subUrl)}&sub_label=Español&sub_lang=es&sub_default=true`;
+                        playUrl += `&sub_url=${encodeURIComponent(subUrl)}&sub_label=English&sub_lang=en&sub_default=true`;
                     }
                 }
                 //window.location.href = playUrl;
