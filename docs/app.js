@@ -7,6 +7,7 @@ const logoContainer = document.getElementById('logo-container');
 const sectionTitle = document.getElementById('section-title');
 const historySection = document.getElementById('history-section');
 const historyGrid = document.getElementById('history-grid');
+const autocompleteResults = document.getElementById('autocomplete-results');
 
 // Registro de Service Worker para PWA/Android
 if ('serviceWorker' in navigator) {
@@ -16,6 +17,7 @@ if ('serviceWorker' in navigator) {
 }
 
 let debounceTimer;
+let autocompleteDebounceTimer;
 let currentResults = [];
 let trendingMoviesCache = null;
 let trendingSeriesCache = null;
@@ -53,6 +55,7 @@ function hideLogo() {
 
 movieInput.addEventListener('input', (e) => {
     clearTimeout(debounceTimer);
+    clearTimeout(autocompleteDebounceTimer);
     const query = e.target.value.trim();
 
     // Mostrar/ocultar botón de limpiar
@@ -60,17 +63,183 @@ movieInput.addEventListener('input', (e) => {
         clearBtn.classList.remove('hidden');
     } else {
         clearBtn.classList.add('hidden');
+        autocompleteResults.classList.add('hidden');
     }
 
     if (query.length < 2) {
-        loadTrendingMovies();
+        autocompleteResults.classList.add('hidden');
+        if (query.length === 0) loadTrendingMovies();
         return;
     }
 
+    autocompleteDebounceTimer = setTimeout(() => {
+        fetchAutocomplete(query);
+    }, 300);
+
     debounceTimer = setTimeout(() => {
-        searchMovies(query);
-    }, 400);
+        // searchMovies(query); // Desactivamos búsqueda automática para priorizar autocompletado
+    }, 1000);
 });
+
+async function fetchAutocomplete(query) {
+    try {
+        const data = await fetchTMDB('/search/multi', {
+            query: query,
+            language: 'es-MX',
+            page: 1,
+            include_adult: false
+        });
+
+        const results = (data.results || []).filter(item => 
+            item.media_type === 'movie' || 
+            item.media_type === 'tv' || 
+            item.media_type === 'person'
+        ).slice(0, 8);
+
+        renderAutocomplete(results);
+    } catch (error) {
+        console.error('Error fetching autocomplete:', error);
+    }
+}
+
+function renderAutocomplete(results) {
+    if (results.length === 0) {
+        autocompleteResults.classList.add('hidden');
+        return;
+    }
+
+    autocompleteResults.innerHTML = results.map((item, index) => {
+        const isPerson = item.media_type === 'person';
+        const title = item.title || item.name || 'Sin título';
+        const year = item.release_date ? item.release_date.substring(0, 4) : (item.first_air_date ? item.first_air_date.substring(0, 4) : '');
+        const typeLabel = item.media_type === 'movie' ? 'Película' : (item.media_type === 'tv' ? 'Serie' : 'Persona');
+        const icon = item.media_type === 'movie' ? 'movie' : (item.media_type === 'tv' ? 'tv' : 'person');
+        const imagePath = item.poster_path || item.profile_path;
+        const imageUrl = imagePath ? `https://image.tmdb.org/t/p/w92${imagePath}` : null;
+
+        return `
+            <div class="autocomplete-item" tabindex="0" data-index="${index}" data-type="${item.media_type}" data-id="${item.id}" data-title="${title.replace(/"/g, '&quot;')}">
+                ${imageUrl ? `<img src="${imageUrl}" class="autocomplete-thumb" alt="${title}">` : `<span class="material-icons">${icon}</span>`}
+                <div class="autocomplete-info">
+                    <span class="autocomplete-title">${title}</span>
+                    <span class="autocomplete-meta">${isPerson ? 'Actor / Director' : (year ? `${year}` : '')}</span>
+                    <span class="autocomplete-type">${typeLabel}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    autocompleteResults.classList.remove('hidden');
+
+    // Manejar clics en los items del autocompletado
+    document.querySelectorAll('.autocomplete-item').forEach(item => {
+        item.addEventListener('click', () => {
+            selectAutocompleteItem(item);
+        });
+    });
+}
+
+async function selectAutocompleteItem(element) {
+    const type = element.dataset.type;
+    const id = element.dataset.id;
+    const title = element.dataset.title;
+
+    autocompleteResults.classList.add('hidden');
+    movieInput.value = title;
+    clearBtn.classList.remove('hidden');
+
+    if (type === 'person') {
+        // Buscar películas de esta persona
+        searchByPerson(id, title);
+    } else {
+        // Es película o serie, ir directamente o buscarla
+        searchMovies(title);
+    }
+}
+
+async function searchByPerson(personId, personName) {
+    hideLogo();
+    showLoading();
+    if (sectionTitle) {
+        sectionTitle.textContent = `Películas y series con ${personName}`;
+        sectionTitle.classList.remove('hidden');
+    }
+    if (tabsContainer) tabsContainer.classList.add('hidden');
+    if (historySection) historySection.classList.add('hidden');
+
+    try {
+        const data = await fetchTMDB(`/person/${personId}/combined_credits`, {
+            language: 'es-MX'
+        });
+
+        let results = (data.cast || []).concat(data.crew || []);
+        
+        // Filtrar y mapear resultados
+        results = results.filter(item => {
+            const isMovieOrTV = (item.media_type === 'movie' || item.media_type === 'tv');
+            const hasPoster = !!item.poster_path;
+            const hasRating = item.vote_average > 0;
+            
+            // Filtrar Talk Shows, News y Documentales (Géneros: 10767, 10763, 99)
+            const genres = item.genre_ids || [];
+            const isIrrelevantGenre = genres.includes(10767) || genres.includes(10763);
+            
+            // Filtrar apariciones como "él mismo" (Talk shows, documentales, etc.)
+            const character = (item.character || "").toLowerCase();
+            const isHimself = character.includes("himself") || character.includes("herself") || character.includes("self");
+
+            return isMovieOrTV && hasPoster && hasRating && !isIrrelevantGenre && !isHimself;
+        });
+
+        // Eliminar duplicados
+        const uniqueResults = [];
+        const seen = new Set();
+        for (const item of results) {
+            if (!seen.has(item.id)) {
+                seen.add(item.id);
+                uniqueResults.push(item);
+            }
+        }
+
+        // Ordenar por relevancia (votos + popularidad + boost a películas)
+        uniqueResults.sort((a, b) => {
+            const scoreA = (a.popularity * 0.3) + (a.vote_count * 0.7) + (a.media_type === 'movie' ? 100 : 0);
+            const scoreB = (b.popularity * 0.3) + (b.vote_count * 0.7) + (b.media_type === 'movie' ? 100 : 0);
+            return scoreB - scoreA;
+        });
+
+        const topResults = uniqueResults.slice(0, 20);
+        
+        const mappedResultsPromises = topResults.map(async (item) => {
+            const type = item.media_type === 'tv' ? 'tvSeries' : 'movie';
+            const details = await getMovieDetails(item.id, type);
+            const finalId = details.imdbId || item.id;
+            const validationData = await validarPeliculaFinal(finalId);
+
+            return {
+                id: finalId,
+                tmdbId: item.id,
+                l: item.title || item.name,
+                disponible: validationData.disponible,
+                resolution: validationData.resolution,
+                source: validationData.source,
+                file_name: validationData.file_name || validationData.filename || '',
+                y: item.release_date ? item.release_date.substring(0, 4) : (item.first_air_date ? item.first_air_date.substring(0, 4) : ''),
+                releaseDate: item.release_date || item.first_air_date || '',
+                digitalReleaseDate: details.digitalReleaseDate || '',
+                qid: type,
+                i: { imageUrl: `https://image.tmdb.org/t/p/w200${item.poster_path}` },
+                rating: item.vote_average ? item.vote_average.toFixed(1) : 'N/A'
+            };
+        });
+
+        currentResults = await Promise.all(mappedResultsPromises);
+        renderResults(currentResults);
+    } catch (error) {
+        console.error('Error searching by person:', error);
+        resultsGrid.innerHTML = '<div class="empty-state"><p>Error al buscar contenido de esta persona.</p></div>';
+    }
+}
 
 // --- Botón Limpiar Búsqueda ---
 clearBtn.addEventListener('click', () => {
@@ -157,6 +326,12 @@ async function searchMovies(query) {
         });
 
         let results = data.results || [];
+
+        // Si el primer resultado es una persona y tiene alta popularidad, mostrar sus películas
+        if (results.length > 0 && results[0].media_type === 'person' && results[0].popularity > 5) {
+            searchByPerson(results[0].id, results[0].name);
+            return;
+        }
 
         // 2. Si no hay resultados en español, hacer fallback a inglés
         if (results.length === 0) {
@@ -730,8 +905,45 @@ if (SpeechRecognition) {
 document.addEventListener('keydown', (e) => {
     const active = document.activeElement;
 
+    // Navegación en Autocomplete
+    if (!autocompleteResults.classList.contains('hidden')) {
+        const items = Array.from(autocompleteResults.querySelectorAll('.autocomplete-item'));
+        const activeItemIndex = items.indexOf(active);
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (active === movieInput) {
+                if (items.length > 0) items[0].focus();
+            } else if (activeItemIndex < items.length - 1) {
+                items[activeItemIndex + 1].focus();
+            }
+            return;
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (activeItemIndex > 0) {
+                items[activeItemIndex - 1].focus();
+            } else if (activeItemIndex === 0 || active === movieInput) {
+                movieInput.focus();
+                if (active === movieInput) {
+                    // Si ya estamos en el input y presionamos arriba, dejamos que siga la navegación normal
+                } else {
+                    return;
+                }
+            }
+        } else if (e.key === 'Enter' && active.classList.contains('autocomplete-item')) {
+            e.preventDefault();
+            selectAutocompleteItem(active);
+            return;
+        } else if (e.key === 'Escape') {
+            autocompleteResults.classList.add('hidden');
+            movieInput.focus();
+            return;
+        }
+    }
+
     if (active === movieInput && e.key === 'Enter') {
         searchMovies(movieInput.value);
+        autocompleteResults.classList.add('hidden');
         return;
     }
 
@@ -746,15 +958,12 @@ document.addEventListener('keydown', (e) => {
         return;
     }
 
-    // Cerrar reproductor eliminado (ahora en player.html)
-
-    const navigables = Array.from(document.querySelectorAll('.navigable, #movie-input')).filter(el => {
-        if (el.id !== 'movie-input' && (!el.classList.contains('navigable') || el.classList.contains('unavailable'))) return false;
+    const navigables = Array.from(document.querySelectorAll('.navigable, #movie-input, .autocomplete-item')).filter(el => {
+        if (el.id !== 'movie-input' && !el.classList.contains('navigable') && !el.classList.contains('autocomplete-item')) return false;
+        if (el.classList.contains('unavailable')) return false;
         const r = el.getBoundingClientRect();
         return r.width > 0 && r.height > 0;
     });
-
-    const currentIndex = navigables.indexOf(active);
 
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
@@ -811,8 +1020,18 @@ document.addEventListener('keydown', (e) => {
 });
 
 window.onload = () => {
-    movieInput.focus();
-    loadTrendingMovies();
+    const params = new URLSearchParams(window.location.search);
+    const personId = params.get('person_id');
+    const personName = params.get('person_name');
+
+    if (personId && personName) {
+        movieInput.value = personName;
+        clearBtn.classList.remove('hidden');
+        searchByPerson(personId, personName);
+    } else {
+        movieInput.focus();
+        loadTrendingMovies();
+    }
 };
 
 // Al volver a la página (por ejemplo desde content.html o player.html) actualizar historial

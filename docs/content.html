@@ -152,6 +152,23 @@
             color: var(--text);
         }
 
+        .person-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: inline-block;
+            border-bottom: 1px solid transparent;
+            cursor: pointer;
+        }
+
+        .person-link:hover,
+        .person-link:focus {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+            transform: translateY(-1px);
+            outline: none;
+        }
+
         .hero-buttons {
             display: flex;
             flex-wrap: wrap;
@@ -194,7 +211,7 @@
             cursor: pointer;
             backdrop-filter: blur(10px);
             transition: 0.25s;
-            max-width: 500px;
+            max-width: 360px;
         }
 
         .tv-select:focus {
@@ -492,6 +509,7 @@
 
             .hero-buttons {
                 width: 100%;
+                max-width: 360px;
             }
 
             .play-button {
@@ -531,19 +549,22 @@
             <div class="hero-overlay"></div>
             <div class="hero-content">
                 <h1 class="hero-title" id="title">Cargando...</h1>
+                <div id="filename-display"
+                    style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 1rem; font-style: italic; opacity: 0.8; margin-top: -0.5rem;">
+                </div>
                 <div class="hero-meta" id="meta"></div>
                 <p class="hero-synopsis" id="overview"></p>
-                <div id="filename-display"
-                    style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem; font-style: italic; opacity: 0.8;">
-                </div>
                 <div class="hero-cast-director" id="castDirector"></div>
                 <div id="media-selectors"
+                    style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <select id="season-select" class="tv-select navigable" tabindex="0"
+                        aria-label="Seleccionar temporada" style="display: none;"></select>
+                    <select id="episode-select" class="tv-select navigable" tabindex="0"
+                        aria-label="Seleccionar capítulo" style="display: none;"></select>
+                </div>
+                <div id="sub-selectors"
                     style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 15px;">
-                    <select id="season-select" class="tv-select" tabindex="0" aria-label="Seleccionar temporada"
-                        style="display: none;"></select>
-                    <select id="episode-select" class="tv-select" tabindex="0" aria-label="Seleccionar capítulo"
-                        style="display: none;"></select>
-                    <select id="sub-select" class="tv-select" tabindex="0" aria-label="Seleccionar subtítulo"
+                    <select id="sub-select" class="tv-select navigable" tabindex="0" aria-label="Seleccionar subtítulo"
                         style="display: none;"></select>
                 </div>
                 <div class="hero-buttons">
@@ -837,25 +858,25 @@
                 document.getElementById('title').textContent = title;
                 document.getElementById('overview').textContent = data.overview || 'Sinopsis no disponible.';
 
-                // Extraer Director y Elenco
-                let director = 'N/A';
+                // Extraer Director y Elenco con links
+                let directorHtml = 'N/A';
                 if (data.credits && data.credits.crew) {
                     const dirObj = data.credits.crew.find(c => c.job === 'Director');
                     if (dirObj) {
-                        director = dirObj.name;
+                        directorHtml = `<a href="index.html?person_id=${dirObj.id}&person_name=${encodeURIComponent(dirObj.name)}" class="person-link navigable" tabindex="0">${dirObj.name}</a>`;
                     } else if (data.created_by && data.created_by.length > 0) {
-                        director = data.created_by.map(c => c.name).join(', ');
+                        directorHtml = data.created_by.map(c => `<a href="index.html?person_id=${c.id}&person_name=${encodeURIComponent(c.name)}" class="person-link navigable" tabindex="0">${c.name}</a>`).join(', ');
                     }
                 }
 
-                let cast = 'N/A';
+                let castHtml = 'N/A';
                 if (data.credits && data.credits.cast && data.credits.cast.length > 0) {
-                    cast = data.credits.cast.slice(0, 5).map(c => c.name).join(', ');
+                    castHtml = data.credits.cast.slice(0, 5).map(c => `<a href="index.html?person_id=${c.id}&person_name=${encodeURIComponent(c.name)}" class="person-link navigable" tabindex="0">${c.name}</a>`).join(', ');
                 }
 
                 document.getElementById('castDirector').innerHTML = `
-                    <p style="margin-bottom: 4px;"><strong>Director:</strong> ${director}</p>
-                    <p><strong>Elenco:</strong> ${cast}</p>
+                    <p style="margin-bottom: 6px;"><strong>Director:</strong> ${directorHtml}</p>
+                    <p><strong>Elenco:</strong> ${castHtml}</p>
                 `;
 
                 // Mostrar nombre de archivo si existe
@@ -1020,148 +1041,90 @@
         }
 
         function setupKeyboardNavigation() {
-            const backBtn = document.getElementById('backBtn');
-            const playBtn = document.getElementById('playBtn');
-            const trailerContainer = document.getElementById('trailerContainer');
-            const carousel = document.getElementById('carousel');
-            const seasonSelect = document.getElementById('season-select');
-            const episodeSelect = document.getElementById('episode-select');
-            const subSelect = document.getElementById('sub-select');
-
-            if (!backBtn || !playBtn || !trailerContainer || !carousel) return;
-
             document.addEventListener('keydown', (e) => {
                 const active = document.activeElement;
-                const cards = Array.from(carousel.querySelectorAll('.movie-card'));
-                const activeIndex = cards.indexOf(active);
-                const isTv = seasonSelect && seasonSelect.style.display !== 'none';
 
                 if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key)) {
                     return;
                 }
 
-                if (e.key === 'Enter' && active.tagName === 'SELECT') {
-                    try {
-                        if (typeof active.showPicker === 'function') {
-                            active.showPicker();
-                        } else {
-                            const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window });
-                            active.dispatchEvent(event);
+                if (e.key === 'Enter') {
+                    if (active.tagName === 'SELECT') {
+                        try {
+                            if (typeof active.showPicker === 'function') {
+                                active.showPicker();
+                            } else {
+                                const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window });
+                                active.dispatchEvent(event);
+                            }
+                        } catch (err) { }
+                        return;
+                    }
+                    if (active.classList.contains('navigable') || active.tagName === 'A' || active.tagName === 'BUTTON') {
+                        active.click();
+                        return;
+                    }
+                }
+
+                const navigables = Array.from(document.querySelectorAll('.navigable, button, select, input, .trailer-container, .movie-card, .person-link')).filter(el => {
+                    if (el.style.display === 'none') return false;
+                    const r = el.getBoundingClientRect();
+                    return r.width > 0 && r.height > 0;
+                });
+
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                    e.preventDefault();
+                    const rect = active.getBoundingClientRect();
+                    let closest = null;
+                    let minDistance = Infinity;
+
+                    navigables.forEach((el) => {
+                        if (el === active) return;
+                        const elRect = el.getBoundingClientRect();
+
+                        const activeCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+                        const elCenter = { x: elRect.left + elRect.width / 2, y: elRect.top + elRect.height / 2 };
+
+                        let isCandidate = false;
+                        const threshold = 10;
+
+                        if (e.key === 'ArrowUp' && elRect.bottom <= rect.top + threshold) isCandidate = true;
+                        else if (e.key === 'ArrowDown' && elRect.top >= rect.bottom - threshold) isCandidate = true;
+                        else if (e.key === 'ArrowLeft' && elRect.right <= rect.left + threshold) isCandidate = true;
+                        else if (e.key === 'ArrowRight' && elRect.left >= rect.right - threshold) isCandidate = true;
+
+                        if (isCandidate) {
+                            // Calcular distancia entre bordes más cercanos (más natural para TV)
+                            let dx = 0;
+                            if (elRect.right < rect.left) dx = rect.left - elRect.right;
+                            else if (elRect.left > rect.right) dx = elRect.left - rect.right;
+
+                            let dy = 0;
+                            if (elRect.bottom < rect.top) dy = rect.top - elRect.bottom;
+                            else if (elRect.top > rect.bottom) dy = elRect.top - rect.bottom;
+
+                            // Distancia al centro para desempate
+                            const centerDistX = Math.abs(elCenter.x - activeCenter.x);
+                            const centerDistY = Math.abs(elCenter.y - activeCenter.y);
+
+                            let score;
+                            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                                score = dy * 2 + centerDistX;
+                            } else {
+                                score = dx * 2 + centerDistY;
+                            }
+
+                            if (score < minDistance) {
+                                minDistance = score;
+                                closest = el;
+                            }
                         }
-                    } catch (err) { }
-                    return;
-                }
+                    });
 
-                if (active === backBtn) {
-                    if (e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        if (isTv) seasonSelect.focus();
-                        else if (subSelect.style.display !== 'none') subSelect.focus();
-                        else playBtn.focus();
+                    if (closest) {
+                        closest.focus();
+                        closest.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
-                    return;
-                }
-
-                if (active === seasonSelect) {
-                    if (e.key === 'ArrowRight') {
-                        e.preventDefault();
-                        episodeSelect.focus();
-                    }
-                    if (e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        playBtn.focus();
-                    }
-                    if (e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        backBtn.focus();
-                    }
-                    return;
-                }
-
-                if (active === episodeSelect) {
-                    if (e.key === 'ArrowLeft') {
-                        e.preventDefault();
-                        seasonSelect.focus();
-                    }
-                    if (e.key === 'ArrowRight') {
-                        e.preventDefault();
-                        if (subSelect.style.display !== 'none') subSelect.focus();
-                        else playBtn.focus();
-                    }
-                    if (e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        playBtn.focus();
-                    }
-                    if (e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        backBtn.focus();
-                    }
-                    return;
-                }
-
-                if (active === subSelect) {
-                    if (e.key === 'ArrowLeft') {
-                        e.preventDefault();
-                        if (isTv) episodeSelect.focus();
-                    }
-                    if (e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        playBtn.focus();
-                    }
-                    if (e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        backBtn.focus();
-                    }
-                    return;
-                }
-
-                if (active === playBtn) {
-                    if (e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        if (subSelect.style.display !== 'none') subSelect.focus();
-                        else if (isTv) episodeSelect.focus();
-                        else backBtn.focus();
-                    }
-                    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-                        e.preventDefault();
-                        trailerContainer.focus();
-                    }
-                    return;
-                }
-
-                if (active === trailerContainer || trailerContainer.contains(active)) {
-                    if (e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        playBtn.focus();
-                    }
-                    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-                        e.preventDefault();
-                        if (cards.length) {
-                            cards[0].focus();
-                        }
-                    }
-                    return;
-                }
-
-                if (activeIndex >= 0) {
-                    if (e.key === 'ArrowLeft' && activeIndex > 0) {
-                        e.preventDefault();
-                        cards[activeIndex - 1].focus();
-                    }
-                    if (e.key === 'ArrowRight' && activeIndex < cards.length - 1) {
-                        e.preventDefault();
-                        cards[activeIndex + 1].focus();
-                    }
-                    if (e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        trailerContainer.focus();
-                    }
-                    // Opcional: Navegar hacia abajo si el grid tiene múltiples filas
-                    if (e.key === 'ArrowDown' && activeIndex + 5 < cards.length) {
-                        e.preventDefault();
-                        cards[activeIndex + 5].focus();
-                    }
-                    return;
                 }
             });
         }
