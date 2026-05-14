@@ -10,34 +10,198 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <title>MauriTV - Reproductor</title>
-    <script>
-        //var version = new Date().getTime();
-        var version = new Date().toISOString().slice(0, 10).replace(/-/g, '');
 
-        var link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = 'style.css?v=' + version;
-        document.head.appendChild(link);
-    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Outfit:wght@300;400;600;800&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
     <style>
+        :root {
+            --bg-color: #141414;
+            --accent-color: #e50914;
+            --focus-border: 4px solid #ffffff;
+            --netflix-font: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
             margin: 0;
             padding: 0;
             background-color: #000;
             overflow: hidden;
+            font-family: var(--netflix-font);
+            color: #ffffff;
+            -webkit-font-smoothing: antialiased;
         }
 
         .player-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            z-index: 10000;
             display: flex !important;
             visibility: visible !important;
             opacity: 1 !important;
-            z-index: 1000;
+            flex-direction: column;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .player-controls {
+            width: 100%;
+            flex-shrink: 0;
+            display: none !important;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: #1a1a1a;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            box-sizing: border-box;
+            z-index: 10001;
+            min-height: 54px;
+        }
+
+        .controls-sensor {
+            display: none;
+        }
+
+        .close-btn {
+            background: rgba(0, 0, 0, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: white;
+            padding: 9px 18px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            white-space: nowrap;
+            pointer-events: auto;
+        }
+
+        .close-btn .material-icons {
+            font-size: 1.1rem;
+        }
+
+        .close-btn:hover,
+        .close-btn:focus {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            transform: scale(1.05);
+            outline: var(--focus-border) !important;
+            outline-offset: 4px !important;
+            box-shadow: 0 0 20px rgba(229, 9, 20, 0.4);
+        }
+
+        .player-container {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #player-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #000;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .player-loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            z-index: 9999;
+        }
+
+        .player-loader .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .navigable:focus,
+        [tabindex]:focus,
+        button:focus,
+        iframe:focus {
+            outline: var(--focus-border) !important;
+            outline-offset: 2px !important;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3) !important;
+        }
+
+        #player-iframe:focus {
+            outline-offset: -4px !important;
+        }
+
+        @media (max-width: 600px) {
+            .close-btn {
+                padding: 7px 12px;
+                font-size: 0.8rem;
+                gap: 5px;
+            }
+
+            .close-btn .material-icons {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .close-btn span:not(.material-icons) {
+                display: none;
+            }
+
+            .close-btn {
+                padding: 8px;
+                border-radius: 50%;
+            }
         }
     </style>
 </head>
@@ -48,67 +212,92 @@
         <div class="player-controls">
             <button id="close-player" class="close-btn navigable" tabindex="1">
                 <span class="material-icons">arrow_back</span>
-                Volver
+                <span>Volver</span>
             </button>
             <button id="download-player" class="close-btn navigable hidden" tabindex="2">
                 <span class="material-icons">download</span>
-                Descargar
+                <span>Descargar</span>
             </button>
         </div>
         <div class="player-container">
             <div id="player-loader" class="player-loader">
+                <div class="spinner"></div>
                 <p>Cargando fuente...</p>
             </div>
             <iframe id="player-iframe" class="navigable" tabindex="3" src=""
                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-top-navigation allow-popups" allowfullscreen></iframe>
+                sandbox="allow-scripts allow-same-origin allow-forms allow-top-navigation allow-popups"
+                allowfullscreen></iframe>
         </div>
     </div>
 
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
-        const imdb = urlParams.get('imdb');
-        const type = urlParams.get('type');
-        const s = urlParams.get('s');
-        const e = urlParams.get('e');
-        const lang = urlParams.get('lang') || 'es';
-        const finalId = imdb || id;
-
+        // Elementos del DOM
         const playerIframe = document.getElementById('player-iframe');
         const playerLoader = document.getElementById('player-loader');
         const closePlayerBtn = document.getElementById('close-player');
-        const downloadPlayerBtn = document.getElementById('download-player');
-        const controlsSensor = document.getElementById('controls-sensor');
-        const playerControls = document.querySelector('.player-controls');
 
-        let controlsParam = "";
-        const ua = navigator.userAgent.toLowerCase();
-        if (ua.includes('android') && (ua.includes('tv') || ua.includes('large screen') || ua.includes('atv'))) {
-            controlsParam = "&controls=false";
-        }
+        // Parámetros de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const movieId = urlParams.get('id');
+        const imdbId = urlParams.get('imdb');
+        const type = urlParams.get('type');
+        const season = urlParams.get('s');
+        const episode = urlParams.get('e');
+        const langCode = urlParams.get('lang') || 'es';
+        const subId = urlParams.get('sub_id');
+        const finalId = imdbId || movieId;
 
-        //const defaultConfig = `skin=netflix&ds_lang=AR_EXT&title=false${controlsParam}&sub_lang=AR_EXT&sub_default=true`;
-        const defaultConfig = `skin=netflix${controlsParam}`;
-        const playerHost = 'https://vaplayer.ru';
+        // Configuraciones disponibles para VidAPI (https://vidapi.ru/api)
+        const CONF_COLOR = ''; // Hex code
+        const CONF_PRIMARY_COLOR = ''; // Color principal (ej: #e50914)
+        const CONF_TITLE = ''; // Título personalizado
+        const CONF_POSTER = ''; // URL del póster personalizado
+        const CONF_SHOW_TITLE = ''; // true | false
+        const CONF_START_AT = ''; // Tiempo de inicio en segundos
+        const CONF_RESUME_AT = ''; // Tiempo de continuación
+        const CONF_SUB_URL = ''; // URL para subtítulos (se asigna dinámicamente si hay subId)
+        const CONF_SUB_FILE = ''; // Archivo de subtítulo
+        const CONF_SUB_LABEL = 'Español'; // Etiqueta del idioma del subtítulo (ej: Español)
+        const CONF_SUB_LANG = 'es'; // Código del lenguaje del subtítulo
+        const CONF_SUB_DEFAULT = 'true'; // Forzar subtítulo por defecto
+        const CONF_DS_LANG = ''; // Lenguaje de doblaje
+        const CONF_LANG = ''; // Lenguaje de la interfaz del player
+        const CONF_THUMBNAILS = ''; // Habilitar miniaturas
 
-        function getSubtitleLangCode(lang) {
-            const map = {
-                es: 'spa',
-                en: 'eng',
-                pt: 'por',
-                fr: 'fra',
-                it: 'ita'
-            };
+        // Configuraciones internas
+        const PLAYER_HOST = 'https://vaplayer.ru';
+        const CONF_SKIN = 'netflix';
+
+        /**
+         * Detecta si el dispositivo es Smart TV o Android TV para ocultar controles
+         * @returns {boolean}
+         */
+        const isTvDevice = () => {
+            const ua = navigator.userAgent.toLowerCase();
+            return ua.includes('android') && (ua.includes('tv') || ua.includes('large screen') || ua.includes('atv'));
+        };
+
+        const CONF_CONTROLS = isTvDevice() ? 'false' : '';
+
+        /**
+         * Mapea un código de idioma corto (es, en) a ISO 639-2 requerido por el reproductor
+         * @param {string} lang Código de 2 letras
+         * @returns {string} Código de 3 letras (spa, eng)
+         */
+        const getSubtitleLangCode = (lang) => {
+            const map = { es: 'spa', en: 'eng', pt: 'por', fr: 'fra', it: 'ita' };
             return map[lang] || lang;
-        }
+        };
 
-        //api/documentacion del player
-        //https://vidapi.ru/api
-
-        async function getDownloadLink(fileId) {
+        /**
+         * Obtiene la URL de descarga directa de OpenSubtitles
+         * @param {string} fileId ID del subtítulo
+         * @returns {Promise<string|null>} Enlace del subtítulo o nulo
+         */
+        const getDownloadLink = async (fileId) => {
             try {
-                const response = await fetch('https://api.opensubtitles.com/api/v1/download', {
+                const res = await fetch('https://api.opensubtitles.com/api/v1/download', {
                     method: 'POST',
                     headers: {
                         'Api-Key': 'SQMOf8KwHb06tmTZjKFAOEACEbKSQ25G',
@@ -119,172 +308,168 @@
                     referrer: 'https://www.opensubtitles.com/',
                     referrerPolicy: 'origin'
                 });
-                if (!response.ok) {
-                    throw new Error('OpenSubtitles download API failed: ' + response.status);
-                }
-                const data = await response.json();
-                return data.link;
+                if (!res.ok) throw new Error(`API error: ${res.status}`);
+                return (await res.json()).link;
             } catch (e) {
                 console.error("Error al obtener link de descarga", e);
                 return null;
             }
-        }
+        };
 
-        if (!finalId || !type) {
-            window.location.href = 'index.html';
-        } else {
-            const subId = urlParams.get('sub_id');
-
-            async function initPlayer() {
-                const subtitleLangCode = getSubtitleLangCode(lang);
-                let playUrl = `${playerHost}/embed/movie/${finalId}?${defaultConfig}`;
-
-                if (type === 'tv' && s && e) {
-                    playUrl = `${playerHost}/embed/tv/${finalId}/${s}/${e}/?${defaultConfig}`;
-                }
-
-                if (subId) {
-                    const statusText = playerLoader.querySelector('p');
-                    if (statusText) statusText.textContent = 'Cargando subtítulos externos...';
-                    const subUrl = await getDownloadLink(subId);
-                    if (subUrl) {
-                        const subtitleLabel = lang === 'es' ? 'Español' : 'English';
-                        const encodedLabel = encodeURIComponent(subtitleLabel);
-                        const encodedLang = encodeURIComponent(subtitleLangCode);
-                        playUrl += `&sub_url=${encodeURIComponent(subUrl)}&sub_label=${encodedLabel}&sub_lang=${encodedLang}&sub_default=true&disable_embedded_subs=true`;
-                    }
-                }
-                playerIframe.src = playUrl;
-
+        /**
+         * Configura e inicializa el iframe del reproductor
+         */
+        const initPlayer = async () => {
+            if (!finalId || !type) {
+                window.location.href = 'index.html';
+                return;
             }
 
-            initPlayer();
+            const isoLangCode = getSubtitleLangCode(langCode);
+            const params = new URLSearchParams();
 
-            playerIframe.onload = () => {
-                playerLoader.classList.add('hidden');
-                playerIframe.focus();
+            // Asignación de configuraciones definidas
+            if (CONF_SKIN) params.append('skin', CONF_SKIN);
+            if (CONF_CONTROLS) params.append('controls', CONF_CONTROLS);
+            if (CONF_COLOR) params.append('color', CONF_COLOR);
+            if (CONF_PRIMARY_COLOR) params.append('primaryColor', CONF_PRIMARY_COLOR);
+            if (CONF_TITLE) params.append('title', CONF_TITLE);
+            if (CONF_POSTER) params.append('poster', CONF_POSTER);
+            if (CONF_SHOW_TITLE) params.append('showTitle', CONF_SHOW_TITLE);
+            if (CONF_START_AT) params.append('startAt', CONF_START_AT);
+            if (CONF_RESUME_AT) params.append('resumeAt', CONF_RESUME_AT);
+            if (CONF_SUB_DEFAULT) params.append('sub_default', CONF_SUB_DEFAULT);
+            if (CONF_DS_LANG) params.append('ds_lang', CONF_DS_LANG);
+            if (CONF_LANG) params.append('lang', CONF_LANG);
+            if (CONF_THUMBNAILS) params.append('thumbnails', CONF_THUMBNAILS);
 
+            let endpoint = type === 'tv' && season && episode ? `/embed/tv/${finalId}/${season}/${episode}/` : `/embed/movie/${finalId}`;
+            let playUrl = `${PLAYER_HOST}${endpoint}?${params.toString()}`;
+
+            // Gestión de subtítulos externos si se provee el subId
+            if (subId) {
+                const statusText = playerLoader.querySelector('p');
+                if (statusText) statusText.textContent = 'Cargando subtítulos externos...';
+
+                const subUrl = await getDownloadLink(subId);
+                if (subUrl) {
+                    const subtitleLabel = langCode === 'es' ? 'Español' : 'English';
+                    playUrl += `&sub_url=${encodeURIComponent(subUrl)}&sub_label=${encodeURIComponent(subtitleLabel)}&sub_lang=${encodeURIComponent(isoLangCode)}&disable_embedded_subs=true`;
+                }
+            }
+
+            playerIframe.src = playUrl;
+        };
+
+        /**
+         * Envía preferencias de subtítulos y configuraciones iniciales al reproductor via postMessage
+         */
+        const sendStorageInit = () => {
+            if (playerIframe?.contentWindow) {
                 const storageData = {
                     'playerSubStyle': JSON.stringify({ color: "#f7eeee", bg: "#000000", bgAlpha: 80, size: 180, font: "inherit" }),
-                    'subtitleLang': getSubtitleLangCode(lang),
-                    'lastSubLang': lang
+                    'subtitleLang': getSubtitleLangCode(langCode),
+                    'lastSubLang': langCode
                 };
+                playerIframe.contentWindow.postMessage({ type: 'STORAGE_INIT', data: storageData }, '*');
+            }
+        };
 
-                const sendStorageInit = () => {
-                    if (playerIframe && playerIframe.contentWindow) {
-                        playerIframe.contentWindow.postMessage({ type: 'STORAGE_INIT', data: storageData }, '*');
-                    }
-                };
-
-                sendStorageInit();
-                setTimeout(sendStorageInit, 1000);
-
-                try {
-                    const iframeWin = playerIframe.contentWindow;
-                    if (iframeWin) {
-                        iframeWin.open = function () { return null; };
-                        Object.defineProperty(iframeWin, 'top', { get: function () { return iframeWin; } });
-                        Object.defineProperty(iframeWin, 'parent', { get: function () { return iframeWin; } });
-                    }
-                } catch (e) { }
-
-                // Simular clic en el centro del video a los 5 segundos
-                setTimeout(() => {
-                    try {
-                        const rect = playerIframe.getBoundingClientRect();
-                        const x = rect.left + (rect.width / 2);
-                        const y = rect.top + (rect.height / 2);
-
-                        // Intentar hacer click directamente en el elemento
-                        playerIframe.click();
-
-                        // Disparar evento de ratón simulando coordenadas
-                        const clickEvent = new MouseEvent('click', {
-                            view: window,
-                            bubbles: true,
-                            cancelable: true,
-                            clientX: x,
-                            clientY: y
-                        });
-                        playerIframe.dispatchEvent(clickEvent);
-                        console.log('Clic simulado en el centro del reproductor.');
-                    } catch (err) {
-                        console.warn('No se pudo simular el clic:', err);
-                    }
-                }, 5000);
-            };
-
-            // Mostrar controles al mover el mouse en la parte superior
-            if (controlsSensor && playerControls) {
-                controlsSensor.addEventListener('mouseenter', () => {
-                    playerControls.classList.add('visible');
+        /**
+         * Simula un clic centrado para interactuar con políticas de autoplay en navegadores
+         */
+        const simulateClickOnPlayer = () => {
+            try {
+                const rect = playerIframe.getBoundingClientRect();
+                const clickEvent = new MouseEvent('click', {
+                    view: window,
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: rect.left + (rect.width / 2),
+                    clientY: rect.top + (rect.height / 2)
                 });
-                playerControls.addEventListener('mouseleave', () => {
-                    playerControls.classList.remove('visible');
-                });
+                playerIframe.dispatchEvent(clickEvent);
+            } catch (err) {
+                console.warn('No se pudo simular el clic:', err);
+            }
+        };
+
+        /**
+         * Previene la apertura de pop-ups bloqueando las llamadas window.open dentro del iframe
+         */
+        const preventIframePopups = () => {
+            try {
+                const iframeWin = playerIframe.contentWindow;
+                if (iframeWin) {
+                    iframeWin.open = () => null;
+                    Object.defineProperty(iframeWin, 'top', { get: () => iframeWin });
+                    Object.defineProperty(iframeWin, 'parent', { get: () => iframeWin });
+                }
+            } catch (e) { }
+        };
+
+        /**
+         * Maneja eventos de navegación en teclado / mando a distancia
+         * @param {KeyboardEvent} e
+         */
+        const handleKeydown = (e) => {
+            const backKeys = ['Escape', 'Backspace', 'Back', 'BrowserBack', 'GoBack'];
+            if (backKeys.includes(e.key) || [8, 27, 10009, 461].includes(e.keyCode)) {
+                closePlayerBtn.click();
+                return;
             }
 
-            // Navegación espacial y botones
-            document.addEventListener('keydown', (e) => {
-                const backKeys = ['Escape', 'Backspace', 'Back', 'BrowserBack', 'GoBack'];
-                if (backKeys.includes(e.key) || e.keyCode === 8 || e.keyCode === 27 || e.keyCode === 10009 || e.keyCode === 461) {
-                    closePlayerBtn.click();
+            const active = document.activeElement;
+            const navigables = Array.from(document.querySelectorAll('.navigable')).filter(el => {
+                const r = el.getBoundingClientRect();
+                return r.width > 0 && r.height > 0 && !el.classList.contains('hidden');
+            });
+
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+                const currentIndex = navigables.indexOf(active);
+
+                if (currentIndex === -1) {
+                    navigables[0]?.focus();
                     return;
                 }
 
-                const active = document.activeElement;
-                const navigables = Array.from(document.querySelectorAll('.navigable')).filter(el => {
-                    const r = el.getBoundingClientRect();
-                    return r.width > 0 && r.height > 0 && !el.classList.contains('hidden');
-                });
+                if (e.key === 'ArrowRight' && currentIndex < navigables.length - 1) navigables[currentIndex + 1].focus();
+                else if (e.key === 'ArrowLeft' && currentIndex > 0) navigables[currentIndex - 1].focus();
+                else if (e.key === 'ArrowDown') playerIframe.focus();
+                else if (e.key === 'ArrowUp') navigables[0].focus();
+            }
 
-                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-                    e.preventDefault();
-                    if (playerControls) {
-                        playerControls.classList.add('visible');
-                        setTimeout(() => playerControls.classList.remove('visible'), 3000);
-                    }
-                    const currentIndex = navigables.indexOf(active);
+            if (e.key === 'Enter' && active !== playerIframe) {
+                active.click();
+            }
+        };
 
-                    if (currentIndex === -1) {
-                        navigables[0].focus();
-                        return;
-                    }
+        // Escuchadores de eventos y Lifecycle del player
+        playerIframe.onload = () => {
+            playerLoader.classList.add('hidden');
+            playerIframe.focus();
 
-                    if (e.key === 'ArrowRight' && currentIndex < navigables.length - 1) navigables[currentIndex + 1].focus();
-                    else if (e.key === 'ArrowLeft' && currentIndex > 0) navigables[currentIndex - 1].focus();
-                    else if (e.key === 'ArrowDown') playerIframe.focus();
-                    else if (e.key === 'ArrowUp') navigables[0].focus();
-                }
+            preventIframePopups();
+            sendStorageInit();
 
-                if (e.key === 'Enter' && active !== playerIframe) {
-                    active.click();
-                }
-            });
+            // Reintenta enviar init por seguridad
+            setTimeout(sendStorageInit, 1000);
 
-            closePlayerBtn.addEventListener('click', () => {
-                window.location.href = 'index.html';
-            });
+            // Interacción automatizada para activar el reproductor
+            setTimeout(simulateClickOnPlayer, 5000);
+        };
 
-            window.addEventListener('message', (e) => {
-                const d = e.data;
-                if (!d || typeof d !== 'object') return;
-                if (d.type === 'STORAGE_GET_ALL') {
-                    const subStyle = { color: "#f7eeee", bg: "#000000", bgAlpha: 80, size: 180, font: "inherit" };
-                    const storageData = {
-                        'playerSubStyle': JSON.stringify(subStyle),
-                        'subtitleLang': getSubtitleLangCode(lang),
-                        'lastSubLang': lang
-                    };
-                    if (playerIframe && playerIframe.contentWindow) {
-                        playerIframe.contentWindow.postMessage({ type: 'STORAGE_INIT', data: storageData }, '*');
-                    }
-                }
-            }); 
+        closePlayerBtn.addEventListener('click', () => window.location.href = 'index.html');
+        document.addEventListener('keydown', handleKeydown);
+        window.addEventListener('message', (e) => {
+            if (e.data?.type === 'STORAGE_GET_ALL') {
+                sendStorageInit();
+            }
+        });
 
-            // Foco inicial
-            setTimeout(() => { playerIframe.focus(); }, 1000);
-        }
+        // Inicializar el flujo
+        initPlayer();
     </script>
 </body>
 

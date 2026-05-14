@@ -20,6 +20,7 @@
     <script src="https://www.youtube.com/iframe_api"></script>
 
     <style>
+        /* ========== CSS VARIABLES ========== */
         :root {
             --bg: #141414;
             --bg-secondary: #1b1b1b;
@@ -31,6 +32,7 @@
             --shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
         }
 
+        /* ========== RESET & BASE STYLES ========== */
         * {
             margin: 0;
             padding: 0;
@@ -54,6 +56,7 @@
             width: 100%;
         }
 
+        /* ========== NAVIGATION ========== */
         .back-button {
             position: fixed;
             top: 20px;
@@ -78,6 +81,7 @@
             transform: scale(1.05);
         }
 
+        /* ========== HERO SECTION ========== */
         .hero-section {
             position: relative;
             width: 100%;
@@ -199,6 +203,7 @@
             box-shadow: 0 0 0 4px rgba(229, 9, 20, 0.25);
         }
 
+        /* ========== MEDIA SELECTORS ========== */
         .tv-select {
             background: rgba(255, 255, 255, 0.1);
             color: white;
@@ -232,6 +237,7 @@
             color: white;
         }
 
+        /* ========== CONTENT SECTION ========== */
         .content-section {
             padding: 30px 80px 80px;
         }
@@ -242,6 +248,7 @@
             margin-bottom: 24px;
         }
 
+        /* ========== TRAILER ========== */
         .trailer-container {
             position: relative;
             width: 100%;
@@ -333,6 +340,7 @@
             background: rgba(229, 9, 20, 0.4);
         }
 
+        /* ========== CAROUSEL ========== */
         .carousel {
             display: flex;
             gap: 18px;
@@ -365,7 +373,7 @@
             transform: scale(1.08);
         }
 
-        /* Movie Card Grid (from style.css) */
+        /* ========== MOVIE CARDS ========== */
         .results-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -424,12 +432,6 @@
             overflow: hidden;
             text-overflow: ellipsis;
             color: #ffffff;
-            /*background: rgba(229, 9, 20, 0.17);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            padding: 4px 10px;
-            border-radius: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.15);*/
             display: inline-block;
             max-width: 100%;
         }
@@ -451,12 +453,17 @@
         }
 
         .movie-rating {
+            position: absolute;
+            top: 0.8rem;
+            left: 0.8rem;
             font-size: 0.9rem;
             color: #f5c518;
             font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 4px;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.5));
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            border: 1px solid rgba(245, 197, 24, 0.3);
+            z-index: 10;
         }
 
         .type-badge {
@@ -476,6 +483,7 @@
             text-transform: uppercase;
         }
 
+        /* ========== ANIMATIONS ========== */
         @keyframes fadeUp {
             from {
                 opacity: 0;
@@ -488,6 +496,7 @@
             }
         }
 
+        /* ========== RESPONSIVE ========== */
         @media (max-width: 768px) {
             .hero-section {
                 padding: 120px 24px 40px 24px;
@@ -536,62 +545,19 @@
             }
         }
     </style>
-</head>
-
-<body>
-
-    <main>
-        <button class="back-button" id="backBtn" onclick="history.back()" aria-label="Volver">
-            <span class="material-icons">arrow_back</span>
-        </button>
-
-        <section class="hero-section" id="hero" style="background-color:#000;">
-            <div class="hero-overlay"></div>
-            <div class="hero-content">
-                <h1 class="hero-title" id="title">Cargando...</h1>
-                <div id="filename-display"
-                    style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 1rem; font-style: italic; opacity: 0.8; margin-top: -0.5rem;">
-                </div>
-                <div class="hero-meta" id="meta"></div>
-                <p class="hero-synopsis" id="overview"></p>
-                <div class="hero-cast-director" id="castDirector"></div>
-                <div id="media-selectors"
-                    style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px;">
-                    <select id="season-select" class="tv-select navigable" tabindex="0"
-                        aria-label="Seleccionar temporada" style="display: none;"></select>
-                    <select id="episode-select" class="tv-select navigable" tabindex="0"
-                        aria-label="Seleccionar capítulo" style="display: none;"></select>
-                </div>
-                <div id="sub-selectors"
-                    style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 15px;">
-                    <select id="sub-select" class="tv-select navigable" tabindex="0" aria-label="Seleccionar subtítulo"
-                        style="display: none;"></select>
-                </div>
-                <div class="hero-buttons">
-                    <button class="play-button" id="playBtn">
-                        <span class="material-icons">play_arrow</span>
-                        Reproducir
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <section class="content-section">
-            <h2 class="section-title">Trailer Oficial</h2>
-            <div class="trailer-container" id="trailerContainer" tabindex="0" aria-label="Contenedor de trailer"></div>
-            <h2 class="section-title" style="margin-top: 40px;" id="similarTitle">Relacionados</h2>
-            <div class="results-grid" id="carousel"></div>
-        </section>
-    </main>
 
     <script>
+        /* ========== CONFIGURATION ========== */
         const TMDB_API_KEY = '12916916a032ac4a2da17601cbc119bd';
         const HISTORY_KEY = 'movie_history_v1';
+
+        /* ========== STATE ========== */
         let ytPlayer = null;
         let currentTrailerKey = null;
         let ytApiReady = false;
 
-        // Esperar a que la API de YouTube esté lista
+        /* ========== YOUTUBE API ========== */
+        /** Initialize YouTube API when ready */
         window.onYouTubeIframeAPIReady = function () {
             console.log('YouTube API ready');
             ytApiReady = true;
@@ -600,9 +566,14 @@
             }
         };
 
+        /* ========== HISTORY MANAGEMENT ========== */
+        /** Save movie to browsing history */
         function saveToHistory(movie) {
             let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-            const existingIndex = history.findIndex(item => String(item.id) === String(movie.id) || (item.tmdbId && String(item.tmdbId) === String(movie.tmdbId)));
+            const existingIndex = history.findIndex(item =>
+                String(item.id) === String(movie.id) ||
+                (item.tmdbId && String(item.tmdbId) === String(movie.tmdbId))
+            );
 
             if (existingIndex !== -1) {
                 movie = { ...history[existingIndex], ...movie };
@@ -616,6 +587,8 @@
             localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
         }
 
+        /* ========== TRAILER MANAGEMENT ========== */
+        /** Display error when trailer cannot be loaded */
         function mostrarErrorTrailer(titulo = '', trailerKey = null) {
             const container = document.getElementById('trailerContainer');
             const searchQuery = titulo ? `${titulo} trailer oficial` : 'trailer';
@@ -635,12 +608,12 @@
             `;
         }
 
+        /** Initialize YouTube player */
         function iniciarReproductorYouTube(trailerKey) {
             const container = document.getElementById('trailerContainer');
             currentTrailerKey = trailerKey;
 
             if (!ytApiReady) {
-                // Mostrar placeholder mientras carga la API
                 container.innerHTML = `
                     <div class="trailer-placeholder">
                         <span class="material-icons">play_circle_filled</span>
@@ -651,18 +624,12 @@
             }
 
             try {
-                // Limpiar contenedor
                 container.innerHTML = '';
-
-                // Crear div para el reproductor
                 const playerDiv = document.createElement('div');
                 playerDiv.id = 'youtube-player';
                 container.appendChild(playerDiv);
 
-                // Crear reproductor de YouTube
-                if (ytPlayer) {
-                    ytPlayer.destroy();
-                }
+                if (ytPlayer) ytPlayer.destroy();
 
                 ytPlayer = new YT.Player('youtube-player', {
                     videoId: trailerKey,
@@ -683,39 +650,29 @@
                         onError: onPlayerError
                     }
                 });
-
             } catch (error) {
-                console.error('Error creando reproductor YouTube:', error);
+                console.error('Error creating YouTube player:', error);
                 mostrarErrorTrailer(document.getElementById('title').textContent, trailerKey);
             }
         }
 
+        /** Handle YouTube player ready event */
         function onPlayerReady(event) {
-            console.log('Reproductor YouTube listo');
+            console.log('YouTube player ready');
             event.target.playVideo();
         }
 
+        /** Handle YouTube player error */
         function onPlayerError(event) {
-            console.error('Error en reproductor YouTube:', event.data);
+            console.error('YouTube player error:', event.data);
             let errorMessage = '';
 
-            // Códigos de error de YouTube
             switch (event.data) {
-                case 2:
-                    errorMessage = 'Video inválido';
-                    break;
-                case 5:
-                    errorMessage = 'Error de reproducción';
-                    break;
-                case 100:
-                    errorMessage = 'Video no encontrado';
-                    break;
-                case 101:
-                case 150:
-                    errorMessage = 'Video no disponible en esta plataforma';
-                    break;
-                default:
-                    errorMessage = 'Error desconocido';
+                case 2: errorMessage = 'Video inválido'; break;
+                case 5: errorMessage = 'Error de reproducción'; break;
+                case 100: errorMessage = 'Video no encontrado'; break;
+                case 101: case 150: errorMessage = 'Video no disponible en esta plataforma'; break;
+                default: errorMessage = 'Error desconocido';
             }
 
             const titulo = document.getElementById('title').textContent;
@@ -735,8 +692,8 @@
             `;
         }
 
+        /** Search for trailer in multiple languages */
         async function buscarTrailer(id, type) {
-            // Lista de idiomas a probar
             const idiomas = ['es-MX', 'es-ES', 'en-US'];
 
             for (const lang of idiomas) {
@@ -748,41 +705,30 @@
                     if (videosResponse.ok) {
                         const videosData = await videosResponse.json();
                         if (videosData.results?.length) {
-                            // Prioridad: Trailer oficial > Trailer > Teaser > Cualquier video
                             let video = videosData.results.find(v =>
                                 v.site === 'YouTube' && v.type === 'Trailer' && v.official === true
-                            );
+                            ) || videosData.results.find(v =>
+                                v.site === 'YouTube' && v.type === 'Trailer'
+                            ) || videosData.results.find(v =>
+                                v.site === 'YouTube' && v.type === 'Teaser'
+                            ) || videosData.results.find(v => v.site === 'YouTube');
 
-                            if (!video) {
-                                video = videosData.results.find(v =>
-                                    v.site === 'YouTube' && v.type === 'Trailer'
-                                );
-                            }
-
-                            if (!video) {
-                                video = videosData.results.find(v =>
-                                    v.site === 'YouTube' && v.type === 'Teaser'
-                                );
-                            }
-
-                            if (!video && videosData.results.length > 0) {
-                                video = videosData.results.find(v => v.site === 'YouTube');
-                            }
-
-                            if (video && video.key) {
-                                console.log(`Trailer encontrado en ${lang}:`, video.key);
+                            if (video?.key) {
+                                console.log(`Trailer found in ${lang}:`, video.key);
                                 return video.key;
                             }
                         }
                     }
                 } catch (e) {
-                    console.log(`Error buscando en ${lang}:`, e);
+                    console.log(`Error searching in ${lang}:`, e);
                 }
             }
 
             return null;
         }
 
+        /* ========== SUBTITLES MANAGEMENT ========== */
+        /** Fetch available subtitles for content */
         async function fetchSubtitles(imdbId, type, season, episode) {
             const subSelect = document.getElementById('sub-select');
             if (!imdbId) {
@@ -794,7 +740,7 @@
             subSelect.style.display = 'inline-block';
 
             try {
-                const subLang = 'es'; // Español (España)
+                const subLang = 'es';
                 let url = `https://api.opensubtitles.com/api/v1/subtitles?languages=${subLang}`;
 
                 if (type === 'tv' && season && episode) {
@@ -822,25 +768,27 @@
                     subSelect.innerHTML = options;
                 } else {
                     subSelect.innerHTML = '<option value="">Seleccionar subtítulos externos</option>';
-                    // Si es película y no hay, lo ocultamos. Si es serie, mejor dejarlo por si cambian de cap.
                     if (type === 'movie') subSelect.style.display = 'none';
                 }
             } catch (e) {
-                console.error("Error cargando subtítulos", e);
-                subSelect.innerHTML = '<option value="">Error en subtítulos</option>';
+                console.error("Error loading subtitles", e);
+                subSelect.innerHTML = '<option value="">Error in subtitles</option>';
             } finally {
-                // Seleccionar el primero por defecto si hay opciones (y no es el de "Sin subtítulos")
                 if (subSelect.options.length > 1) {
                     subSelect.selectedIndex = 1;
                 }
             }
         }
 
+        /* ========== CONTENT LOADING ========== */
+        /** Load and display content details */
         async function loadContent() {
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id') || '278';
             const type = params.get('type') || 'movie';
             const file_name = params.get('file_name') || params.get('filename') || '';
+            const res = params.get('res') || '';
+            const src = params.get('src') || '';
 
             try {
                 const response = await fetch(
@@ -858,19 +806,19 @@
                 document.getElementById('title').textContent = title;
                 document.getElementById('overview').textContent = data.overview || 'Sinopsis no disponible.';
 
-                // Extraer Director y Elenco con links
+                // Display director and cast with links
                 let directorHtml = 'N/A';
-                if (data.credits && data.credits.crew) {
+                if (data.credits?.crew) {
                     const dirObj = data.credits.crew.find(c => c.job === 'Director');
                     if (dirObj) {
                         directorHtml = `<a href="index.html?person_id=${dirObj.id}&person_name=${encodeURIComponent(dirObj.name)}" class="person-link navigable" tabindex="0">${dirObj.name}</a>`;
-                    } else if (data.created_by && data.created_by.length > 0) {
+                    } else if (data.created_by?.length > 0) {
                         directorHtml = data.created_by.map(c => `<a href="index.html?person_id=${c.id}&person_name=${encodeURIComponent(c.name)}" class="person-link navigable" tabindex="0">${c.name}</a>`).join(', ');
                     }
                 }
 
                 let castHtml = 'N/A';
-                if (data.credits && data.credits.cast && data.credits.cast.length > 0) {
+                if (data.credits?.cast?.length > 0) {
                     castHtml = data.credits.cast.slice(0, 5).map(c => `<a href="index.html?person_id=${c.id}&person_name=${encodeURIComponent(c.name)}" class="person-link navigable" tabindex="0">${c.name}</a>`).join(', ');
                 }
 
@@ -879,7 +827,7 @@
                     <p><strong>Elenco:</strong> ${castHtml}</p>
                 `;
 
-                // Mostrar nombre de archivo si existe
+                // Display filename if available
                 const filenameDisplay = document.getElementById('filename-display');
                 if (file_name) {
                     filenameDisplay.textContent = `(${file_name})`;
@@ -894,7 +842,11 @@
                     ? `<span>${data.number_of_seasons} temporada${data.number_of_seasons === 1 ? '' : 's'}</span>`
                     : `<span>${data.runtime || 'HD'} min</span>`;
 
+                const badgeText = [src, res].filter(Boolean).join(' ');
+                const badgeHtml = badgeText ? `<span class="quality-badge" >${badgeText}</span>` : '';
+
                 document.getElementById('meta').innerHTML = `
+                    ${badgeHtml}
                     <span>${year}</span>
                     <span>⭐ ${rating}</span>
                     ${seasonsLabel}
@@ -903,7 +855,7 @@
 
                 const imdbId = data.external_ids?.imdb_id;
 
-                // Guardar en historial
+                // Save to history
                 const movieObj = {
                     id: imdbId || id,
                     tmdbId: id,
@@ -920,11 +872,10 @@
                     document.getElementById('hero').style.backgroundImage = `url('https://image.tmdb.org/t/p/original${data.backdrop_path}')`;
                 }
 
-                // Buscar trailer
+                // Search for trailer
                 const trailerKey = await buscarTrailer(id, type);
 
                 if (trailerKey) {
-                    // Mostrar placeholder mientras carga
                     const container = document.getElementById('trailerContainer');
                     container.innerHTML = `
                         <div class="trailer-placeholder">
@@ -932,15 +883,13 @@
                             <p>Cargando trailer...</p>
                         </div>
                     `;
-
-                    // Iniciar reproductor
                     iniciarReproductorYouTube(trailerKey);
                 } else {
-                    console.log('No se encontró trailer para:', title);
+                    console.log('No trailer found for:', title);
                     mostrarErrorTrailer(title);
                 }
 
-                // Cargar contenido recomendado (recomendaciones)
+                // Load recommended content
                 const similarTitle = document.getElementById('similarTitle');
                 similarTitle.textContent = type === 'movie' ? 'Películas Recomendadas' : 'Series Recomendadas';
 
@@ -957,19 +906,17 @@
                         const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
                         const typeDisplay = type === 'movie' ? 'PELÍCULA' : 'SERIE';
 
-                        return `
-                        <div class="movie-card navigable" tabindex="0" onclick="window.location.href='content.html?id=${item.id}&type=${type}'" onkeydown="if(event.key==='Enter') this.click()" aria-label="${itemTitle}">
+                        return `<div class="movie-card navigable" tabindex="0" onclick="window.location.href='content.html?id=${item.id}&type=${type}'" onkeydown="if(event.key==='Enter') this.click()" aria-label="${itemTitle}">
                             <div class="type-badge">${typeDisplay}</div>
                             <img src="${imageUrl}" class="movie-poster" alt="${itemTitle}" loading="lazy">
                             <div class="movie-info">
-                                <h3 class="movie-title">${itemTitle}</h3>
                                 <div class="movie-meta">
                                     <span class="movie-year">${year}</span>
-                                    <span class="movie-rating">★ ${rating}</span>
                                 </div>
+                                <h3 class="movie-title">${itemTitle}</h3>
                             </div>
-                        </div>
-                        `;
+                            <span class="movie-rating">★ ${rating}</span>
+                        </div>`;
                     }).join('');
                 } else {
                     carousel.innerHTML = '<div style="color:#888; text-align:center; padding:40px; grid-column: 1 / -1;">No hay contenido relacionado disponible</div>';
@@ -977,7 +924,7 @@
 
                 carousel.setAttribute('aria-label', type === 'movie' ? 'Películas relacionadas' : 'Series relacionadas');
 
-                // Configurar selectores de serie
+                // Configure season/episode selectors
                 const seasonSelect = document.getElementById('season-select');
                 const episodeSelect = document.getElementById('episode-select');
 
@@ -1015,7 +962,7 @@
                     fetchSubtitles(imdbId, type);
                 }
 
-                // Configurar botón de reproducción
+                // Configure play button
                 const playBtn = document.getElementById('playBtn');
                 playBtn.onclick = () => {
                     const subId = document.getElementById('sub-select').value;
@@ -1034,12 +981,14 @@
                 playBtn.focus();
 
             } catch (err) {
-                console.error('Error cargando contenido:', err);
-                document.getElementById('title').textContent = 'Error cargando contenido';
+                console.error('Error loading content:', err);
+                document.getElementById('title').textContent = 'Error loading content';
                 mostrarErrorTrailer();
             }
         }
 
+        /* ========== KEYBOARD NAVIGATION ========== */
+        /** Setup keyboard navigation for TV/remote control */
         function setupKeyboardNavigation() {
             document.addEventListener('keydown', (e) => {
                 const active = document.activeElement;
@@ -1094,7 +1043,6 @@
                         else if (e.key === 'ArrowRight' && elRect.left >= rect.right - threshold) isCandidate = true;
 
                         if (isCandidate) {
-                            // Calcular distancia entre bordes más cercanos (más natural para TV)
                             let dx = 0;
                             if (elRect.right < rect.left) dx = rect.left - elRect.right;
                             else if (elRect.left > rect.right) dx = elRect.left - rect.right;
@@ -1103,7 +1051,6 @@
                             if (elRect.bottom < rect.top) dy = rect.top - elRect.bottom;
                             else if (elRect.top > rect.bottom) dy = elRect.top - rect.bottom;
 
-                            // Distancia al centro para desempate
                             const centerDistX = Math.abs(elCenter.x - activeCenter.x);
                             const centerDistY = Math.abs(elCenter.y - activeCenter.y);
 
@@ -1129,10 +1076,57 @@
             });
         }
 
-        // Inicializar
+        /* ========== INITIALIZATION ========== */
+        /** Initialize page when DOM is ready */
         loadContent();
         setupKeyboardNavigation();
     </script>
+</head>
+
+<body>
+    <main>
+        <button class="back-button" id="backBtn" onclick="history.back()" aria-label="Volver">
+            <span class="material-icons">arrow_back</span>
+        </button>
+
+        <section class="hero-section" id="hero" style="background-color:#000;">
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                <h1 class="hero-title" id="title">Cargando...</h1>
+                <div id="filename-display"
+                    style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 1rem; font-style: italic; opacity: 0.8; margin-top: -0.5rem;">
+                </div>
+                <div class="hero-meta" id="meta"></div>
+                <p class="hero-synopsis" id="overview"></p>
+                <div class="hero-cast-director" id="castDirector"></div>
+                <div id="media-selectors"
+                    style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <select id="season-select" class="tv-select navigable" tabindex="0"
+                        aria-label="Seleccionar temporada" style="display: none;"></select>
+                    <select id="episode-select" class="tv-select navigable" tabindex="0"
+                        aria-label="Seleccionar capítulo" style="display: none;"></select>
+                </div>
+                <div id="sub-selectors"
+                    style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 15px;">
+                    <select id="sub-select" class="tv-select navigable" tabindex="0" aria-label="Seleccionar subtítulo"
+                        style="display: none;"></select>
+                </div>
+                <div class="hero-buttons">
+                    <button class="play-button" id="playBtn">
+                        <span class="material-icons">play_arrow</span>
+                        Reproducir
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <h2 class="section-title">Trailer Oficial</h2>
+            <div class="trailer-container" id="trailerContainer" tabindex="0" aria-label="Contenedor de trailer"></div>
+            <h2 class="section-title" style="margin-top: 40px;" id="similarTitle">Relacionados</h2>
+            <div class="results-grid" id="carousel"></div>
+        </section>
+    </main>
 </body>
 
 </html>
