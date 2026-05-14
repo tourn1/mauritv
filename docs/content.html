@@ -454,13 +454,16 @@
 
         .movie-rating {
             position: absolute;
-            top: 0.8rem;
-            left: 0.8rem;
-            font-size: 0.9rem;
+            top: 10px;
+            left: 10px;
+            font-size: 0.7rem;
             color: #f5c518;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
             background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.5));
-            padding: 0.4rem 0.6rem;
+            padding: 3px 8px;
             border-radius: 6px;
             border: 1px solid rgba(245, 197, 24, 0.3);
             z-index: 10;
@@ -481,6 +484,66 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(4px);
             text-transform: uppercase;
+        }
+
+        /* Badge Disponibilidad */
+        .availability-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            z-index: 12;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .availability-badge.unavailable {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            text-align: center;
+            font-size: 1rem;
+            padding: 10px;
+            white-space: normal;
+        }
+
+        /* Badge de Información Extra (Fuente y Resolución combinadas) */
+        .info-badge {
+            position: absolute;
+            top: 42px;
+            /* Debajo del type-badge */
+            right: 10px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            z-index: 12;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            background: rgb(229 9 20 / 17%);
+            /* rgba(229, 9, 20, 0.85);  Rojo Netflix/MauriTV */
+            color: white;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            animation: fadeIn 0.5s ease;
+        }
+
+        .movie-card.unavailable {
+            cursor: default;
+        }
+
+        .movie-card.unavailable .movie-poster {
+            filter: grayscale(1);
+            opacity: 0.5;
         }
 
         /* ========== ANIMATIONS ========== */
@@ -550,6 +613,7 @@
         /* ========== CONFIGURATION ========== */
         const TMDB_API_KEY = '12916916a032ac4a2da17601cbc119bd';
         const HISTORY_KEY = 'movie_history_v1';
+        const HIDDEN_RESOLUTIONS = ['CAM', 'TS', 'TC'];
 
         /* ========== STATE ========== */
         let ytPlayer = null;
@@ -897,27 +961,58 @@
                 const similares = data.recommendations?.results?.slice(0, 5) || [];
 
                 if (similares.length > 0) {
-                    carousel.innerHTML = similares.map((item, index) => {
-                        const itemTitle = item.title || item.name || 'Sin título';
-                        const imageUrl = item.poster_path
-                            ? `https://image.tmdb.org/t/p/w200${item.poster_path}`
-                            : 'https://via.placeholder.com/500x750?text=No+Image';
-                        const year = item.release_date ? item.release_date.substring(0, 4) : (item.first_air_date ? item.first_air_date.substring(0, 4) : '');
-                        const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
-                        const typeDisplay = type === 'movie' ? 'PELÍCULA' : 'SERIE';
+                    const batchResults = await Promise.all(similares.map(async (item) => {
+                        let imdbId = item.id;
+                        try {
+                            const extRes = await fetch(`https://api.themoviedb.org/3/${type}/${item.id}/external_ids?api_key=${TMDB_API_KEY}`);
+                            if (extRes.ok) {
+                                const extData = await extRes.json();
+                                if (extData.imdb_id) imdbId = extData.imdb_id;
+                            }
+                        } catch (e) {}
 
-                        return `<div class="movie-card navigable" tabindex="0" onclick="window.location.href='content.html?id=${item.id}&type=${type}'" onkeydown="if(event.key==='Enter') this.click()" aria-label="${itemTitle}">
-                            <div class="type-badge">${typeDisplay}</div>
-                            <img src="${imageUrl}" class="movie-poster" alt="${itemTitle}" loading="lazy">
-                            <div class="movie-info">
-                                <div class="movie-meta">
-                                    <span class="movie-year">${year}</span>
+                        const validation = await validarPeliculaFinal(imdbId);
+                        if (!validation.disponible) return null;
+                        return { ...item, validation, imdbId };
+                    }));
+
+                    const validSimilares = batchResults.filter(Boolean);
+
+                    if (validSimilares.length > 0) {
+                        carousel.innerHTML = validSimilares.map((item, index) => {
+                            const itemTitle = item.title || item.name || 'Sin título';
+                            const imageUrl = item.poster_path
+                                ? `https://image.tmdb.org/t/p/w200${item.poster_path}`
+                                : 'https://via.placeholder.com/500x750?text=No+Image';
+                            const year = item.release_date ? item.release_date.substring(0, 4) : (item.first_air_date ? item.first_air_date.substring(0, 4) : '');
+                            const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
+                            const typeDisplay = type === 'movie' ? 'PELÍCULA' : 'SERIE';
+                            
+                            const val = item.validation;
+                            const extraBadges = (val.source || val.resolution)
+                                ? `<div class="info-badge">${[val.source, val.resolution].filter(Boolean).join(' ')}</div>` : '';
+                            
+                            let url = `content.html?id=${item.id}&type=${type}`;
+                            if (val.file_name) url += `&file_name=${encodeURIComponent(val.file_name)}`;
+                            if (val.resolution) url += `&res=${encodeURIComponent(val.resolution)}`;
+                            if (val.source) url += `&src=${encodeURIComponent(val.source)}`;
+
+                            return `<div class="movie-card navigable" tabindex="0" onclick="window.location.href='${url}'" onkeydown="if(event.key==='Enter') this.click()" aria-label="${itemTitle}">
+                                <div class="type-badge">${typeDisplay}</div>
+                                ${extraBadges}
+                                <img src="${imageUrl}" class="movie-poster" alt="${itemTitle}" loading="lazy">
+                                <div class="movie-info">
+                                    <div class="movie-meta">
+                                        <span class="movie-year">${year}</span>
+                                    </div>
+                                    <h3 class="movie-title">${itemTitle}</h3>
                                 </div>
-                                <h3 class="movie-title">${itemTitle}</h3>
-                            </div>
-                            <span class="movie-rating">★ ${rating}</span>
-                        </div>`;
-                    }).join('');
+                                <span class="movie-rating">★ ${rating}</span>
+                            </div>`;
+                        }).join('');
+                    } else {
+                        carousel.innerHTML = '<div style="color:#888; text-align:center; padding:40px; grid-column: 1 / -1;">No hay contenido relacionado disponible</div>';
+                    }
                 } else {
                     carousel.innerHTML = '<div style="color:#888; text-align:center; padding:40px; grid-column: 1 / -1;">No hay contenido relacionado disponible</div>';
                 }
@@ -985,6 +1080,57 @@
                 document.getElementById('title').textContent = 'Error loading content';
                 mostrarErrorTrailer();
             }
+        }
+
+        /* ========== VALIDATION ========== */
+        /** Validate content availability from local or remote service */
+        async function validarPeliculaFinal(id) {
+            if (!id) return { disponible: false };
+
+            let validationResult = { disponible: false };
+
+            try {
+                const response = await fetch(`verify.php?id=${encodeURIComponent(id)}&v=${Date.now()}`, {
+                    method: 'GET',
+                    cache: 'no-store',
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                validationResult = await response.json();
+            } catch (error) {
+                console.warn(`Local validation failed for ${id}, trying fallback...`);
+
+                try {
+                    const fbResponse = await fetch(`https://imobiledeals.com/service/verify?id=${encodeURIComponent(id)}`);
+                    if (fbResponse.ok) {
+                        const data = await fbResponse.json();
+                        const q = data.quality_info || {};
+                        validationResult = {
+                            disponible: data.disponible === true,
+                            resolution: q.resolucion || data.resolution || 'HD',
+                            source: q.fuente || data.source || 'EXT',
+                            file_name: data.file_name || data.filename || ''
+                        };
+                    }
+                } catch (fbError) {
+                    console.error(`Validation failed for ${id}:`, fbError);
+                }
+            }
+
+            if (validationResult.disponible) {
+                const resolution = validationResult.resolution || (validationResult.quality_info && validationResult.quality_info.resolucion) || '';
+                const source = validationResult.source || (validationResult.quality_info && validationResult.quality_info.fuente) || '';
+
+                const isHiddenResolution = resolution && HIDDEN_RESOLUTIONS.includes(resolution.toUpperCase());
+                const isHiddenSource = source && HIDDEN_RESOLUTIONS.includes(source.toUpperCase());
+
+                if (isHiddenResolution || isHiddenSource) {
+                    validationResult.disponible = false;
+                }
+            }
+
+            return validationResult;
         }
 
         /* ========== KEYBOARD NAVIGATION ========== */
@@ -1085,7 +1231,7 @@
 
 <body>
     <main>
-        <button class="back-button" id="backBtn" onclick="history.back()" aria-label="Volver">
+        <button class="back-button" id="backBtn" onclick="window.location.href='index.html'" aria-label="Volver">
             <span class="material-icons">arrow_back</span>
         </button>
 
