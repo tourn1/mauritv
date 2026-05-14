@@ -1,0 +1,123 @@
+async function addSubtitle(label, cues, isDefault, langName, langCode, downloadLink, cachedVttUrl) {
+    if (isDefault === undefined) isDefault = false;
+    if (langName === undefined) langName = '';
+    if (langCode === undefined) langCode = 'en';
+    if (downloadLink === undefined) downloadLink = null;
+    if (cachedVttUrl === undefined) cachedVttUrl = null;
+    if (!cues) cues = [];
+    
+    // Check for duplicates first
+    const existingIdx = state.subtitles.findIndex(s => 
+        s.label === label || 
+        (downloadLink && s.downloadLink === downloadLink)
+    );
+    
+    if (existingIdx >= 0) {
+        _log('Subtitle already exists, activating:', label);
+        setActiveSubtitle(existingIdx);
+        return;
+    }
+    
+    // Store original cues and apply current offset
+    const originalCues = cues.map(cue => ({ ...cue }));
+    const offsetCues = cues.map(cue => ({
+        start: cue.start + subtitleOffset,
+        end: cue.end + subtitleOffset,
+        text: cue.text
+    }));
+    
+    const vttContent = cuesToVTT(offsetCues);
+    const isiOS = isIOSDevice();
+    
+    // For iOS: ALWAYS upload to our server and use a same-origin URL.
+    // iOS Safari's native player refuses cross-origin <track> sources (e.g. sub.wyzie.io),
+    // so the wyzie URL cannot be used here — even with CORS headers.
+    if (isiOS && cues.length > 0) {
+        cachedVttUrl = await getOrCreateVttUrlForIOS(vttContent, {
+            filename: label,
+            imdb: CONFIG.mediaId,
+            lang: langCode
+        });
+    }
+    
+    // PlayerJS-style track creation for iOS compatibility
+    // Key: Use setAttribute instead of property assignment
+    const track = document.createElement('track');
+    track.setAttribute('kind', 'subtitles');
+    track.setAttribute('label', langName || label);
+    track.setAttribute('srclang', langCode || 'en');
+    
+    if (cachedVttUrl) {
+        // Ensure absolute URL for iOS
+        if (cachedVttUrl.startsWith('/')) {
+            cachedVttUrl = window.location.origin + cachedVttUrl;
+        }
+        track.setAttribute('src', cachedVttUrl);
+        _log('Using VTT URL for track:', cachedVttUrl);
+    } else {
+        track.setAttribute('src', createVTTDataUrl(vttContent));
+        _log('Using data URL for subtitle track');
+    }
+    
+    // Append track to video
+    video.appendChild(track);
+    
+    // Wait for track to load (critical for iOS)
+    await new Promise(resolve => {
+        let resolved = false;
+        const done = () => {
+            if (!resolved) {
+                resolved = true;
+                resolve();
+            }
+        };
+        track.addEventListener('load', done, { once: true });
+        track.addEventListener('error', function(e) {
+            _log('Subtitle load failed (non-critical)');
+            done();
+        }, { once: true });
+        // Timeout fallback
+        setTimeout(done, 2000);
+    });
+    
+    // IMPORTANT: Get TextTrack by DOM index, NOT by array length
+    // iOS can reorder tracks, so video.textTracks.length-1 is WRONG
+    const trackIdx = getTrackIndexForSubtitle({ track: track });
+    const textTrack = trackIdx >= 0 ? video.textTracks[trackIdx] : null;
+    
+    if (textTrack) {
+        // Start in 'hidden': cues load into memory, overlay can read them,
+        // but the browser's native rendering is suppressed (we draw our own).
+        textTrack.mode = 'hidden';
+    }
+    
+    const subEntry = { 
+        label: label, 
+        cues: offsetCues, 
+        originalCues: originalCues,
+        track: track,
+        textTrack: textTrack,
+        vttContent: vttContent,
+        langName: langName,
+        langCode: langCode,
+        downloadLink: downloadLink,
+        cachedVttUrl: cachedVttUrl
+    };
+    
+    state.subtitles.push(subEntry);
+    
+    _log('Subtitle added:', label, 'trackIdx:', trackIdx, 'total tracks:', video.textTracks.length);
+    _log('  cachedVttUrl:', cachedVttUrl);
+    _log('  track.src:', track.src?.substring(0, 100));
+    
+    // Send VTT URL to parent (for iOS tester)
+    if (window.parent !== window && cachedVttUrl) {
+        window.parent.postMessage({ type: 'VTT_URL', url: cachedVttUrl, label: label }, '*');
+    }
+    
+    renderSubList();
+    
+    if (isDefault || state.subtitles.length === 1) {
+        setActiveSubtitle(state.subtitles.length - 1);
+    }
+}

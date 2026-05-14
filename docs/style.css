@@ -352,7 +352,7 @@ button#clear-btn.hidden {
     left: 0;
     right: 0;
     padding: 1.5rem 1rem 1rem;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.7) 30%, rgba(0, 0, 0, 0.95) 100%);
     transform: translateY(0);
     transition: transform var(--transition-speed);
 }
@@ -381,9 +381,9 @@ button#clear-btn.hidden {
 
 .movie-meta {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
-    margin-top: 4px;
+    margin-bottom: 0.5rem;
 }
 
 .movie-year {
@@ -392,12 +392,20 @@ button#clear-btn.hidden {
 }
 
 .movie-rating {
+    position: absolute;
+    top: 0.8rem;
+    left: 0.8rem;
     font-size: 0.9rem;
     color: #f5c518;
     font-weight: 600;
     display: flex;
     align-items: center;
     gap: 4px;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.5));
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid rgba(245, 197, 24, 0.3);
+    z-index: 10;
 }
 
 /* Voice Indicator */

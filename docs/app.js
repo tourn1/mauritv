@@ -760,12 +760,12 @@ function renderToGrid(results, gridElement, tabindexOffset) {
                 ${disponibleBadge}
                 <img src="${imageUrl}" class="movie-poster" alt="${title}" loading="lazy">
                 <div class="movie-info">
-                    <h3 class="movie-title">${title}</h3>
                     <div class="movie-meta">
                         <span class="movie-year">${year}</span>
-                        <span class="movie-rating">★ ${movie.rating || 'N/A'}</span>
                     </div>
+                    <h3 class="movie-title">${title}</h3>
                 </div>
+                <span class="movie-rating">★ ${movie.rating || 'N/A'}</span>
             </div>
         `;
     }).join('');

@@ -1,0 +1,263 @@
+function setActiveSubtitle(idx) {
+    _log('=== setActiveSubtitle called ===', { 
+        idx, 
+        isIOS: isIOSDevice(),
+        isTouchDevice: isTouchDevice(),
+        usingHlsJs: !!state.hls,
+        willUseNativeRendering: isTouchDevice()
+    });
+    
+    state.activeSubIdx = idx;
+    state.currentCues = idx >= 0 ? state.subtitles[idx].cues : [];
+    ccBtn.classList.toggle('active', idx >= 0);
+    
+    const tracks = video.textTracks;
+    const trackElements = video.querySelectorAll('track');
+    
+    // Clear all default attributes first
+    trackElements.forEach(t => t.default = false);
+    
+    // Hide all tracks first
+    for (let i = 0; i < tracks.length; i++) {
+        tracks[i].mode = 'hidden';
+    }
+    
+    // Enable selected track
+    if (idx >= 0 && state.subtitles[idx]) {
+        const sub = state.subtitles[idx];
+        const trackIdx = getTrackIndexForSubtitle(sub);
+        
+        _log('Activating subtitle:', { 
+            idx, 
+            label: sub.label, 
+            trackIdx,
+            cachedVttUrl: sub.cachedVttUrl,
+            trackSrc: sub.track ? sub.track.src : 'no track element'
+        });
+        
+        if (trackIdx >= 0 && tracks[trackIdx]) {
+            // Set default attribute
+            sub.track.default = true;
+            
+            // iOS: Set to 'showing' — required for native fullscreen subtitle rendering.
+            // The custom overlay handles display outside fullscreen via updateSubtitleDisplay().
+            // Non-iOS: Keep 'hidden' — custom overlay renders everything.
+            if (isIOSDevice()) {
+                tracks[trackIdx].mode = 'showing';
+                _log('🍎 iOS: Track set to showing (needed for native fullscreen)');
+            } else {
+                tracks[trackIdx].mode = 'hidden';
+            }
+            
+            // Update stored textTrack reference
+            sub.textTrack = tracks[trackIdx];
+            
+            _log('✅ Subtitle activated:', sub.label, 'trackIdx:', trackIdx, 'mode:', tracks[trackIdx].mode);
+            
+            if (isIOSDevice()) {
+                _log('🍎 iOS: Track element active. Proxy will activate on fullscreen.');
+                _log('🍎 iOS Debug Info:', {
+                    'API_BASE': API_BASE,
+                    'Track src': sub.track.src,
+                    'Cached VTT URL': sub.cachedVttUrl,
+                    'Should use proxy': shouldUseIOSHlsProxy(),
+                    'Current video URL': state.currentVideoUrl
+                });
+            }
+        }
+    } else {
+        // Subtitle turned off
+        // Only reload if we're currently using a proxied URL (in fullscreen mode)
+        if (isIOSDevice() && video.src && video.src.includes('hls-proxy.php')) {
+            _log('iOS: Reloading HLS without subtitles (was using proxy)');
+            // Reload with original HLS URL (no subtitle injection)
+            const currentTime = video.currentTime;
+            const wasPlaying = !video.paused;
+            
+            video.src = state.currentVideoUrl;
+            video.load();
+            video.addEventListener('loadedmetadata', function onLoaded() {
+                video.removeEventListener('loadedmetadata', onLoaded);
+                video.currentTime = currentTime;
+                if (wasPlaying) {
+                    video.play().catch(e => _log('Play prevented:', e));
+                }
+            });
+        } else {
+            _log('iOS: Subtitle turned off (track mode set to hidden)');
+        }
+    }
+    
+    if (idx >= 0 && state.subtitles[idx] && state.subtitles[idx].langCode) {
+        var code2 = state.subtitles[idx].langCode;
+        parentStorage.setItem('lastSubLang', code2);
+        var code3 = _langMap2to3[code2];
+        if (code3 && langSelect && langSelect.querySelector('option[value="' + code3 + '"]')) {
+            langSelect.value = code3;
+            parentStorage.setItem('subtitleLang', code3);
+        }
+    }
+    
+    renderSubList();
+    updateSubtitleDisplay();
+}
+
+function renderSubList() {
+    let html = '<div class="menu-item ' + (state.activeSubIdx === -1 ? 'active' : '') + '" data-idx="-1"><div class="menu-item-radio"></div><span class="menu-item-label">Off</span></div>';
+    
+    state.subtitles.forEach((sub, i) => {
+        let labelHtml = '';
+        if (sub.langName && sub.langName !== sub.label) {
+            labelHtml = '<span class="menu-item-label"><span class="sub-lang">' + sub.langName + '</span><span class="sub-filename">' + sub.label + '</span></span>';
+        } else {
+            labelHtml = '<span class="menu-item-label">' + (sub.langName || sub.label) + '</span>';
+        }
+        html += '<div class="menu-item ' + (state.activeSubIdx === i ? 'active' : '') + '" data-idx="' + i + '"><div class="menu-item-radio"></div>' + labelHtml + '<span class="menu-item-remove" data-remove="' + i + '">✕</span></div>';
+    });
+    
+    subList.innerHTML = html;
+    
+   subList.querySelectorAll('.menu-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+        if (e.target.classList.contains('menu-item-remove')) {
+            removeSubtitle(parseInt(e.target.dataset.remove));
+        } else {
+            // Create loading overlay
+            const subList = document.getElementById('subList');
+            
+            let overlay = document.getElementById('subtitleLoadingOverlay');
+            if (!overlay && subList) {
+                overlay = document.createElement('div');
+                overlay.className = 'search-loading-overlay';
+                overlay.id = 'subtitleLoadingOverlay';
+                overlay.innerHTML = `
+                    <div class="search-loading-spinner"></div>
+                    <div class="search-loading-text">Loading subtitle...</div>
+                `;
+                subList.appendChild(overlay);
+                setTimeout(() => overlay.classList.add('visible'), 10);
+            } else if (overlay) {
+                overlay.classList.add('visible');
+            }
+            
+            setActiveSubtitle(parseInt(item.dataset.idx));
+            
+            setTimeout(() => {
+                if (overlay) overlay.classList.remove('visible');
+            }, 400);
+        }
+    });
+});
+}
+
+function removeSubtitle(idx) {
+    const sub = state.subtitles[idx];
+    if (sub.track && sub.track.parentNode) sub.track.parentNode.removeChild(sub.track);
+    if (sub.blobUrl) URL.revokeObjectURL(sub.blobUrl);
+    
+    state.subtitles.splice(idx, 1);
+    
+    if (state.activeSubIdx === idx) {
+        setActiveSubtitle(-1);
+    } else if (state.activeSubIdx > idx) {
+        state.activeSubIdx--;
+    }
+    renderSubList();
+}
+
+function clearAllSubtitles() {
+    while (state.subtitles.length > 0) {
+        const sub = state.subtitles.pop();
+        if (sub.track && sub.track.parentNode) sub.track.parentNode.removeChild(sub.track);
+        if (sub.blobUrl) URL.revokeObjectURL(sub.blobUrl);
+    }
+    state.activeSubIdx = -1;
+    state.currentCues = [];
+    state.searchResults = [];
+    state._loadedDefaultSubs = {};
+    subtitleText.textContent = '';
+    
+    subtitleOffset = 0;
+    const syncInput = $id('syncOffset');
+    if (syncInput) syncInput.value = 0;
+    
+    renderSubList();
+    renderDefaultSubsList();
+}
+
+function updateSubtitleDisplay() {
+    // On iOS using native HLS, skip custom overlay entirely — native text tracks render
+    if (isIOSDevice() && !state.hls) {
+        subtitles.classList.add('sub-hidden');
+        return;
+    }
+    
+    // For iOS fullscreen (even with HLS.js), hide custom overlay
+    if (state.isIOSFullscreen) {
+        subtitles.classList.add('sub-hidden');
+        return;
+    }
+    
+    // Android and Desktop: Use custom overlay
+    const t = video.currentTime;
+    let text = '';
+    
+    for (const cue of state.currentCues) {
+        if (t >= cue.start && t <= cue.end) {
+            text = cue.text;
+            break;
+        }
+    }
+    
+    // Strip invisible Unicode control/bidi characters that render as boxes in HTML
+    // (U+200B–U+200F zero-width/directional marks, U+202A–U+202E bidi embedding,
+    //  U+2066–U+2069 bidi isolate, U+FEFF BOM, U+00AD soft-hyphen)
+    const cleanText = text.replace(/[\u00AD\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, '');
+    subtitleText.innerHTML = cleanText.replace(/\n/g, '<br>');
+    if (text) {
+        subtitles.classList.remove('sub-hidden');
+        subtitles.style.setProperty('opacity', '1', 'important');
+        subtitles.style.setProperty('visibility', 'visible', 'important');
+    } else {
+        subtitles.classList.add('sub-hidden');
+        subtitles.style.removeProperty('opacity');
+        subtitles.style.removeProperty('visibility');
+    }
+    
+}
+
+video.addEventListener('timeupdate', updateSubtitleDisplay);
+
+$id('subFile').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        let content = ev.target.result;
+        if (file.name.toLowerCase().endsWith('.srt')) {
+            content = srtToVtt(content);
+        }
+        const cues = parseVTT(content);
+        addSubtitle(file.name, cues);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+});
+
+async function loadExternalSubtitle() {
+    if (!CONFIG.externalSub.file) return;
+    var subUrl = CONFIG.externalSub.file;
+    try {
+        var res = await fetch(subUrl);
+        if (!res.ok) throw new Error('Direct fetch failed: ' + res.status);
+        var text = await res.text();
+        if (!text.trim().startsWith('WEBVTT')) text = srtToVtt(text);
+        var cues = parseVTT(text);
+        addSubtitle(CONFIG.externalSub.label, cues, CONFIG.externalSub.default);
+    } catch (directErr) {
+        _log('Direct subtitle fetch failed, trying proxy:', directErr.message);
+        try {
+            var proxyUrl = 'embed.php?ext_subproxy=' + encodeURIComponent(subUrl);
+            var res2 = await fetch(proxyUrl);
+            if (!res2.ok) throw new Err

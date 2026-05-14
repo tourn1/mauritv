@@ -61,7 +61,7 @@
             </div>
             <iframe id="player-iframe" class="navigable" tabindex="3" src=""
                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                sandbox="allow-scripts allow-same-origin allow-forms" allowfullscreen></iframe>
+                sandbox="allow-scripts allow-same-origin allow-forms allow-top-navigation allow-popups" allowfullscreen></iframe>
         </div>
     </div>
 
@@ -90,6 +90,18 @@
 
         //const defaultConfig = `skin=netflix&ds_lang=AR_EXT&title=false${controlsParam}&sub_lang=AR_EXT&sub_default=true`;
         const defaultConfig = `skin=netflix${controlsParam}`;
+        const playerHost = 'https://vaplayer.ru';
+
+        function getSubtitleLangCode(lang) {
+            const map = {
+                es: 'spa',
+                en: 'eng',
+                pt: 'por',
+                fr: 'fra',
+                it: 'ita'
+            };
+            return map[lang] || lang;
+        }
 
         //api/documentacion del player
         //https://vidapi.ru/api
@@ -103,8 +115,13 @@
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
-                    body: JSON.stringify({ file_id: fileId })
+                    body: JSON.stringify({ file_id: fileId }),
+                    referrer: 'https://www.opensubtitles.com/',
+                    referrerPolicy: 'origin'
                 });
+                if (!response.ok) {
+                    throw new Error('OpenSubtitles download API failed: ' + response.status);
+                }
                 const data = await response.json();
                 return data.link;
             } catch (e) {
@@ -119,10 +136,11 @@
             const subId = urlParams.get('sub_id');
 
             async function initPlayer() {
-                let playUrl = `https://vaplayer.ru/embed/movie/${finalId}?${defaultConfig}`;
+                const subtitleLangCode = getSubtitleLangCode(lang);
+                let playUrl = `${playerHost}/embed/movie/${finalId}?${defaultConfig}`;
 
                 if (type === 'tv' && s && e) {
-                    playUrl = `https://vaplayer.ru/embed/tv/${finalId}/${s}/${e}/?${defaultConfig}`;
+                    playUrl = `${playerHost}/embed/tv/${finalId}/${s}/${e}/?${defaultConfig}`;
                 }
 
                 if (subId) {
@@ -130,10 +148,12 @@
                     if (statusText) statusText.textContent = 'Cargando subtítulos externos...';
                     const subUrl = await getDownloadLink(subId);
                     if (subUrl) {
-                        playUrl += `&lang=${lang}&ds_lang=${lang}_ext&sub_url=${encodeURIComponent(subUrl)}&sub_label=${lang === 'es' ? 'Español' : 'English'}&sub_lang=${lang}_ext&sub_default=true`;
+                        const subtitleLabel = lang === 'es' ? 'Español' : 'English';
+                        const encodedLabel = encodeURIComponent(subtitleLabel);
+                        const encodedLang = encodeURIComponent(subtitleLangCode);
+                        playUrl += `&sub_url=${encodeURIComponent(subUrl)}&sub_label=${encodedLabel}&sub_lang=${encodedLang}&sub_default=true&disable_embedded_subs=true`;
                     }
                 }
-                //window.location.href = playUrl;
                 playerIframe.src = playUrl;
 
             }
@@ -143,6 +163,21 @@
             playerIframe.onload = () => {
                 playerLoader.classList.add('hidden');
                 playerIframe.focus();
+
+                const storageData = {
+                    'playerSubStyle': JSON.stringify({ color: "#f7eeee", bg: "#000000", bgAlpha: 80, size: 180, font: "inherit" }),
+                    'subtitleLang': getSubtitleLangCode(lang),
+                    'lastSubLang': lang
+                };
+
+                const sendStorageInit = () => {
+                    if (playerIframe && playerIframe.contentWindow) {
+                        playerIframe.contentWindow.postMessage({ type: 'STORAGE_INIT', data: storageData }, '*');
+                    }
+                };
+
+                sendStorageInit();
+                setTimeout(sendStorageInit, 1000);
 
                 try {
                     const iframeWin = playerIframe.contentWindow;
@@ -232,15 +267,20 @@
             });
 
             window.addEventListener('message', (e) => {
-                if (playerIframe && e.source === playerIframe.contentWindow) {
-                    const d = e.data;
-                    if (!d || typeof d !== 'object') return;
-                    if (d.type === 'STORAGE_GET_ALL') {
-                        const subStyle = { color: "#f7eeee", bg: "#000000", bgAlpha: 80, size: 180, font: "inherit" };
-                        playerIframe.contentWindow.postMessage({ type: 'STORAGE_INIT', data: { 'playerSubStyle': JSON.stringify(subStyle) } }, '*');
+                const d = e.data;
+                if (!d || typeof d !== 'object') return;
+                if (d.type === 'STORAGE_GET_ALL') {
+                    const subStyle = { color: "#f7eeee", bg: "#000000", bgAlpha: 80, size: 180, font: "inherit" };
+                    const storageData = {
+                        'playerSubStyle': JSON.stringify(subStyle),
+                        'subtitleLang': getSubtitleLangCode(lang),
+                        'lastSubLang': lang
+                    };
+                    if (playerIframe && playerIframe.contentWindow) {
+                        playerIframe.contentWindow.postMessage({ type: 'STORAGE_INIT', data: storageData }, '*');
                     }
                 }
-            });
+            }); 
 
             // Foco inicial
             setTimeout(() => { playerIframe.focus(); }, 1000);
