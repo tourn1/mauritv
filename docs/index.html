@@ -66,6 +66,30 @@
             pointer-events: none;
         }
 
+        .logo-nav-wrapper {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            padding: 10px;
+            transition: all var(--transition-speed);
+            outline: none;
+            border-radius: 15px;
+        }
+
+        .logo-nav-wrapper:focus {
+            background: transparent !important;
+            border: none !important;
+            border-color: transparent !important;
+            transform: none !important;
+            box-shadow: none !important;
+            outline: none !important;
+        }
+
+        .logo-nav-wrapper:focus .app-logo {
+            filter: grayscale(1) !important;
+        }
+
         .app-logo {
             max-height: 120px;
             max-width: 80%;
@@ -306,26 +330,6 @@
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-        }
-
-        #clear-history-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            width: 44px;
-            height: 44px;
-            border-radius: 8px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: transform 0.12s ease, color 0.12s ease;
-        }
-
-        #clear-history-btn:hover,
-        #clear-history-btn:focus {
-            color: var(--accent-color);
-            transform: scale(1.05);
         }
 
         .movie-card {
@@ -1027,7 +1031,10 @@
     <div id="app">
         <header>
             <div class="logo-container" id="logo-container">
-                <img src="mauritv.png" alt="MauriTV" id="app-logo" class="app-logo">
+                <div class="logo-nav-wrapper navigable" id="logo-nav-wrapper" tabindex="0" role="button"
+                    aria-label="Recargar e ir al inicio">
+                    <img src="mauritv.png" alt="MauriTV" id="app-logo" class="app-logo">
+                </div>
             </div>
             <div class="search-container">
                 <div class="search-bar" id="search-bar-container">
@@ -1062,10 +1069,6 @@
             <div id="history-section" class="hidden">
                 <div class="section-header">
                     <h2 class="section-title">Las últimas que buscaste</h2>
-                    <button id="clear-history-btn" class="navigable" title="Borrar historial"
-                        aria-label="Borrar historial">
-                        <span class="material-icons">delete</span>
-                    </button>
                 </div>
                 <div id="history-grid" class="results-grid">
                     <!-- El historial aparecerá aquí -->
@@ -1103,6 +1106,7 @@
         const resultsGrid = document.getElementById('results-grid');
         const voiceIndicator = document.getElementById('voice-indicator');
         const logoContainer = document.getElementById('logo-container');
+        const logoNavWrapper = document.getElementById('logo-nav-wrapper');
         const sectionTitle = document.getElementById('section-title');
         const historySection = document.getElementById('history-section');
         const historyGrid = document.getElementById('history-grid');
@@ -1150,6 +1154,24 @@
         /** Toggle logo visibility */
         const showLogo = () => logoContainer?.classList.remove('hidden');
         const hideLogo = () => logoContainer?.classList.add('hidden');
+
+        // Logo click/activation logic
+        if (logoNavWrapper) {
+            logoNavWrapper.addEventListener('click', () => {
+                // Limpiar caches de trending (Top 10)
+                localStorage.removeItem('trendingMoviesCache_v1');
+                localStorage.removeItem('trendingMoviesCache_v1Time');
+                localStorage.removeItem('trendingSeriesCache_v1');
+                localStorage.removeItem('trendingSeriesCache_v1Time');
+
+                // Limpiar historial (Las últimas que buscaste)
+                clearHistory();
+
+                // Recargar página al inicio y asegurar foco en input
+                movieInput.focus();
+                window.location.href = window.location.pathname;
+            });
+        }
 
         /** Display loading spinner */
         const showLoading = () => {
@@ -1780,10 +1802,14 @@
                 return;
             }
 
-            // Movie card selection
-            if (active.classList.contains('movie-card') && (e.key === 'Enter' || e.key === 'Select' || e.keyCode === 23)) {
+            // Movie card or Logo selection
+            if ((active.classList.contains('movie-card') || active.id === 'logo-nav-wrapper') && (e.key === 'Enter' || e.key === 'Select' || e.keyCode === 23)) {
                 e.preventDefault();
-                openContentPage(JSON.parse(active.dataset.movieObj));
+                if (active.id === 'logo-nav-wrapper') {
+                    active.click();
+                } else {
+                    openContentPage(JSON.parse(active.dataset.movieObj));
+                }
                 return;
             }
 
@@ -1836,11 +1862,8 @@
             if (document.visibilityState === 'visible') loadHistory();
         });
 
-        // Clear history button
-        const clearHistoryBtn = document.getElementById('clear-history-btn');
-        if (clearHistoryBtn) {
-            clearHistoryBtn.addEventListener('click', clearHistory);
-        }
+        // El botón de borrar historial ha sido removido ya que la funcionalidad 
+        // ahora se encuentra integrada en el logo principal.
 
         // ========== VALIDATION ==========
         /** Validate content availability from local or remote service */
