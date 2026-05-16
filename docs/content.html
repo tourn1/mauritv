@@ -977,11 +977,11 @@
                     const verMasBtn = document.getElementById('ver-mas-btn');
                     if (overviewEl.scrollHeight > overviewEl.clientHeight) {
                         verMasBtn.style.display = 'inline-block';
-                        
+
                         // Limpiar listeners previos para evitar duplicados
                         const newBtn = verMasBtn.cloneNode(true);
                         verMasBtn.parentNode.replaceChild(newBtn, verMasBtn);
-                        
+
                         newBtn.addEventListener('click', (e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -1180,11 +1180,13 @@
                     fetchSubtitles(imdbId, type);
                 }
 
-                // Configure play button
+                // Configure play buttons
                 const playBtn = document.getElementById('playBtn');
-                playBtn.onclick = () => {
+                const playBtn2 = document.getElementById('playBtn2');
+
+                const handlePlay = (targetPlayer) => {
                     const subId = document.getElementById('sub-select').value;
-                    let url = `player.html?id=${id}&type=${type}${imdbId ? `&imdb=${imdbId}` : ''}&lang=es`;
+                    let url = `${targetPlayer}?id=${id}&type=${type}${imdbId ? `&imdb=${imdbId}` : ''}&lang=es`;
                     if (subId) url += `&sub_id=${subId}`;
                     if (type === 'tv') {
                         const s = seasonSelect.value;
@@ -1195,6 +1197,10 @@
                     }
                     window.location.href = url;
                 };
+
+                playBtn.onclick = () => handlePlay('player.html');
+                playBtn2.onclick = () => handlePlay('player2.html');
+
                 playBtn.classList.add('selected');
                 playBtn.focus();
 
@@ -1305,9 +1311,9 @@
 
                         let isCandidate = false;
                         const isTrailer = el.id === 'trailerContainer';
-                        
+
                         // Umbrales más estrictos para navegación vertical para evitar bucles en la misma línea
-                        const vThreshold = 5; 
+                        const vThreshold = 5;
                         const hThreshold = 40;
 
                         if (e.key === 'ArrowUp' && elRect.bottom <= rect.top + vThreshold && elCenter.y < activeCenter.y) isCandidate = true;
@@ -1356,7 +1362,8 @@
 
 <body>
     <main>
-        <button class="back-button navigable" id="backBtn" onclick="window.location.href='index.html'" aria-label="Volver" tabindex="0">
+        <button class="back-button navigable" id="backBtn" onclick="window.location.href='index.html'"
+            aria-label="Volver" tabindex="0">
             <span class="material-icons">arrow_back</span>
         </button>
 
@@ -1388,7 +1395,11 @@
                     <div class="hero-buttons">
                         <button class="play-button navigable" id="playBtn">
                             <span class="material-icons">play_arrow</span>
-                            Reproducir
+                            vaplayer.ru
+                        </button>
+                        <button class="play-button navigable" id="playBtn2">
+                            <span class="material-icons">play_arrow</span>
+                            vsembed.ru
                         </button>
                     </div>
                 </div>

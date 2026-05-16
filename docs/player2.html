@@ -260,8 +260,7 @@
                 <p>Cargando fuente...</p>
             </div>
             <iframe id="player-iframe" class="navigable" tabindex="3" src=""
-                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-top-navigation-by-user-activation"
+                allow="autoplay; fullscreen; encrypted-media; picture-in-picture" referrerpolicy="no-referrer"
                 allowfullscreen></iframe>
         </div>
     </div>
@@ -289,29 +288,11 @@
         const langCode = urlParams.get('lang') || DEFAULT_LANG;
         const subId = urlParams.get('sub_id') || DEFAULT_SUB_ID;
 
-        // Identificador final (IMDB tiene prioridad, luego ID, luego valores por defecto)
-        const finalId = imdbId || movieId || DEFAULT_IMDB || DEFAULT_ID;
-
-        // Configuraciones disponibles para VidAPI (https://vidapi.ru/api)
-        const CONF_COLOR = ''; // Hex code
-        const CONF_PRIMARY_COLOR = ''; // Color principal (ej: #e50914)
-        const CONF_TITLE = ''; // Título personalizado
-        const CONF_POSTER = ''; // URL del póster personalizado
-        const CONF_SHOW_TITLE = ''; // true | false
-        const CONF_START_AT = ''; // Tiempo de inicio en segundos
-        const CONF_RESUME_AT = ''; // Tiempo de continuación
-        const CONF_SUB_URL = ''; // URL para subtítulos (se asigna dinámicamente si hay subId)
-        const CONF_SUB_FILE = ''; // Archivo de subtítulo
-        const CONF_SUB_LABEL = 'Español'; // Etiqueta del idioma del subtítulo (ej: Español)
-        const CONF_SUB_LANG = 'es'; // Código del lenguaje del subtítulo
-        const CONF_SUB_DEFAULT = '1'; // Forzar subtítulo por defecto (1 o true)
-        const CONF_DS_LANG = ''; // Lenguaje de doblaje
-        const CONF_LANG = ''; // Lenguaje de la interfaz del player
-        const CONF_THUMBNAILS = ''; // Habilitar miniaturas
+        // Identificador final (será procesado dinámicamente en initPlayer)
 
         // Configuraciones internas
-        const PLAYER_HOST = 'https://vaplayer.ru';
-        const CONF_SKIN = 'netflix';
+        // https://vidsrcme.ru/api/
+        const PLAYER_HOST = 'https://vsembed.ru';
 
         /**
          * Detecta si el dispositivo es Smart TV o Android TV para ocultar controles
@@ -365,69 +346,53 @@
          * Configura e inicializa el iframe del reproductor
          */
         const initPlayer = async () => {
-            if (!finalId || !type) {
+            if ((!imdbId && !movieId) && !DEFAULT_IMDB) {
                 window.location.href = 'index.html';
                 return;
             }
 
-            const isoLangCode = getSubtitleLangCode(langCode);
-            const params = new URLSearchParams();
+            // Determinamos el ID y el parámetro correcto (imdb o tmdb)
+            let idParam = '';
+            if (imdbId && imdbId.startsWith('tt')) {
+                idParam = `imdb=${imdbId}`;
+            } else if (movieId) {
+                idParam = `tmdb=${movieId}`;
+            } else {
+                idParam = `imdb=${DEFAULT_IMDB}`;
+            }
 
-            // Asignación de configuraciones definidas
-            if (CONF_SKIN) params.append('skin', CONF_SKIN);
-            if (CONF_CONTROLS) params.append('controls', CONF_CONTROLS);
-            if (CONF_COLOR) params.append('color', CONF_COLOR);
-            if (CONF_PRIMARY_COLOR) params.append('primaryColor', CONF_PRIMARY_COLOR);
-            if (CONF_TITLE) params.append('title', CONF_TITLE);
-            if (CONF_POSTER) params.append('poster', CONF_POSTER);
-            if (CONF_SHOW_TITLE) params.append('showTitle', CONF_SHOW_TITLE);
-            if (CONF_START_AT) params.append('startAt', CONF_START_AT);
-            if (CONF_RESUME_AT) params.append('resumeAt', CONF_RESUME_AT);
-            if (CONF_SUB_DEFAULT) params.append('sub_default', CONF_SUB_DEFAULT);
-            if (CONF_DS_LANG) params.append('ds_lang', CONF_DS_LANG);
-            if (CONF_LANG) params.append('lang', CONF_LANG);
-            if (CONF_THUMBNAILS) params.append('thumbnails', CONF_THUMBNAILS);
-
-            let endpoint = type === 'tv' && season && episode ? `/embed/tv/${finalId}/${season}/${episode}/` : `/embed/movie/${finalId}`;
-            let playUrl = `${PLAYER_HOST}${endpoint}?${params.toString()}`;
+            // Construcción de la URL base
+            // Importante: El orden de los parámetros y la falta de codificación en sub_url 
+            // parecen ser críticos para vsembed.ru según el reporte del usuario.
+            let playUrl = `${PLAYER_HOST}/embed/${type === 'tv' ? 'tv' : 'movie'}?${idParam}`;
 
             // Gestión de subtítulos externos si se provee el subId
-            if (subId) {
+            if (subId && subId !== 'null' && subId !== 'undefined') {
                 const statusText = playerLoader.querySelector('p');
                 if (statusText) statusText.textContent = 'Cargando subtítulos externos...';
 
                 const subUrl = await getDownloadLink(subId);
 
-                //window.open(subUrl, '_blank');
-
-
                 if (subUrl) {
-                    const subtitleLabel = langCode === 'es' ? 'Español' : 'English';
-                    // Truco: Usamos sub_lang=eng para que el reproductor lo considere como la pista principal
-                    // de inglés y lo elija por encima del embebido, pero mantenemos la etiqueta 'Español'
-                    playUrl += `&sub_url=${encodeURIComponent(subUrl)}&sub_label=${encodeURIComponent(subtitleLabel)}&sub_lang=eng&sub_on=1&sub_default=1&disable_embedded_subs=1`;
+                    // Pasamos la URL del subtítulo directamente si no contiene '&' 
+                    // para evitar problemas de doble codificación con vsembed.ru
+                    const cleanSubUrl = subUrl.includes('&') ? encodeURIComponent(subUrl) : subUrl;
+                    playUrl += `&sub_url=${cleanSubUrl}`;
                 }
             }
 
+            // Parámetros para series
+            if (type === 'tv' && season && episode) {
+                playUrl += `&s=${season}&e=${episode}`;
+            }
+
+            // Parámetros finales de comportamiento
+            playUrl += `&autoplay=1&ds_lang=es`;
+
+            console.log("Player URL:", playUrl);
             playerIframe.src = playUrl;
         };
 
-        /**
-         * Envía preferencias de subtítulos y configuraciones iniciales al reproductor via postMessage
-         */
-        const sendStorageInit = () => {
-            if (playerIframe?.contentWindow) {
-                // Si hay subId, engañamos al player diciendo que preferimos 'eng'
-                const effectiveLang = subId ? 'eng' : getSubtitleLangCode(langCode);
-
-                const storageData = {
-                    'playerSubStyle': JSON.stringify({ color: "#f7eeee", bg: "#000000", bgAlpha: 80, size: 180, font: "inherit" }),
-                    'subtitleLang': effectiveLang,
-                    'lastSubLang': langCode
-                };
-                playerIframe.contentWindow.postMessage({ type: 'STORAGE_INIT', data: storageData }, '*');
-            }
-        };
 
         /**
          * Simula un clic centrado para interactuar con políticas de autoplay en navegadores
@@ -519,16 +484,6 @@
             // Un pequeño delay para asegurar que el contenido interno haya empezado a renderizar
             setTimeout(hideLoader, 500);
 
-            // Envío persistente de configuración para asegurar que se mantenga el idioma seleccionado
-            // Esto combate el comportamiento del player que a veces recarga pistas embebidas tras iniciar
-            const sendWithPersistence = () => {
-                sendStorageInit();
-                // Reintentamos en tiempos clave (1s, 2s, 3s, 5s) donde el player suele estabilizar sus pistas
-                [1000, 2000, 3000, 5000].forEach(ms => setTimeout(sendStorageInit, ms));
-            };
-
-            sendWithPersistence();
-
             // Interacción automatizada para activar el reproductor
             setTimeout(simulateClickOnPlayer, 5000);
         };
@@ -542,9 +497,6 @@
         window.addEventListener('message', (e) => {
             // Si el player envía cualquier mensaje, es señal de que ya está vivo
             if (e.data) {
-                if (e.data.type === 'STORAGE_GET_ALL') {
-                    sendStorageInit();
-                }
                 // Si recibimos señales comunes de que el video está listo o cargando, podemos ocultar nuestro spinner
                 const readyTypes = ['ready', 'playing', 'canplay', 'loadedmetadata'];
                 if (readyTypes.includes(e.data.type) || readyTypes.includes(e.data.event)) {
