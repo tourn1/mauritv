@@ -494,20 +494,6 @@
 
         closePlayerBtn.addEventListener('click', () => window.location.href = 'index.html');
         document.addEventListener('keydown', handleKeydown);
-        
-        // MITIGACIÓN DE POP-UPS (Focus Stealing)
-        // Ya que no podemos usar 'sandbox' sin romper el reproductor,
-        // interceptamos cuando la ventana pierde el foco (ej. cuando se abre un pop-up)
-        // y forzamos a MauriTV a volver al primer plano inmediatamente.
-        window.addEventListener('blur', () => {
-            setTimeout(() => {
-                window.focus();
-                // Opcional: Volver a enfocar el iframe para el uso con control remoto
-                if (document.activeElement !== playerIframe && document.activeElement !== closePlayerBtn) {
-                    playerIframe.focus();
-                }
-            }, 10);
-        });
 
         window.addEventListener('message', (e) => {
             // Si el player envía cualquier mensaje, es señal de que ya está vivo
