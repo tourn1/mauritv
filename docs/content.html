@@ -163,6 +163,14 @@
         #filename-display {
             width: 100%;
             display: block;
+            background: rgba(0, 0, 0, 0.35);
+            padding: 0.45rem 0.65rem;
+            border-radius: 12px;
+            line-height: 1.4;
+            color: rgba(255,255,255,0.85);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            margin-top: -0.5rem;
         }
 
         @media (min-width: 1025px) {
@@ -866,6 +874,8 @@
         const TMDB_API_KEY = '12916916a032ac4a2da17601cbc119bd';
         const HISTORY_KEY = 'movie_history_v1';
         const HIDDEN_RESOLUTIONS = ['CAM', 'TS', 'TC'];
+        // Verify API endpoint - previously: https://imobiledeals.com/service/verify
+        const VERIFY_API_URL = 'https://tourn1.page.gd/verify.php';
 
         /* ========== STATE ========== */
         let ytPlayer = null;
@@ -1159,7 +1169,7 @@
                 const profileBase = 'https://image.tmdb.org/t/p/w185';
                 const placeholderProfile = 'https://via.placeholder.com/185x185?text=No+Photo';
 
-                let directorSection = `<p style="margin-bottom: 6px;"><strong>Director:</strong></p>`;
+                let directorSection = `<p style="margin-top:8px;"><strong>Director:</strong></p>`;
                 if (data.credits?.crew) {
                     const dirObj = data.credits.crew.find(c => c.job === 'Director');
                     if (dirObj) {
@@ -1191,7 +1201,7 @@
                     directorSection += '<div>N/A</div>';
                 }
 
-                let castSection = `<p style="margin-top:8px;"><strong>Elenco:</strong></p><div class="person-list">`;
+                let castSection = `<p style="margin-bottom: 6px;"><strong>Elenco:</strong></p><div class="person-list">`;
                 if (data.credits?.cast?.length > 0) {
                     const castArr = data.credits.cast.slice(0, 6);
                     castArr.forEach(c => {
@@ -1209,7 +1219,7 @@
                 }
                 castSection += '</div>';
 
-                document.getElementById('castDirector').innerHTML = directorSection + castSection;
+                document.getElementById('castDirector').innerHTML = castSection + directorSection;
 
                 // Display filename if available
                 const filenameDisplay = document.getElementById('filename-display');
@@ -1229,8 +1239,13 @@
                 const badgeText = [src, res].filter(Boolean).join(' ');
                 const badgeHtml = badgeText ? `<span class="quality-badge" >${badgeText}</span>` : '';
 
+                const genresHtml = data.genres && data.genres.length > 0
+                    ? `<span>${data.genres.slice(0, 3).map(g => g.name).join(' / ')}</span>`
+                    : '';
+
                 document.getElementById('meta').innerHTML = `
                     ${badgeHtml}
+                    ${genresHtml}
                     <span>${year}</span>
                     <span>⭐ ${rating}</span>
                     ${seasonsLabel}
@@ -1416,7 +1431,7 @@
             let validationResult = { disponible: false };
 
             try {
-                const response = await fetch(`verify.php?id=${encodeURIComponent(id)}&v=${Date.now()}`, {
+                const response = await fetch(`${VERIFY_API_URL}?id=${encodeURIComponent(id)}&v=${Date.now()}`, {
                     method: 'GET',
                     cache: 'no-store',
                     headers: { 'Accept': 'application/json' }

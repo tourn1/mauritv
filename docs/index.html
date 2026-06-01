@@ -1008,6 +1008,10 @@
         }
     </style>
     <script>
+        /* ========== CONFIGURATION ========== */
+        // Verify API endpoint - previously: https://imobiledeals.com/service/verify
+        const VERIFY_API_URL = 'https://tourn1.page.gd/verify.php';
+        
         //var version = new Date().getTime();
         var version = new Date().toISOString().slice(0, 10).replace(/-/g, '');
 
@@ -1260,6 +1264,8 @@
         clearBtn.addEventListener('click', () => {
             movieInput.value = '';
             clearBtn.classList.add('hidden');
+            const newUrl = window.location.pathname + window.location.hash;
+            window.history.replaceState(null, '', newUrl);
             loadTrendingContent('movies');
             loadHistory();
             movieInput.focus();
@@ -1873,7 +1879,7 @@
             let validationResult = { disponible: false };
 
             try {
-                const response = await fetch(`verify.php?id=${encodeURIComponent(id)}&v=${Date.now()}`, {
+                const response = await fetch(`${VERIFY_API_URL}?id=${encodeURIComponent(id)}&v=${Date.now()}`, {
                     method: 'GET',
                     cache: 'no-store',
                     headers: { 'Accept': 'application/json' }
