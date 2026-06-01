@@ -240,6 +240,44 @@
             outline: none;
         }
 
+        /* Person list (director / cast) */
+        .person-list {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            margin-top: 8px;
+        }
+
+        .person-item {
+            width: 84px;
+            text-align: center;
+        }
+
+        .person-photo {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+            margin: 0 auto;
+            border: 2px solid rgba(255,255,255,0.06);
+        }
+
+        .person-photo-link {
+            display: inline-block;
+        }
+
+        .person-name {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            max-width: 84px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         .hero-buttons {
             display: flex;
             flex-wrap: wrap;
@@ -703,6 +741,73 @@
                 padding: 15px;
             }
         }
+
+        /* Mobile narrow layout: ensure controls fit within 340px
+           - Temporada and capítulo on the same row
+           - Subtítulo and each play button on its own row */
+        @media (max-width: 520px) {
+            #media-selectors {
+                display: flex;
+                flex-wrap: nowrap;
+                gap: 8px;
+                width: 100%;
+                align-items: center;
+            }
+
+            #season-select,
+            #episode-select {
+                display: inline-block;
+                width: calc(50% - 6px);
+                max-width: calc(50% - 6px);
+            }
+
+            #sub-selectors {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                width: 100%;
+            }
+
+            #sub-select {
+                width: 100%;
+                max-width: 340px;
+            }
+
+            .tv-select {
+                max-width: 100%;
+                padding: 10px 12px;
+                font-size: 0.95rem;
+            }
+
+            .hero-buttons {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+                max-width: 340px;
+                padding: 0;
+            }
+
+            .hero-buttons .play-button {
+                width: 100%;
+                justify-content: center;
+                padding: 12px 14px;
+                box-shadow: none;
+                outline: none;
+            }
+            .hero-buttons .play-button:focus {
+                box-shadow: 0 0 0 4px rgba(229,9,20,0.28);
+                transform: none;
+            }
+            /* Reduce select border radius slightly to fit */
+            #season-select, #episode-select, #sub-select {
+                border-radius: 10px;
+            }
+            /* Ensure container doesn't cause horizontal overflow */
+            .hero-content {
+                padding-right: 10px;
+            }
+        }
     </style>
 
     <script>
@@ -999,26 +1104,61 @@
                     }
                 });
 
-                // Display director and cast with links
-                let directorHtml = 'N/A';
+                // Display director and cast with round photos (photo is navigable)
+                const profileBase = 'https://image.tmdb.org/t/p/w185';
+                const placeholderProfile = 'https://via.placeholder.com/185x185?text=No+Photo';
+
+                let directorSection = `<p style="margin-bottom: 6px;"><strong>Director:</strong></p>`;
                 if (data.credits?.crew) {
                     const dirObj = data.credits.crew.find(c => c.job === 'Director');
                     if (dirObj) {
-                        directorHtml = `<a href="index.html?person_id=${dirObj.id}&person_name=${encodeURIComponent(dirObj.name)}" class="person-link navigable" tabindex="0">${dirObj.name}</a>`;
+                        const img = dirObj.profile_path ? `${profileBase}${dirObj.profile_path}` : placeholderProfile;
+                        directorSection += `
+                            <div class="person-list">
+                                <div class="person-item">
+                                    <a href="index.html?person_id=${dirObj.id}&person_name=${encodeURIComponent(dirObj.name)}" class="person-link navigable person-photo-link" tabindex="0" aria-label="${dirObj.name}">
+                                        <img src="${img}" alt="${dirObj.name}" class="person-photo" loading="lazy">
+                                    </a>
+                                    <div class="person-name">${dirObj.name}</div>
+                                </div>
+                            </div>`;
                     } else if (data.created_by?.length > 0) {
-                        directorHtml = data.created_by.map(c => `<a href="index.html?person_id=${c.id}&person_name=${encodeURIComponent(c.name)}" class="person-link navigable" tabindex="0">${c.name}</a>`).join(', ');
+                        directorSection += '<div class="person-list">';
+                        directorSection += data.created_by.map(c => {
+                            const img = c.profile_path ? `${profileBase}${c.profile_path}` : placeholderProfile;
+                            return `
+                                <div class="person-item">
+                                    <a href="index.html?person_id=${c.id}&person_name=${encodeURIComponent(c.name)}" class="person-link navigable person-photo-link" tabindex="0" aria-label="${c.name}">
+                                        <img src="${img}" alt="${c.name}" class="person-photo" loading="lazy">
+                                    </a>
+                                    <div class="person-name">${c.name}</div>
+                                </div>`;
+                        }).join('');
+                        directorSection += '</div>';
                     }
+                } else {
+                    directorSection += '<div>N/A</div>';
                 }
 
-                let castHtml = 'N/A';
+                let castSection = `<p style="margin-top:8px;"><strong>Elenco:</strong></p><div class="person-list">`;
                 if (data.credits?.cast?.length > 0) {
-                    castHtml = data.credits.cast.slice(0, 5).map(c => `<a href="index.html?person_id=${c.id}&person_name=${encodeURIComponent(c.name)}" class="person-link navigable" tabindex="0">${c.name}</a>`).join(', ');
+                    const castArr = data.credits.cast.slice(0, 6);
+                    castArr.forEach(c => {
+                        const img = c.profile_path ? `${profileBase}${c.profile_path}` : placeholderProfile;
+                        castSection += `
+                            <div class="person-item">
+                                <a href="index.html?person_id=${c.id}&person_name=${encodeURIComponent(c.name)}" class="person-link navigable person-photo-link" tabindex="0" aria-label="${c.name}">
+                                    <img src="${img}" alt="${c.name}" class="person-photo" loading="lazy">
+                                </a>
+                                <div class="person-name">${c.name}</div>
+                            </div>`;
+                    });
+                } else {
+                    castSection += '<div>N/A</div>';
                 }
+                castSection += '</div>';
 
-                document.getElementById('castDirector').innerHTML = `
-                    <p style="margin-bottom: 6px;"><strong>Director:</strong> ${directorHtml}</p>
-                    <p><strong>Elenco:</strong> ${castHtml}</p>
-                `;
+                document.getElementById('castDirector').innerHTML = directorSection + castSection;
 
                 // Display filename if available
                 const filenameDisplay = document.getElementById('filename-display');
@@ -1382,10 +1522,10 @@
                         style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 1rem; font-style: italic; opacity: 0.8; margin-top: -0.5rem;">
                     </div>
                     <div class="hero-meta" id="meta"></div>
+                    <div class="hero-cast-director" id="castDirector"></div>
                     <p class="hero-synopsis" id="overview"></p>
                     <button id="ver-mas-btn" class="ver-mas-btn navigable" tabindex="0" style="display: none;">Ver
                         más</button>
-                    <div class="hero-cast-director" id="castDirector"></div>
                     <div id="media-selectors"
                         style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px;">
                         <select id="season-select" class="tv-select navigable" tabindex="0"
