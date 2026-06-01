@@ -1396,6 +1396,11 @@
                 const playBtn = document.getElementById('playBtn');
                 const playBtn2 = document.getElementById('playBtn2');
 
+                // Hide playBtn2 when accessed from mauritv.tourn1.com
+                if (window.location.hostname === 'mauritv.tourn1.com') {
+                    playBtn2.style.display = 'none';
+                }
+
                 const handlePlay = (targetPlayer) => {
                     const subId = document.getElementById('sub-select').value;
                     let url = `${targetPlayer}?id=${id}&type=${type}${imdbId ? `&imdb=${imdbId}` : ''}&lang=es`;
