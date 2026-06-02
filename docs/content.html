@@ -867,6 +867,24 @@
                 padding-right: 10px;
             }
         }
+
+        /* Cursor Virtual */
+        #virtual-cursor {
+            position: fixed;
+            width: 30px;
+            height: 30px;
+            z-index: 999999;
+            pointer-events: none;
+            display: none;
+            color: white;
+            text-shadow: 0 0 5px rgba(0,0,0,0.8);
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+            transition: left 0.1s ease-out, top 0.1s ease-out;
+        }
+        #virtual-cursor .material-icons {
+            font-size: 30px;
+            transform: rotate(-20deg);
+        }
     </style>
 
     <script>
@@ -1397,9 +1415,9 @@
                 const playBtn2 = document.getElementById('playBtn2');
 
                 // Hide playBtn2 when accessed from mauritv.tourn1.com
-                if (window.location.hostname === 'mauritv.tourn1.com') {
+                /* if (window.location.hostname === 'mauritv.tourn1.com') {
                     playBtn2.style.display = 'none';
-                }
+                } */
 
                 const handlePlay = (targetPlayer) => {
                     const subId = document.getElementById('sub-select').value;
@@ -1614,12 +1632,12 @@
                     <div class="hero-buttons">
                         <button class="play-button navigable" id="playBtn">
                             <span class="material-icons">play_arrow</span>
-                            vaplayer.ru
+                            Reproducir
                         </button>
-                        <button class="play-button navigable" id="playBtn2">
+                        <!--button class="play-button navigable" id="playBtn2">
                             <span class="material-icons">play_arrow</span>
                             vsembed.ru
-                        </button>
+                        </button -->
                     </div>
                 </div>
                 <div class="hero-trailer-wrapper">

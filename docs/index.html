@@ -1006,6 +1006,24 @@
             outline: var(--focus-border) !important;
             outline-offset: 2px !important;
         }
+
+        /* Cursor Virtual */
+        #virtual-cursor {
+            position: fixed;
+            width: 30px;
+            height: 30px;
+            z-index: 999999;
+            pointer-events: none;
+            display: none;
+            color: white;
+            text-shadow: 0 0 5px rgba(0,0,0,0.8);
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+            transition: left 0.1s ease-out, top 0.1s ease-out;
+        }
+        #virtual-cursor .material-icons {
+            font-size: 30px;
+            transform: rotate(-20deg);
+        }
     </style>
     <script>
         /* ========== CONFIGURATION ========== */
@@ -1096,6 +1114,10 @@
         <p id="pre-play-status" class="loading-text"></p>
     </div>
 
+    <div id="virtual-cursor">
+        <span class="material-icons">navigation</span>
+    </div>
+
     <script>
         // JS con cache busting
         var vScript = document.createElement('script');
@@ -1130,6 +1152,17 @@
         // ========== STATE ==========
         let debounceTimer, autocompleteDebounceTimer, currentResults = [];
         let trendingCache = { movies: null, series: null };
+
+        // Virtual Cursor State
+        let lastEnterPress = 0;
+        let enterPressCount = 0;
+        let isCursorActive = false;
+        let cursorX = window.innerWidth / 2;
+        let cursorY = window.innerHeight / 2;
+        const cursorSpeed = 30;
+
+        // Logging for debugging (will show in logcat)
+        console.log("MauriTV Script Loaded - Cursor Logic Ready");
 
         // ========== SERVICE WORKER ==========
         if ('serviceWorker' in navigator) {
@@ -1774,6 +1807,62 @@
 
         document.addEventListener('keydown', (e) => {
             const active = document.activeElement;
+            // DEBUG: console.log("Key pressed:", e.key, "Code:", e.keyCode);
+
+            // --- Lógica de Triple Click Enter para Cursor ---
+            // Aceptamos Enter (13), Select (23), DPad Center (66 en Android WebView)
+            if (e.key === 'Enter' || e.key === 'Select' || e.keyCode === 23 || e.keyCode === 13 || e.keyCode === 66) {
+                const now = Date.now();
+                if (now - lastEnterPress < 600) { // Aumentado a 600ms para mayor margen
+                    enterPressCount++;
+                } else {
+                    enterPressCount = 1;
+                }
+                lastEnterPress = now;
+
+                if (enterPressCount === 3) {
+                    isCursorActive = !isCursorActive;
+                    const cursorEl = document.getElementById('virtual-cursor');
+                    if (isCursorActive) {
+                        cursorEl.style.display = 'block';
+                        cursorEl.style.left = cursorX + 'px';
+                        cursorEl.style.top = cursorY + 'px';
+                        // console.log("Cursor Activado");
+                    } else {
+                        cursorEl.style.display = 'none';
+                        // console.log("Cursor Desactivado");
+                    }
+                    enterPressCount = 0;
+                    return;
+                }
+            }
+
+            // --- Control del Cursor Virtual ---
+            if (isCursorActive) {
+                const cursorEl = document.getElementById('virtual-cursor');
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                    e.preventDefault();
+                    if (e.key === 'ArrowUp') cursorY = Math.max(0, cursorY - cursorSpeed);
+                    if (e.key === 'ArrowDown') cursorY = Math.min(window.innerHeight, cursorY + cursorSpeed);
+                    if (e.key === 'ArrowLeft') cursorX = Math.max(0, cursorX - cursorSpeed);
+                    if (e.key === 'ArrowRight') cursorX = Math.min(window.innerWidth, cursorX + cursorSpeed);
+
+                    cursorEl.style.left = cursorX + 'px';
+                    cursorEl.style.top = cursorY + 'px';
+                    return;
+                }
+
+                if (e.key === 'Enter' || e.key === 'Select' || e.keyCode === 23 || e.keyCode === 13 || e.keyCode === 66) {
+                    e.preventDefault();
+                    const target = document.elementFromPoint(cursorX, cursorY);
+                    if (target) {
+                        // console.log("Cursor Click en:", target.tagName);
+                        target.click();
+                        if (target.tagName === 'INPUT') target.focus();
+                    }
+                    return;
+                }
+            }
 
             // Autocomplete navigation
             if (!autocompleteResults.classList.contains('hidden')) {
