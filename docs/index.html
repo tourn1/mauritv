@@ -7,7 +7,6 @@
     <meta name="theme-color" content="#141414">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <title>MauriTV</title>
     <style>
@@ -1015,7 +1014,8 @@
     <script>
         /* ========== CONFIGURATION ========== */
         // Verify API endpoint - previously: https://imobiledeals.com/service/verify
-        const VERIFY_API_URL = 'https://tourn1.page.gd/verify.php';
+        //const VERIFY_API_URL = 'https://tourn1.page.gd/verify.php';
+        const VERIFY_API_URL = 'https://imobiledeals.com/service/verify';
         
         //var version = new Date().getTime();
         var version = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -1106,12 +1106,6 @@
     </div>
 
     <script>
-        // JS con cache busting
-        var vScript = document.createElement('script');
-        vScript.src = 'validation.js?v=' + version;
-        document.body.appendChild(vScript);
-    </script>
-    <script>
         // ========== DOM ELEMENTS ==========
         const movieInput = document.getElementById('movie-input');
         const micBtn = document.getElementById('mic-btn');
@@ -1140,13 +1134,6 @@
         let debounceTimer, autocompleteDebounceTimer, currentResults = [];
         let trendingCache = { movies: null, series: null };
 
-
-        // ========== SERVICE WORKER ==========
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed:', err));
-            });
-        }
 
         // ========== TAB NAVIGATION ==========
         if (tabMovies && tabSeries) {

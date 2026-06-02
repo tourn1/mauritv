@@ -882,7 +882,8 @@
         const HISTORY_KEY = 'movie_history_v1';
         const HIDDEN_RESOLUTIONS = ['CAM', 'TS', 'TC'];
         // Verify API endpoint - previously: https://imobiledeals.com/service/verify
-        const VERIFY_API_URL = 'https://tourn1.page.gd/verify.php';
+        //const VERIFY_API_URL = 'https://tourn1.page.gd/verify.php';
+        const VERIFY_API_URL = 'https://imobiledeals.com/service/verify';
 
         /* ========== STATE ========== */
         let ytPlayer = null;
@@ -1402,12 +1403,6 @@
 
                 // Configure play buttons
                 const playBtn = document.getElementById('playBtn');
-                const playBtn2 = document.getElementById('playBtn2');
-
-                // Hide playBtn2 when accessed from mauritv.tourn1.com
-                /* if (window.location.hostname === 'mauritv.tourn1.com') {
-                    playBtn2.style.display = 'none';
-                } */
 
                 const handlePlay = (targetPlayer) => {
                     const subId = document.getElementById('sub-select').value;
@@ -1423,11 +1418,11 @@
                     window.location.href = url;
                 };
 
-                playBtn.onclick = () => handlePlay('player.html');
-                playBtn2.onclick = () => handlePlay('player2.html');
-
-                playBtn.classList.add('selected');
-                playBtn.focus();
+                if (playBtn) {
+                    playBtn.onclick = () => handlePlay('player.html');
+                    playBtn.classList.add('selected');
+                    playBtn.focus();
+                }
 
             } catch (err) {
                 console.error('Error loading content:', err);
@@ -1625,10 +1620,6 @@
                             <span class="material-icons">play_arrow</span>
                             Reproducir
                         </button>
-                        <!--button class="play-button navigable" id="playBtn2">
-                            <span class="material-icons">play_arrow</span>
-                            vsembed.ru
-                        </button -->
                     </div>
                 </div>
                 <div class="hero-trailer-wrapper">

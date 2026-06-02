@@ -135,10 +135,18 @@ public class MainActivity extends BridgeActivity {
                 switch (keyCode) {
                     case KeyEvent.KEYCODE_DPAD_UP:
                         cursorY -= cursorSpeed;
+                        if (cursorY < 0) {
+                            cursorY = 0;
+                            scrollWebView(-200);
+                        }
                         updateCursorPosition();
                         return true;
                     case KeyEvent.KEYCODE_DPAD_DOWN:
                         cursorY += cursorSpeed;
+                        if (cursorY > screenHeight) {
+                            cursorY = screenHeight;
+                            scrollWebView(200);
+                        }
                         updateCursorPosition();
                         return true;
                     case KeyEvent.KEYCODE_DPAD_LEFT:
@@ -182,6 +190,15 @@ public class MainActivity extends BridgeActivity {
         
         downEvent.recycle();
         upEvent.recycle();
+    }
+
+    private void scrollWebView(int amount) {
+        WebView webView = getBridge().getWebView();
+        if (webView != null) {
+            webView.post(() -> {
+                webView.evaluateJavascript("window.scrollBy(0, " + amount + ");", null);
+            });
+        }
     }
 
     @Override
