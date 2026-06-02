@@ -284,6 +284,10 @@
         </div>
     </div>
 
+    <div id="virtual-cursor">
+        <span class="material-icons">navigation</span>
+    </div>
+
     <script>
         // Elementos del DOM
         const playerIframe = document.getElementById('player-iframe');
@@ -336,8 +340,9 @@
          * @returns {boolean}
          */
         const isTvDevice = () => {
-            const ua = navigator.userAgent.toLowerCase();
-            return ua.includes('android') && (ua.includes('tv') || ua.includes('large screen') || ua.includes('atv'));
+            return 'true';
+            //const ua = navigator.userAgent.toLowerCase();
+            //return ua.includes('android') && (ua.includes('tv') || ua.includes('large screen') || ua.includes('atv'));
         };
 
         const CONF_CONTROLS = isTvDevice() ? 'false' : '';
