@@ -333,7 +333,8 @@
             //return ua.includes('android') && (ua.includes('tv') || ua.includes('large screen') || ua.includes('atv'));
         };
 
-        const CONF_CONTROLS = isTvDevice() ? 'false' : '';
+        //const CONF_CONTROLS = isTvDevice() ? 'false' : '';
+        const CONF_CONTROLS = 'true';
 
         /**
          * Mapea un código de idioma corto (es, en) a ISO 639-2 requerido por el reproductor
@@ -386,7 +387,7 @@
 
             // Asignación de configuraciones definidas
             if (CONF_SKIN) params.append('skin', CONF_SKIN);
-            if (CONF_CONTROLS) params.append('controls', CONF_CONTROLS);
+            //if (CONF_CONTROLS) params.append('controls', CONF_CONTROLS);
             if (CONF_COLOR) params.append('color', CONF_COLOR);
             if (CONF_PRIMARY_COLOR) params.append('primaryColor', CONF_PRIMARY_COLOR);
             if (CONF_TITLE) params.append('title', CONF_TITLE);

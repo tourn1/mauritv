@@ -4,6 +4,7 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -28,7 +29,9 @@ public class MainActivity extends BridgeActivity {
     private ImageView cursorView;
     private float cursorX = 0;
     private float cursorY = 0;
-    private int cursorSpeed = 35;
+    private int screenWidth = 0;
+    private int screenHeight = 0;
+    private int cursorSpeed = 25; // Velocidad ajustada
     private long lastCenterClickTime = 0;
     private int centerClickCount = 0;
 
@@ -45,44 +48,62 @@ public class MainActivity extends BridgeActivity {
     }
 
     private void initVirtualCursor() {
+        // Obtener dimensiones reales de la pantalla
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        screenWidth = metrics.widthPixels;
+        screenHeight = metrics.heightPixels;
+
+        // Tamaño del cursor en DP para que sea consistente
+        int cursorSizePx = (int) (30 * metrics.density);
+
         cursorView = new ImageView(this);
-        // Usar un icono de navegación del sistema o similar
+        // Usar un icono más pequeño y limpio
         cursorView.setImageResource(android.R.drawable.ic_menu_send); 
         cursorView.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
-        cursorView.setRotation(-120); // Orientarlo como un puntero
+        cursorView.setRotation(-135); // Apuntar hacia arriba-izquierda
+        cursorView.setElevation(999); // Máxima elevación
+        cursorView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        cursorView.setPadding(0, 0, 0, 0);
         
-        // Sombra para visibilidad
-        cursorView.setElevation(100);
-        
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(80, 80);
+        // Configurar el layout para que NO sea pantalla completa, sino el tamaño del icono
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(cursorSizePx, cursorSizePx);
         params.gravity = Gravity.TOP | Gravity.START;
-        cursorView.setLayoutParams(params);
+        
+        // Añadir a la ventana
+        addContentView(cursorView, params);
         cursorView.setVisibility(View.GONE);
 
-        addContentView(cursorView, new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT));
-        
         // Posición inicial: centro
-        getWindow().getDecorView().post(() -> {
-            cursorX = getWindow().getDecorView().getWidth() / 2f;
-            cursorY = getWindow().getDecorView().getHeight() / 2f;
-            updateCursorPosition();
-        });
+        cursorX = screenWidth / 2f;
+        cursorY = screenHeight / 2f;
+        updateCursorPosition();
     }
 
     private void updateCursorPosition() {
-        cursorView.setX(cursorX - 20); // Ajuste fino del hotspot
-        cursorView.setY(cursorY - 20);
+        if (cursorView != null) {
+            // Asegurar que el cursor se mantenga dentro de los límites de la pantalla
+            if (cursorX < 0) cursorX = 0;
+            if (cursorX > screenWidth) cursorX = screenWidth;
+            if (cursorY < 0) cursorY = 0;
+            if (cursorY > screenHeight) cursorY = screenHeight;
+
+            cursorView.setX(cursorX);
+            cursorView.setY(cursorY);
+        }
     }
 
     private void toggleCursor() {
         isCursorActive = !isCursorActive;
         cursorView.setVisibility(isCursorActive ? View.VISIBLE : View.GONE);
         if (isCursorActive) {
-            Toast.makeText(this, "Modo Cursor Activado", Toast.LENGTH_SHORT).show();
+            // Resetear posición al activar por si acaso
+            cursorX = screenWidth / 2f;
+            cursorY = screenHeight / 2f;
+            updateCursorPosition();
+            Toast.makeText(this, "Modo Mouse: ACTIVADO", Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(this, "Modo Cursor Desactivado", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Modo Mouse: DESACTIVADO", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -91,7 +112,7 @@ public class MainActivity extends BridgeActivity {
         int keyCode = event.getKeyCode();
         int action = event.getAction();
 
-        // Detectar triple click en botón central (ENTER o DPAD_CENTER)
+        // Triple Click central
         if (action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
             long currentTime = System.currentTimeMillis();
             if (currentTime - lastCenterClickTime < 600) {
@@ -108,24 +129,24 @@ public class MainActivity extends BridgeActivity {
             }
         }
 
-        // Si el cursor está activo, interceptar flechas y centro
+        // Navegación con el cursor activo
         if (isCursorActive) {
             if (action == KeyEvent.ACTION_DOWN || action == KeyEvent.ACTION_MULTIPLE) {
                 switch (keyCode) {
                     case KeyEvent.KEYCODE_DPAD_UP:
-                        cursorY = Math.max(0, cursorY - cursorSpeed);
+                        cursorY -= cursorSpeed;
                         updateCursorPosition();
                         return true;
                     case KeyEvent.KEYCODE_DPAD_DOWN:
-                        cursorY = Math.min(getWindow().getDecorView().getHeight(), cursorY + cursorSpeed);
+                        cursorY += cursorSpeed;
                         updateCursorPosition();
                         return true;
                     case KeyEvent.KEYCODE_DPAD_LEFT:
-                        cursorX = Math.max(0, cursorX - cursorSpeed);
+                        cursorX -= cursorSpeed;
                         updateCursorPosition();
                         return true;
                     case KeyEvent.KEYCODE_DPAD_RIGHT:
-                        cursorX = Math.min(getWindow().getDecorView().getWidth(), cursorX + cursorSpeed);
+                        cursorX += cursorSpeed;
                         updateCursorPosition();
                         return true;
                     case KeyEvent.KEYCODE_DPAD_CENTER:
@@ -134,7 +155,8 @@ public class MainActivity extends BridgeActivity {
                         return true;
                 }
             }
-            // Bloquear otras teclas de navegación mientras el cursor está activo
+            
+            // Bloquear escape del foco si el mouse está activo
             if (keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_DPAD_DOWN || 
                 keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
                 return true;
@@ -149,12 +171,13 @@ public class MainActivity extends BridgeActivity {
         if (webView == null) return;
 
         long downTime = SystemClock.uptimeMillis();
-        long eventTime = SystemClock.uptimeMillis();
         
-        MotionEvent downEvent = MotionEvent.obtain(downTime, eventTime, MotionEvent.ACTION_DOWN, x, y, 0);
+        // Simular evento Touch Down
+        MotionEvent downEvent = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, x, y, 0);
         webView.dispatchTouchEvent(downEvent);
         
-        MotionEvent upEvent = MotionEvent.obtain(downTime, eventTime + 10, MotionEvent.ACTION_UP, x, y, 0);
+        // Simular evento Touch Up un poco después
+        MotionEvent upEvent = MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_UP, x, y, 0);
         webView.dispatchTouchEvent(upEvent);
         
         downEvent.recycle();
@@ -164,13 +187,11 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onResume() {
         super.onResume();
-        WebView webView = getBridge().getWebView();
-        if (webView != null) {
-            webView.setFocusable(true);
-            webView.setFocusableInTouchMode(true);
-            webView.requestFocus();
-            configurarWebView(webView);
-        }
+        // Recalcular dimensiones por si cambió la resolución o rotación
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        screenWidth = metrics.widthPixels;
+        screenHeight = metrics.heightPixels;
     }
 
     private void configurarWebView(WebView webView) {
@@ -178,8 +199,8 @@ public class MainActivity extends BridgeActivity {
         settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
-        settings.setJavaScriptEnabled(true); // Asegurar JS activo
-        settings.setMediaPlaybackRequiresUserGesture(false); // Para autoplay
+        settings.setJavaScriptEnabled(true);
+        settings.setMediaPlaybackRequiresUserGesture(false);
         
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -211,7 +232,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onBackPressed() {
         if (isCursorActive) {
-            toggleCursor(); // El botón atrás desactiva el cursor si está encendido
+            toggleCursor();
             return;
         }
 
