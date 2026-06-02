@@ -20,9 +20,7 @@
     <script src="https://www.youtube.com/iframe_api"></script>
 
     <style>
-        /* ================================================================
-           1. VARIABLES Y RESET (comunes a todos los dispositivos)
-        ================================================================ */
+        /* ========== CSS VARIABLES ========== */
         :root {
             --bg: #141414;
             --bg-secondary: #1b1b1b;
@@ -36,6 +34,7 @@
             --transition-speed: 0.3s;
         }
 
+        /* ========== RESET & BASE STYLES ========== */
         * {
             margin: 0;
             padding: 0;
@@ -62,10 +61,7 @@
             flex-direction: column;
         }
 
-        /* ================================================================
-           2. ESTILOS BASE: MÓVIL (por defecto, hasta 640px)
-           (Optimizado para ~400px)
-        ================================================================ */
+        /* ========== NAVIGATION ========== */
         .back-button {
             position: fixed;
             top: 20px;
@@ -90,13 +86,14 @@
             transform: scale(1.05);
         }
 
+        /* ========== HERO SECTION ========== */
         .hero-section {
             position: relative;
             width: 100%;
             flex: 1;
             display: flex;
             align-items: center;
-            padding: 120px 24px 40px 24px;
+            padding: 80px 40px 20px;
             background-color: #000;
             background-size: cover;
             background-position: center;
@@ -116,7 +113,7 @@
             display: grid;
             grid-template-columns: 1fr;
             grid-template-rows: auto 1fr;
-            gap: 30px;
+            gap: 40px;
             width: 100%;
             max-width: 1600px;
             margin: 0 auto;
@@ -136,7 +133,7 @@
             max-height: 100%;
             animation: fadeUp 0.8s ease;
             overflow-y: auto;
-            padding-right: 10px;
+            padding: 10px 20px 10px 10px;
         }
 
         .hero-content::-webkit-scrollbar {
@@ -170,9 +167,30 @@
             padding: 0.45rem 0.65rem;
             border-radius: 12px;
             line-height: 1.4;
-            color: rgba(255, 255, 255, 0.85);
+            color: rgba(255,255,255,0.85);
             backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
             margin-top: -0.5rem;
+        }
+
+        @media (min-width: 1025px) {
+            .hero-layout {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto 1fr;
+            }
+
+            .hero-title-wrapper {
+                grid-column: 1 / -1;
+            }
+
+            .hero-content {
+                grid-column: 1;
+                width: 100%;
+            }
+
+            .hero-trailer-wrapper {
+                grid-column: 2;
+            }
         }
 
         .hero-title {
@@ -185,6 +203,10 @@
             overflow-wrap: anywhere;
             hyphens: auto;
             white-space: normal;
+        }
+
+        .hero-title-wrapper {
+            min-width: 0;
         }
 
         .hero-meta {
@@ -206,8 +228,8 @@
         }
 
         .hero-synopsis {
-            font-size: 1rem;
-            line-height: 1.7;
+            font-size: 1.08rem;
+            line-height: 1.9;
             color: #e8e8e8;
             margin-bottom: 0.5rem;
             max-width: 650px;
@@ -263,6 +285,7 @@
             outline: none;
         }
 
+        /* Person list (director / cast) */
         .person-list {
             display: flex;
             gap: 14px;
@@ -283,7 +306,7 @@
             object-fit: cover;
             display: block;
             margin: 0 auto;
-            border: 2px solid rgba(255, 255, 255, 0.06);
+            border: 2px solid rgba(255,255,255,0.06);
         }
 
         .person-photo-link {
@@ -302,18 +325,15 @@
 
         .hero-buttons {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
-            width: 100%;
-            max-width: 100%;
-            padding: 0;
+            flex-wrap: wrap;
+            gap: 18px;
             margin-bottom: 1rem;
         }
 
         .play-button {
             border: none;
             border-radius: 8px;
-            padding: 12px 14px;
+            padding: 14px 26px;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -323,8 +343,6 @@
             transition: 0.25s;
             background: var(--accent);
             color: white;
-            width: 100%;
-            justify-content: center;
         }
 
         .play-button:hover,
@@ -335,27 +353,27 @@
             box-shadow: 0 0 0 4px rgba(229, 9, 20, 0.25);
         }
 
+        /* ========== MEDIA SELECTORS ========== */
         .tv-select {
             background: rgba(255, 255, 255, 0.1);
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            padding: 10px 12px;
-            font-size: 0.95rem;
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-size: 1rem;
             font-family: 'Inter', sans-serif;
             outline: none;
             cursor: pointer;
             backdrop-filter: blur(10px);
             transition: 0.25s;
-            width: 100%;
-            max-width: 100%;
+            max-width: 360px;
         }
 
         .tv-select:focus {
             background: rgba(255, 255, 255, 0.25);
             border-color: #ffffff;
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-            transform: scale(1.02);
+            transform: scale(1.05);
             z-index: 10;
         }
 
@@ -369,47 +387,19 @@
             color: white;
         }
 
-        /* Selectores en móvil: temporada y capítulo en fila */
-        #media-selectors {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            width: 100%;
-            margin-bottom: 10px;
-        }
-
-        #season-select,
-        #episode-select {
-            display: inline-block;
-            width: calc(50% - 6px);
-            max-width: calc(50% - 6px);
-            min-width: 0;
-        }
-
-        #sub-selectors {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            width: 100%;
-            margin-bottom: 15px;
-        }
-
-        #sub-select {
-            width: 100%;
-            max-width: 100%;
-        }
-
+        /* ========== CONTENT SECTION ========== */
         .content-section {
-            padding: 40px 20px;
+            padding: 2rem;
             width: 100%;
         }
 
         .section-title {
-            font-size: 1.5rem;
+            font-size: 2rem;
             font-weight: 800;
             margin-bottom: 24px;
         }
 
+        /* ========== TRAILER ========== */
         .trailer-container {
             position: relative;
             width: 100%;
@@ -453,11 +443,11 @@
         }
 
         .trailer-placeholder .material-icons {
-            font-size: 50px;
-            padding: 15px;
+            font-size: 80px;
             color: #e50914;
             background: rgba(0, 0, 0, 0.6);
             border-radius: 50%;
+            padding: 20px;
         }
 
         .trailer-placeholder p {
@@ -501,10 +491,48 @@
             background: rgba(229, 9, 20, 0.4);
         }
 
+        /* ========== CAROUSEL ========== */
+        .carousel {
+            display: flex;
+            gap: 18px;
+            overflow-x: auto;
+            margin-top: 40px;
+            padding-bottom: 10px;
+        }
+
+        .carousel::-webkit-scrollbar {
+            display: none;
+        }
+
+        .carousel img {
+            width: 260px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 14px;
+            flex-shrink: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            z-index: 1;
+        }
+
+        .carousel img:hover {
+            transform: scale(1.08);
+            z-index: 90;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+        }
+
+        .carousel img:focus {
+            outline: 4px solid rgba(229, 9, 20, 0.8);
+            outline-offset: 4px;
+            transform: scale(1.08);
+        }
+
+        /* ========== MOVIE CARDS ========== */
         .results-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1.5rem;
             padding: 1rem 0;
         }
 
@@ -522,13 +550,13 @@
 
         .movie-card:focus {
             border-color: #ffffff;
-            transform: scale(1.05);
+            transform: scale(1.1);
             z-index: 100;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
         }
 
         .movie-card:hover {
-            transform: scale(1.03);
+            transform: scale(1.08);
             z-index: 90;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
         }
@@ -552,7 +580,7 @@
         }
 
         .movie-title {
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: 600;
             margin-bottom: 0.2rem;
             white-space: nowrap;
@@ -563,6 +591,10 @@
             max-width: 100%;
         }
 
+        .movie-card:focus .movie-title {
+            color: white !important;
+        }
+
         .movie-meta {
             display: flex;
             justify-content: space-between;
@@ -571,7 +603,7 @@
         }
 
         .movie-year {
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             color: #e5e5e5;
         }
 
@@ -609,6 +641,7 @@
             text-transform: uppercase;
         }
 
+        /* Badge Disponibilidad */
         .availability-badge {
             position: absolute;
             top: 10px;
@@ -636,9 +669,11 @@
             white-space: normal;
         }
 
+        /* Badge de Información Extra (Fuente y Resolución combinadas) */
         .info-badge {
             position: absolute;
             top: 42px;
+            /* Debajo del type-badge */
             right: 10px;
             padding: 4px 10px;
             border-radius: 4px;
@@ -647,9 +682,11 @@
             z-index: 12;
             letter-spacing: 0.5px;
             text-transform: uppercase;
-            background: rgba(229, 9, 20, 0.85);
+            background: rgb(229 9 20 / 17%);
+            /* rgba(229, 9, 20, 0.85);  Rojo Netflix/MauriTV */
             color: white;
             backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.15);
             animation: fadeIn 0.5s ease;
@@ -664,239 +701,174 @@
             opacity: 0.5;
         }
 
+        /* ========== ANIMATIONS ========== */
         @keyframes fadeUp {
             from {
                 opacity: 0;
                 transform: translateY(30px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
 
-        /* ================================================================
-           3. ESTILOS PARA TABLET / CHROMECAST (aprox. 481px a 1024px)
-           (Optimizado para ~800px)
-        ================================================================ */
-        @media (min-width: 641px) and (max-width: 1024px) {
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 1024px) {
+            body {
+                height: auto;
+                overflow: auto;
+            }
+
+            main {
+                height: auto;
+                display: block;
+            }
+
             .hero-section {
-                padding: 100px 32px 40px;
+                padding: 100px 24px 40px;
                 display: block;
             }
 
             .hero-layout {
                 display: grid;
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 1fr;
                 grid-template-rows: auto 1fr;
-                gap: 32px;
+                gap: 30px;
             }
 
             .hero-title-wrapper {
-                grid-column: 1 / -1;
-            }
-
-            .hero-content {
-                grid-column: 1;
                 width: 100%;
-                overflow-y: auto;
-                padding-right: 20px;
-            }
-
-            .hero-trailer-wrapper {
-                grid-column: 2;
-                height: auto;
             }
 
             .hero-title {
-                font-size: 3.2rem;
+                word-break: break-word;
+            }
+
+            .hero-content,
+            .hero-trailer-wrapper {
+                max-width: 100%;
+                width: 100%;
+                overflow-y: visible;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero-section {
+                padding: 120px 24px 40px 24px;
+            }
+
+            .content-section {
+                padding: 40px 20px;
+            }
+
+            .hero-title {
+                font-size: 2.8rem;
             }
 
             .hero-synopsis {
                 font-size: 1rem;
-                line-height: 1.8;
-                -webkit-line-clamp: 3;
+                line-height: 1.7;
             }
 
             .hero-buttons {
-                flex-direction: row;
-                flex-wrap: wrap;
-                gap: 18px;
-                width: auto;
-                max-width: 100%;
+                width: 100%;
+                max-width: 360px;
             }
 
             .play-button {
-                width: auto;
-                padding: 14px 26px;
-            }
-
-            .tv-select {
-                width: auto;
-                min-width: 180px;
-                padding: 12px 16px;
-            }
-
-            #media-selectors {
-                flex-wrap: nowrap;
-                gap: 12px;
-            }
-
-            #season-select,
-            #episode-select {
-                width: auto;
-                max-width: 200px;
-            }
-
-            #sub-selectors {
-                flex-direction: row;
-                flex-wrap: wrap;
-                gap: 12px;
-            }
-
-            #sub-select {
-                width: auto;
-                min-width: 240px;
+                width: 100%;
+                justify-content: center;
             }
 
             .results-grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 1.2rem;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
             }
 
             .section-title {
-                font-size: 1.8rem;
+                font-size: 1.5rem;
             }
 
             .trailer-placeholder .material-icons {
-                font-size: 70px;
-                padding: 18px;
-            }
-
-            .content-section {
-                padding: 2rem 1.5rem;
-            }
-
-            .movie-title {
-                font-size: 1rem;
+                font-size: 50px;
+                padding: 15px;
             }
         }
 
-        /* ================================================================
-           4. ESTILOS PARA PC / ESCRITORIO (> 1024px)
-        ================================================================ */
-        @media (min-width: 1025px) {
-            .hero-section {
-                padding: 80px 40px 20px;
-                min-height: 0;
-            }
-
-            .hero-layout {
-                grid-template-columns: 1fr 1fr;
-                grid-template-rows: auto 1fr;
-                gap: 40px;
-            }
-
-            .hero-title-wrapper {
-                grid-column: 1 / -1;
-            }
-
-            .hero-content {
-                grid-column: 1;
-                width: 100%;
-                max-height: 100%;
-                overflow-y: auto;
-                padding: 10px 20px 10px 10px;
-            }
-
-            .hero-trailer-wrapper {
-                grid-column: 2;
-                height: 100%;
-            }
-
-            .hero-title {
-                font-size: clamp(2rem, 5vw, 4rem);
-            }
-
-            .hero-synopsis {
-                font-size: 1.08rem;
-                line-height: 1.9;
-                -webkit-line-clamp: 2;
-            }
-
-            .hero-buttons {
-                flex-direction: row;
-                gap: 18px;
-                width: auto;
-                margin-bottom: 1rem;
-            }
-
-            .play-button {
-                width: auto;
-                padding: 14px 26px;
-            }
-
-            .tv-select {
-                width: auto;
-                padding: 14px 16px;
-                font-size: 1rem;
-            }
-
+        /* Mobile narrow layout: ensure controls fit within 340px
+           - Temporada and capítulo on the same row
+           - Subtítulo and each play button on its own row */
+        @media (max-width: 520px) {
             #media-selectors {
-                flex-wrap: nowrap;
-                gap: 12px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                width: 100%;
+                align-items: center;
+                margin-left: 0;
             }
 
             #season-select,
             #episode-select {
-                width: auto;
+                display: inline-block;
+                width: calc(50% - 6px);
+                max-width: calc(50% - 6px);
+                min-width: 0;
             }
 
             #sub-selectors {
-                flex-direction: row;
-                gap: 12px;
-                margin-bottom: 15px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                width: 100%;
+                margin-left: 0;
             }
 
-            .results-grid {
-                grid-template-columns: repeat(5, 1fr);
-                gap: 1.5rem;
+            #sub-select {
+                width: 100%;
+                max-width: 100%;
             }
 
-            .section-title {
-                font-size: 2rem;
+            .tv-select {
+                max-width: 100%;
+                padding: 10px 12px;
+                font-size: 0.95rem;
+                min-width: 0;
             }
 
-            .content-section {
-                padding: 2rem;
+            .hero-buttons {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+                max-width: 100%;
+                padding: 0;
             }
 
-            .movie-card:hover {
-                transform: scale(1.08);
-            }
-
-            .movie-card:focus {
-                transform: scale(1.1);
-            }
-        }
-
-        /* ================================================================
-           5. AJUSTES FINOS PARA PANTALLAS MUY PEQUEÑAS (<= 520px)
-           (Refuerzo para móviles estrechos)
-        ================================================================ */
-        @media (max-width: 520px) {
-            .play-button:focus {
-                box-shadow: 0 0 0 4px rgba(229, 9, 20, 0.28);
-                transform: none;
-            }
             .hero-buttons .play-button {
                 width: 100%;
                 justify-content: center;
                 padding: 12px 14px;
+                box-shadow: none;
+                outline: none;
+            }
+            .hero-buttons .play-button:focus {
+                box-shadow: 0 0 0 4px rgba(229,9,20,0.28);
+                transform: none;
+            }
+            /* Reduce select border radius slightly to fit */
+            #season-select, #episode-select, #sub-select {
+                border-radius: 10px;
+            }
+            /* Ensure container doesn't cause horizontal overflow */
+            .hero-content {
+                padding-right: 10px;
             }
         }
 
-        /* Cursor virtual desactivado (se usa navegación nativa) */
+        /* Cursor Virtual (Eliminado - Ahora manejado por Android Nativo) */
         #virtual-cursor {
             display: none !important;
         }
@@ -909,6 +881,8 @@
         const TMDB_API_KEY = '12916916a032ac4a2da17601cbc119bd';
         const HISTORY_KEY = 'movie_history_v1';
         const HIDDEN_RESOLUTIONS = ['CAM', 'TS', 'TC'];
+        // Verify API endpoint - previously: https://imobiledeals.com/service/verify
+        //const VERIFY_API_URL = 'https://tourn1.page.gd/verify.php';
         const VERIFY_API_URL = 'https://imobiledeals.com/service/verify';
 
         /* ========== STATE ========== */
@@ -918,6 +892,7 @@
 
 
         /* ========== YOUTUBE API ========== */
+        /** Initialize YouTube API when ready */
         window.onYouTubeIframeAPIReady = function () {
             console.log('YouTube API ready');
             ytApiReady = true;
@@ -927,6 +902,7 @@
         };
 
         /* ========== HISTORY MANAGEMENT ========== */
+        /** Save movie to browsing history */
         function saveToHistory(movie) {
             let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
             const existingIndex = history.findIndex(item =>
@@ -946,6 +922,8 @@
             localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
         }
 
+        /* ========== TRAILER MANAGEMENT ========== */
+        /** Display error when trailer cannot be loaded */
         function mostrarErrorTrailer(titulo = '', trailerKey = null) {
             const container = document.getElementById('trailerContainer');
             const searchQuery = titulo ? `${titulo} trailer oficial` : 'trailer';
@@ -965,6 +943,7 @@
             `;
         }
 
+        /** Initialize YouTube player */
         function iniciarReproductorYouTube(trailerKey) {
             const container = document.getElementById('trailerContainer');
             currentTrailerKey = trailerKey;
@@ -1007,6 +986,7 @@
                     }
                 });
 
+                // Permitir play al hacer click/enter en el contenedor
                 container.onclick = () => {
                     if (ytPlayer && ytPlayer.getPlayerState) {
                         const state = ytPlayer.getPlayerState();
@@ -1023,13 +1003,17 @@
             }
         }
 
+        /** Handle YouTube player ready event */
         function onPlayerReady(event) {
             console.log('YouTube player ready');
+            // No autoplay: event.target.playVideo();
         }
 
+        /** Handle YouTube player error */
         function onPlayerError(event) {
             console.error('YouTube player error:', event.data);
             let errorMessage = '';
+
             switch (event.data) {
                 case 2: errorMessage = 'Video inválido'; break;
                 case 5: errorMessage = 'Error de reproducción'; break;
@@ -1037,9 +1021,11 @@
                 case 101: case 150: errorMessage = 'Video no disponible en esta plataforma'; break;
                 default: errorMessage = 'Error desconocido';
             }
+
             const titulo = document.getElementById('title').textContent;
-            const youtubeUrl = `https://www.youtube.com/watch?v=${currentTrailerKey}`;
             const container = document.getElementById('trailerContainer');
+            const youtubeUrl = `https://www.youtube.com/watch?v=${currentTrailerKey}`;
+
             container.innerHTML = `
                 <div class="trailer-error">
                     <span class="material-icons">error_outline</span>
@@ -1053,13 +1039,16 @@
             `;
         }
 
+        /** Search for trailer in multiple languages */
         async function buscarTrailer(id, type) {
             const idiomas = ['es-MX', 'es-ES', 'en-US'];
+
             for (const lang of idiomas) {
                 try {
                     const videosResponse = await fetch(
                         `https://api.themoviedb.org/3/${type}/${id}/videos?api_key=${TMDB_API_KEY}&language=${lang}`
                     );
+
                     if (videosResponse.ok) {
                         const videosData = await videosResponse.json();
                         if (videosData.results?.length) {
@@ -1070,30 +1059,43 @@
                             ) || videosData.results.find(v =>
                                 v.site === 'YouTube' && v.type === 'Teaser'
                             ) || videosData.results.find(v => v.site === 'YouTube');
-                            if (video?.key) return video.key;
+
+                            if (video?.key) {
+                                console.log(`Trailer found in ${lang}:`, video.key);
+                                return video.key;
+                            }
                         }
                     }
-                } catch (e) { console.log(`Error searching in ${lang}:`, e); }
+                } catch (e) {
+                    console.log(`Error searching in ${lang}:`, e);
+                }
             }
+
             return null;
         }
 
+        /* ========== SUBTITLES MANAGEMENT ========== */
+        /** Fetch available subtitles for content */
         async function fetchSubtitles(imdbId, type, season, episode) {
             const subSelect = document.getElementById('sub-select');
             if (!imdbId) {
                 subSelect.style.display = 'none';
                 return;
             }
+
             subSelect.innerHTML = '<option value="">Buscando subtítulos...</option>';
             subSelect.style.display = 'inline-block';
+
             try {
                 const subLang = 'es';
                 let url = `https://api.opensubtitles.com/api/v1/subtitles?languages=${subLang}`;
+
                 if (type === 'tv' && season && episode) {
                     url += `&imdb_id=${imdbId.replace('tt', '')}&season_number=${season}&episode_number=${episode}`;
                 } else {
                     url += `&imdb_id=${imdbId.replace('tt', '')}`;
                 }
+
                 const response = await fetch(url, {
                     method: 'GET',
                     headers: {
@@ -1101,6 +1103,7 @@
                         'Content-Type': 'application/json'
                     }
                 });
+
                 const data = await response.json();
                 if (data.data && data.data.length > 0) {
                     let options = '<option value="">Seleccionar subtítulos externos</option>';
@@ -1118,10 +1121,14 @@
                 console.error("Error loading subtitles", e);
                 subSelect.innerHTML = '<option value="">Error in subtitles</option>';
             } finally {
-                if (subSelect.options.length > 1) subSelect.selectedIndex = 1;
+                if (subSelect.options.length > 1) {
+                    subSelect.selectedIndex = 1;
+                }
             }
         }
 
+        /* ========== CONTENT LOADING ========== */
+        /** Load and display content details */
         async function loadContent() {
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id') || '278';
@@ -1134,7 +1141,11 @@
                 const response = await fetch(
                     `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=es-MX&append_to_response=recommendations,external_ids,credits`
                 );
-                if (!response.ok) throw new Error(`TMDB responded with ${response.status}`);
+
+                if (!response.ok) {
+                    throw new Error(`TMDB responded with ${response.status}`);
+                }
+
                 const data = await response.json();
 
                 const title = data.title || data.name || 'Sin título';
@@ -1147,8 +1158,11 @@
                     const verMasBtn = document.getElementById('ver-mas-btn');
                     if (overviewEl.scrollHeight > overviewEl.clientHeight) {
                         verMasBtn.style.display = 'inline-block';
+
+                        // Limpiar listeners previos para evitar duplicados
                         const newBtn = verMasBtn.cloneNode(true);
                         verMasBtn.parentNode.replaceChild(newBtn, verMasBtn);
+
                         newBtn.addEventListener('click', (e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -1160,8 +1174,10 @@
                     }
                 });
 
+                // Display director and cast with round photos (photo is navigable)
                 const profileBase = 'https://image.tmdb.org/t/p/w185';
                 const placeholderProfile = 'https://via.placeholder.com/185x185?text=No+Photo';
+
                 let directorSection = `<p style="margin-top:8px;"><strong>Director:</strong></p>`;
                 if (data.credits?.crew) {
                     const dirObj = data.credits.crew.find(c => c.job === 'Director');
@@ -1211,8 +1227,10 @@
                     castSection += '<div>N/A</div>';
                 }
                 castSection += '</div>';
+
                 document.getElementById('castDirector').innerHTML = castSection + directorSection;
 
+                // Display filename if available
                 const filenameDisplay = document.getElementById('filename-display');
                 if (file_name) {
                     filenameDisplay.textContent = `(${file_name})`;
@@ -1226,11 +1244,14 @@
                 const seasonsLabel = type === 'tv' && data.number_of_seasons
                     ? `<span>${data.number_of_seasons} temporada${data.number_of_seasons === 1 ? '' : 's'}</span>`
                     : `<span>${data.runtime || 'HD'} min</span>`;
+
                 const badgeText = [src, res].filter(Boolean).join(' ');
-                const badgeHtml = badgeText ? `<span class="quality-badge">${badgeText}</span>` : '';
+                const badgeHtml = badgeText ? `<span class="quality-badge" >${badgeText}</span>` : '';
+
                 const genresHtml = data.genres && data.genres.length > 0
                     ? `<span>${data.genres.slice(0, 3).map(g => g.name).join(' / ')}</span>`
                     : '';
+
                 document.getElementById('meta').innerHTML = `
                     ${badgeHtml}
                     ${genresHtml}
@@ -1242,6 +1263,7 @@
 
                 const imdbId = data.external_ids?.imdb_id;
 
+                // Save to history
                 const movieObj = {
                     id: imdbId || id,
                     tmdbId: id,
@@ -1258,17 +1280,27 @@
                     document.getElementById('hero').style.backgroundImage = `url('https://image.tmdb.org/t/p/original${data.backdrop_path}')`;
                 }
 
+                // Search for trailer
                 const trailerKey = await buscarTrailer(id, type);
+
                 if (trailerKey) {
                     const container = document.getElementById('trailerContainer');
-                    container.innerHTML = `<div class="trailer-placeholder"><span class="material-icons">play_circle_filled</span><p>Cargando trailer...</p></div>`;
+                    container.innerHTML = `
+                        <div class="trailer-placeholder">
+                            <span class="material-icons">play_circle_filled</span>
+                            <p>Cargando trailer...</p>
+                        </div>
+                    `;
                     iniciarReproductorYouTube(trailerKey);
                 } else {
+                    console.log('No trailer found for:', title);
                     mostrarErrorTrailer(title);
                 }
 
+                // Load recommended content
                 const similarTitle = document.getElementById('similarTitle');
                 similarTitle.textContent = type === 'movie' ? 'Películas Recomendadas' : 'Series Recomendadas';
+
                 const carousel = document.getElementById('carousel');
                 const similares = data.recommendations?.results?.slice(0, 5) || [];
 
@@ -1282,24 +1314,33 @@
                                 if (extData.imdb_id) imdbId = extData.imdb_id;
                             }
                         } catch (e) { }
+
                         const validation = await validarPeliculaFinal(imdbId);
                         if (!validation.disponible) return null;
                         return { ...item, validation, imdbId };
                     }));
+
                     const validSimilares = batchResults.filter(Boolean);
+
                     if (validSimilares.length > 0) {
                         carousel.innerHTML = validSimilares.map((item, index) => {
                             const itemTitle = item.title || item.name || 'Sin título';
-                            const imageUrl = item.poster_path ? `https://image.tmdb.org/t/p/w200${item.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Image';
+                            const imageUrl = item.poster_path
+                                ? `https://image.tmdb.org/t/p/w200${item.poster_path}`
+                                : 'https://via.placeholder.com/500x750?text=No+Image';
                             const year = item.release_date ? item.release_date.substring(0, 4) : (item.first_air_date ? item.first_air_date.substring(0, 4) : '');
                             const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
                             const typeDisplay = type === 'movie' ? 'PELÍCULA' : 'SERIE';
+
                             const val = item.validation;
-                            const extraBadges = (val.source || val.resolution) ? `<div class="info-badge">${[val.source, val.resolution].filter(Boolean).join(' ')}</div>` : '';
+                            const extraBadges = (val.source || val.resolution)
+                                ? `<div class="info-badge">${[val.source, val.resolution].filter(Boolean).join(' ')}</div>` : '';
+
                             let url = `content.html?id=${item.id}&type=${type}`;
                             if (val.file_name) url += `&file_name=${encodeURIComponent(val.file_name)}`;
                             if (val.resolution) url += `&res=${encodeURIComponent(val.resolution)}`;
                             if (val.source) url += `&src=${encodeURIComponent(val.source)}`;
+
                             return `<div class="movie-card navigable" tabindex="0" onclick="window.location.href='${url}'" onkeydown="if(event.key==='Enter') this.click()" aria-label="${itemTitle}">
                                 <div class="type-badge">${typeDisplay}</div>
                                 ${extraBadges}
@@ -1322,21 +1363,30 @@
 
                 carousel.setAttribute('aria-label', type === 'movie' ? 'Películas relacionadas' : 'Series relacionadas');
 
+                // Configure season/episode selectors
                 const seasonSelect = document.getElementById('season-select');
                 const episodeSelect = document.getElementById('episode-select');
+
                 if (type === 'tv' && data.seasons) {
-                    seasonSelect.style.display = 'inline-block';
-                    episodeSelect.style.display = 'inline-block';
+                    document.getElementById('season-select').style.display = 'inline-block';
+                    document.getElementById('episode-select').style.display = 'inline-block';
+
                     const validSeasons = data.seasons.filter(s => s.season_number > 0);
+
                     if (validSeasons.length > 0) {
                         seasonSelect.innerHTML = validSeasons.map(s => `<option value="${s.season_number}" data-episodes="${s.episode_count}">Temporada ${s.season_number}</option>`).join('');
+
                         const updateEpisodes = () => {
                             const selectedOption = seasonSelect.options[seasonSelect.selectedIndex];
                             const episodeCount = parseInt(selectedOption.getAttribute('data-episodes')) || 1;
+
                             let episodesHtml = '';
-                            for (let i = 1; i <= episodeCount; i++) episodesHtml += `<option value="${i}">Capítulo ${i}</option>`;
+                            for (let i = 1; i <= episodeCount; i++) {
+                                episodesHtml += `<option value="${i}">Capítulo ${i}</option>`;
+                            }
                             episodeSelect.innerHTML = episodesHtml;
                         };
+
                         seasonSelect.addEventListener('change', () => {
                             updateEpisodes();
                             fetchSubtitles(imdbId, type, seasonSelect.value, episodeSelect.value);
@@ -1351,7 +1401,9 @@
                     fetchSubtitles(imdbId, type);
                 }
 
+                // Configure play buttons
                 const playBtn = document.getElementById('playBtn');
+
                 const handlePlay = (targetPlayer) => {
                     const subId = document.getElementById('sub-select').value;
                     let url = `${targetPlayer}?id=${id}&type=${type}${imdbId ? `&imdb=${imdbId}` : ''}&lang=es`;
@@ -1359,15 +1411,19 @@
                     if (type === 'tv') {
                         const s = seasonSelect.value;
                         const e = episodeSelect.value;
-                        if (s && e) url += `&s=${s}&e=${e}`;
+                        if (s && e) {
+                            url += `&s=${s}&e=${e}`;
+                        }
                     }
                     window.location.href = url;
                 };
+
                 if (playBtn) {
                     playBtn.onclick = () => handlePlay('player.html');
                     playBtn.classList.add('selected');
                     playBtn.focus();
                 }
+
             } catch (err) {
                 console.error('Error loading content:', err);
                 document.getElementById('title').textContent = 'Error loading content';
@@ -1375,19 +1431,25 @@
             }
         }
 
+        /* ========== VALIDATION ========== */
+        /** Validate content availability from local or remote service */
         async function validarPeliculaFinal(id) {
             if (!id) return { disponible: false };
+
             let validationResult = { disponible: false };
+
             try {
                 const response = await fetch(`${VERIFY_API_URL}?id=${encodeURIComponent(id)}&v=${Date.now()}`, {
                     method: 'GET',
                     cache: 'no-store',
                     headers: { 'Accept': 'application/json' }
                 });
+
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 validationResult = await response.json();
             } catch (error) {
                 console.warn(`Local validation failed for ${id}, trying fallback...`);
+
                 try {
                     const fbResponse = await fetch(`https://imobiledeals.com/service/verify?id=${encodeURIComponent(id)}`);
                     if (fbResponse.ok) {
@@ -1400,28 +1462,46 @@
                             file_name: data.file_name || data.filename || ''
                         };
                     }
-                } catch (fbError) { console.error(`Validation failed for ${id}:`, fbError); }
+                } catch (fbError) {
+                    console.error(`Validation failed for ${id}:`, fbError);
+                }
             }
+
             if (validationResult.disponible) {
                 const resolution = validationResult.resolution || (validationResult.quality_info && validationResult.quality_info.resolucion) || '';
                 const source = validationResult.source || (validationResult.quality_info && validationResult.quality_info.fuente) || '';
-                if ((resolution && HIDDEN_RESOLUTIONS.includes(resolution.toUpperCase())) ||
-                    (source && HIDDEN_RESOLUTIONS.includes(source.toUpperCase()))) {
+
+                const isHiddenResolution = resolution && HIDDEN_RESOLUTIONS.includes(resolution.toUpperCase());
+                const isHiddenSource = source && HIDDEN_RESOLUTIONS.includes(source.toUpperCase());
+
+                if (isHiddenResolution || isHiddenSource) {
                     validationResult.disponible = false;
                 }
             }
+
             return validationResult;
         }
 
+        /* ========== KEYBOARD NAVIGATION ========== */
+        /** Setup keyboard navigation for TV/remote control */
         function setupKeyboardNavigation() {
             document.addEventListener('keydown', (e) => {
                 const active = document.activeElement;
-                if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key)) return;
+
+                if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key)) {
+                    return;
+                }
+
+
                 if (e.key === 'Enter') {
                     if (active.tagName === 'SELECT') {
                         try {
-                            if (typeof active.showPicker === 'function') active.showPicker();
-                            else { const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }); active.dispatchEvent(event); }
+                            if (typeof active.showPicker === 'function') {
+                                active.showPicker();
+                            } else {
+                                const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window });
+                                active.dispatchEvent(event);
+                            }
                         } catch (err) { }
                         return;
                     }
@@ -1430,45 +1510,72 @@
                         return;
                     }
                 }
+
                 const navigables = Array.from(document.querySelectorAll('.navigable, button, select, input, .trailer-container, .movie-card, .person-link')).filter(el => {
                     if (el.style.display === 'none') return false;
                     const r = el.getBoundingClientRect();
                     return r.width > 0 && r.height > 0;
                 });
+
                 if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
                     e.preventDefault();
                     const rect = active.getBoundingClientRect();
                     let closest = null;
                     let minDistance = Infinity;
+
                     navigables.forEach((el) => {
                         if (el === active) return;
                         const elRect = el.getBoundingClientRect();
+
                         const activeCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
                         const elCenter = { x: elRect.left + elRect.width / 2, y: elRect.top + elRect.height / 2 };
+
                         let isCandidate = false;
                         const isTrailer = el.id === 'trailerContainer';
+
+                        // Umbrales más estrictos para navegación vertical para evitar bucles en la misma línea
                         const vThreshold = 5;
                         const hThreshold = 40;
+
                         if (e.key === 'ArrowUp' && elRect.bottom <= rect.top + vThreshold && elCenter.y < activeCenter.y) isCandidate = true;
                         else if (e.key === 'ArrowDown' && elRect.top >= rect.bottom - vThreshold && elCenter.y > activeCenter.y) isCandidate = true;
                         else if (e.key === 'ArrowLeft' && elRect.right <= rect.left + hThreshold) isCandidate = true;
                         else if (e.key === 'ArrowRight' && (elRect.left >= rect.right - hThreshold || (isTrailer && elRect.left > rect.left))) isCandidate = true;
+
                         if (isCandidate) {
                             let dx = Math.max(0, elRect.left - rect.right, rect.left - elRect.right);
                             let dy = Math.max(0, elRect.top - rect.bottom, rect.top - elRect.bottom);
+
                             const centerDistX = Math.abs(elCenter.x - activeCenter.x);
                             const centerDistY = Math.abs(elCenter.y - activeCenter.y);
+
                             let score;
-                            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') score = dy * 10 + centerDistX;
-                            else score = dx * 2 + centerDistY * (isTrailer ? 0.5 : 2);
-                            if (score < minDistance) { minDistance = score; closest = el; }
+                            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                                // Priorizar fuertemente la alineación vertical y la proximidad en el eje Y
+                                score = dy * 10 + centerDistX;
+                            } else {
+                                // Priorizar misma fila o salto al trailer
+                                score = dx * 2 + centerDistY * (isTrailer ? 0.5 : 2);
+                                if (isTrailer && e.key === 'ArrowRight') score -= 100;
+                            }
+
+                            if (score < minDistance) {
+                                minDistance = score;
+                                closest = el;
+                            }
                         }
                     });
-                    if (closest) { closest.focus(); closest.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+
+                    if (closest) {
+                        closest.focus();
+                        closest.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
                 }
             });
         }
 
+        /* ========== INITIALIZATION ========== */
+        /** Initialize page when DOM is ready */
         loadContent();
         setupKeyboardNavigation();
     </script>
@@ -1496,13 +1603,15 @@
                     <p class="hero-synopsis" id="overview"></p>
                     <button id="ver-mas-btn" class="ver-mas-btn navigable" tabindex="0" style="display: none;">Ver
                         más</button>
-                    <div id="media-selectors">
+                    <div id="media-selectors"
+                        style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px;">
                         <select id="season-select" class="tv-select navigable" tabindex="0"
                             aria-label="Seleccionar temporada" style="display: none;"></select>
                         <select id="episode-select" class="tv-select navigable" tabindex="0"
                             aria-label="Seleccionar capítulo" style="display: none;"></select>
                     </div>
-                    <div id="sub-selectors">
+                    <div id="sub-selectors"
+                        style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 15px;">
                         <select id="sub-select" class="tv-select navigable" tabindex="0"
                             aria-label="Seleccionar subtítulo" style="display: none;"></select>
                     </div>
@@ -1514,6 +1623,7 @@
                     </div>
                 </div>
                 <div class="hero-trailer-wrapper">
+
                     <div class="trailer-container" id="trailerContainer" tabindex="0"
                         aria-label="Contenedor de trailer"></div>
                 </div>
