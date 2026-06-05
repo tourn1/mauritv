@@ -1,5 +1,6 @@
 package com.mauritv.movies;
 
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
@@ -10,6 +11,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.webkit.CookieManager;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -112,6 +114,14 @@ public class MainActivity extends BridgeActivity {
         int keyCode = event.getKeyCode();
         int action = event.getAction();
 
+        // Evitar que el teclado se abra automáticamente al navegar con flechas
+        if (action == KeyEvent.ACTION_DOWN) {
+            if (keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_DPAD_DOWN ||
+                keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+                hideKeyboard();
+            }
+        }
+
         // Triple Click central
         if (action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
             long currentTime = System.currentTimeMillis();
@@ -192,6 +202,16 @@ public class MainActivity extends BridgeActivity {
         upEvent.recycle();
     }
 
+    private void hideKeyboard() {
+        View view = this.getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            }
+        }
+    }
+
     private void scrollWebView(int amount) {
         WebView webView = getBridge().getWebView();
         if (webView != null) {
@@ -218,6 +238,10 @@ public class MainActivity extends BridgeActivity {
         settings.setDatabaseEnabled(true);
         settings.setJavaScriptEnabled(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
+        
+        // Evitar que el foco automático abra el teclado en TV
+        webView.setFocusable(true);
+        webView.setFocusableInTouchMode(false);
         
         webView.setWebViewClient(new WebViewClient() {
             @Override

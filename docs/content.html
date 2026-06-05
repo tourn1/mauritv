@@ -1230,7 +1230,7 @@
                 });
 
                 const profileBase = 'https://image.tmdb.org/t/p/w185';
-                const placeholderProfile = 'https://via.placeholder.com/185x185?text=No+Photo';
+                const placeholderProfile = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='50' fill='%232a2a2a'/%3E%3Ccircle cx='50' cy='38' r='18' fill='%23555'/%3E%3Cellipse cx='50' cy='82' rx='28' ry='20' fill='%23555'/%3E%3C/svg%3E";
                 let directorSection = `<p style="margin-top:8px;"><strong>Director:</strong></p>`;
                 if (data.credits?.crew) {
                     const dirObj = data.credits.crew.find(c => c.job === 'Director');
@@ -1240,7 +1240,7 @@
                             <div class="person-list">
                                 <div class="person-item">
                                     <a href="index.html?person_id=${dirObj.id}&person_name=${encodeURIComponent(dirObj.name)}" class="person-link navigable person-photo-link" tabindex="0" aria-label="${dirObj.name}">
-                                        <img src="${img}" alt="${dirObj.name}" class="person-photo" loading="lazy">
+                                        <img src="${img}" alt="${dirObj.name}" class="person-photo" loading="lazy" onerror="this.onerror=null;this.src=placeholderProfile;">
                                     </a>
                                     <div class="person-name">${dirObj.name}</div>
                                 </div>
@@ -1252,7 +1252,7 @@
                             return `
                                 <div class="person-item">
                                     <a href="index.html?person_id=${c.id}&person_name=${encodeURIComponent(c.name)}" class="person-link navigable person-photo-link" tabindex="0" aria-label="${c.name}">
-                                        <img src="${img}" alt="${c.name}" class="person-photo" loading="lazy">
+                                        <img src="${img}" alt="${c.name}" class="person-photo" loading="lazy" onerror="this.onerror=null;this.src=placeholderProfile;">
                                     </a>
                                     <div class="person-name">${c.name}</div>
                                 </div>`;
@@ -1271,7 +1271,7 @@
                         castSection += `
                             <div class="person-item">
                                 <a href="index.html?person_id=${c.id}&person_name=${encodeURIComponent(c.name)}" class="person-link navigable person-photo-link" tabindex="0" aria-label="${c.name}">
-                                    <img src="${img}" alt="${c.name}" class="person-photo" loading="lazy">
+                                    <img src="${img}" alt="${c.name}" class="person-photo" loading="lazy" onerror="this.onerror=null;this.src=placeholderProfile;">
                                 </a>
                                 <div class="person-name">${c.name}</div>
                             </div>`;
