@@ -325,6 +325,8 @@
             color: white;
             width: 100%;
             justify-content: center;
+            /* Al escalar, expandir hacia la derecha por defecto */
+            transform-origin: left center;
         }
 
         .play-button:hover,
@@ -349,6 +351,22 @@
             transition: 0.25s;
             width: 100%;
             max-width: 100%;
+        }
+
+        /* Márgenes pequeños seguros para controles en el hero
+           Evitan que el borde/focus se recorte al estar pegados al borde */
+        .hero-content .play-button,
+        .hero-content .tv-select,
+        .hero-content .ver-mas-btn,
+        .hero-content #media-selectors select,
+        .hero-content #sub-selectors select,
+        .hero-buttons > * {
+            margin: 6px 6px;
+        }
+
+        /* Asegurar espacio para el botón de volver fijo */
+        .back-button {
+            margin: 6px;
         }
 
         .tv-select:focus {
@@ -684,6 +702,8 @@
             .hero-section {
                 padding: 100px 32px 40px;
                 display: block;
+                /* Permitir que los botones ampliados no se recorten */
+                overflow: visible;
             }
 
             .hero-layout {
@@ -725,11 +745,14 @@
                 gap: 18px;
                 width: auto;
                 max-width: 100%;
+                z-index: 3;
             }
 
             .play-button {
                 width: auto;
                 padding: 14px 26px;
+                /* Al escalar, expande hacia la derecha en lugar de la izquierda */
+                transform-origin: left center;
             }
 
             .tv-select {
@@ -780,6 +803,50 @@
 
             .movie-title {
                 font-size: 1rem;
+            }
+        }
+
+        /* Aplicar overflow visible y origen de transformación para todas las pantallas <=1024px
+           Esto evita que botones ampliados se recorten en móviles y tablets (incluye <641px). */
+        @media (max-width: 1024px) {
+            .hero-section {
+                overflow: visible;
+            }
+
+            .hero-buttons {
+                z-index: 3;
+            }
+
+            .play-button {
+                transform-origin: left center;
+            }
+        }
+
+        /* Ajustes específicos para móviles muy estrechos (<= 640px) */
+        @media (max-width: 640px) {
+            .hero-content {
+                /* Garantizar que el contenido no recorte sombras/focus */
+                overflow: visible;
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+
+            /* Aumentar márgenes laterales para controles táctiles */
+            .hero-content .play-button,
+            .hero-content .tv-select,
+            .hero-content .ver-mas-btn,
+            .hero-content #media-selectors select,
+            .hero-content #sub-selectors select,
+            .hero-buttons > * {
+                margin-left: 10px;
+                margin-right: 10px;
+            }
+
+            /* Reducir la extensión del foco para que no se salga del viewport */
+            .play-button:focus,
+            .play-button.selected {
+                box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.28);
+                transform: none;
             }
         }
 
