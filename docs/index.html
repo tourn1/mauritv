@@ -1905,12 +1905,21 @@
                 }
             }
 
-            if (validationResult.disponible) {
-                const resolution = validationResult.resolution || (validationResult.quality_info && validationResult.quality_info.resolucion) || '';
-                const source = validationResult.source || (validationResult.quality_info && validationResult.quality_info.fuente) || '';
+            // Normalizar campos provenientes de diferentes respuestas (directas o dentro de quality_info)
+            const qInfo = validationResult.quality_info || {};
+            const normalizedResolution = validationResult.resolution || qInfo.resolucion || validationResult.resolucion || '';
+            const normalizedSource = validationResult.source || qInfo.fuente || validationResult.fuente || '';
+            const normalizedFileName = validationResult.file_name || validationResult.filename || qInfo.file_name || qInfo.filename || '';
 
-                const isHiddenResolution = resolution && HIDDEN_RESOLUTIONS.includes(resolution.toUpperCase());
-                const isHiddenSource = source && HIDDEN_RESOLUTIONS.includes(source.toUpperCase());
+            // Exponer los valores normalizados en el objeto de retorno
+            validationResult.resolution = normalizedResolution;
+            validationResult.source = normalizedSource;
+            validationResult.file_name = normalizedFileName;
+
+            // Si está disponible, aplicar el filtro de resoluciones/fuentes ocultas
+            if (validationResult.disponible) {
+                const isHiddenResolution = normalizedResolution && HIDDEN_RESOLUTIONS.includes(normalizedResolution.toUpperCase());
+                const isHiddenSource = normalizedSource && HIDDEN_RESOLUTIONS.includes(normalizedSource.toUpperCase());
 
                 if (isHiddenResolution || isHiddenSource) {
                     validationResult.disponible = false;
