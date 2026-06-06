@@ -980,6 +980,9 @@
         const HIDDEN_RESOLUTIONS = ['CAM', 'TS', 'TC'];
         const VERIFY_API_URL = 'https://imobiledeals.com/service/BKP/verify';
 
+        // Poner en `false` para reactivar verify.php cuando vuelva a funcionar
+        const BYPASS_VERIFY = true;
+
         /* ========== STATE ========== */
         let ytPlayer = null;
         let currentTrailerKey = null;
@@ -1446,6 +1449,10 @@
 
         async function validarPeliculaFinal(id) {
             if (!id) return { disponible: false };
+
+            // Bypass: saltear verificación y marcar todo como disponible
+            if (BYPASS_VERIFY) return { disponible: true, resolution: '', source: '', file_name: '' };
+
             let validationResult = { disponible: false };
             try {
                 const response = await fetch(`${VERIFY_API_URL}?id=${encodeURIComponent(id)}&v=${Date.now()}`, {
