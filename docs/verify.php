@@ -1,222 +1,266 @@
 <?php
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
-if (!isset($_GET['id']) || empty($_GET['id'])) {
-    http_response_code(400);
-    echo json_encode(['disponible' => false, 'error' => 'ID requerido']);
-    exit();
-}
-
-$id = $_GET['id'];
-$type = isset($_GET['type']) ? $_GET['type'] : null; // 'movie' o 'tv'
-$season = isset($_GET['season']) ? intval($_GET['season']) : null;
-$episode = isset($_GET['episode']) ? intval($_GET['episode']) : null;
-
-if (!preg_match('/^tt\d{5,}$/', $id)) {
-    http_response_code(400);
-    echo json_encode(['disponible' => false, 'error' => 'Formato inválido']);
-    exit();
-}
 
 /**
- * Verifica la API de streaming - primero prueba como película, luego como serie
+ * Detecta la calidad del video desde el nombre del archivo
  */
-function verificarAPIStreaming($id, $type = null, $season = null, $episode = null) {
-    $attempts = [];
-    $tests = [];
-
-    if ($type) {
-        $tests[] = ['type' => $type, 'season' => $season, 'episode' => $episode, 'label' => $type];
-    } else {
-        $tests[] = ['type' => 'movie', 'season' => null, 'episode' => null, 'label' => 'movie'];
-        $tests[] = ['type' => 'tv', 'season' => null, 'episode' => null, 'label' => 'tv'];
-        $tests[] = ['type' => 'tv', 'season' => 1, 'episode' => 1, 'label' => 'tv_s01e01'];
-    }
-
-    foreach ($tests as $index => $test) {
-        $url = buildApiUrl($id, $test['type'], $test['season'], $test['episode']);
-        $resultado = consultarAPI($url);
-        $resultado['tipo_probado'] = $test['label'];
-        $resultado['api_url'] = $url;
-        $attempts[] = $resultado;
-
-        if ($resultado['disponible']) {
-            return array_merge($resultado, [
-                'attempts' => $attempts,
-                'used_attempt' => $index
-            ]);
+function detectQuality($fileName) {
+    if (empty($fileName)) return [
+        'detalles' => 'Desconocido', 
+        'fuente' => null, 
+        'resolucion' => null,
+        'codec' => null,
+        'audio' => null,
+        'grupo' => null
+    ];
+    
+    $fileNameLower = strtolower($fileName);
+    $info = [];
+    
+    // 1. FUENTE/FORMATO
+    $sourceMap = [
+        'CAM'        => [' cam ', '.cam.', 'camrip', 'hdcam', ' cam-', '-cam'],
+        'TS'         => [' telesync', '.ts.', ' ts ', 'telesync', ' ts-', '-ts'],
+        'TC'         => [' telecine', '.tc.', ' tc ', 'tc-', '-tc'],
+        'SCR'        => [' screener', ' scr ', '.scr.', 'dvdscr', ' scr-', '-scr'],
+        'R5'         => [' r5 ', '.r5.', 'r5rip', ' r5-', '-r5'],
+        'DVD-Rip'    => ['dvdrip', 'dvd-rip', 'dvd rip'],
+        'DVD'        => [' dvd5 ', ' dvd9 ', '.dvd.', ' dvd ', 'dvd5.', 'dvd9.'],
+        'HD-Rip'     => ['hdrip', 'hd-rip', 'hd rip'],
+        'BR-Rip'     => ['brrip', 'br-rip', 'br rip'],
+        'BD-Rip'     => ['bdrip', 'bd-rip', 'bd rip'],
+        'VHS-Rip'    => ['vhsrip', 'vhs-rip', 'vhs rip'],
+        'TV-Rip'     => ['tvrip', 'tv-rip', 'tv rip'],
+        'HDTV'       => ['hdtv', 'hd-tv'],
+        'WEB-Rip'    => ['webrip', 'web-rip', 'web rip'],
+        'WEB-DL'     => ['web-dl', 'web dl', 'webdl'],
+        'BluRay'     => ['bluray', 'blu-ray', 'bdremux', 'bd50', 'bd25', 'bdmv'],
+        'AMZN WEB'   => ['amzn web', 'amazon web', 'amzn.'],
+        'NF WEB'     => ['nf web', 'netflix web', 'netflix.'],
+        'DSNP WEB'   => ['dsnp web', 'disney web', 'disney+.', 'dsnp.'],
+        'HMAX WEB'   => ['hmax web', 'hbo max', 'hbo.'],
+        'ATVP WEB'   => ['atvp web', 'apple tv', 'atvp.'],
+    ];
+    
+    foreach ($sourceMap as $label => $patterns) {
+        foreach ($patterns as $pattern) {
+            if (strpos($fileNameLower, $pattern) !== false) {
+                $info['fuente'] = $label;
+                break 2;
+            }
         }
     }
-
-    if (isset($attempts[1]) && !empty($attempts[1]['title'])) {
-        return array_merge($attempts[1], [
-            'disponible' => true,
-            'attempts' => $attempts,
-            'used_attempt' => 1
-        ]);
-    }
-
-    return array_merge(end($attempts), [
-        'attempts' => $attempts,
-        'used_attempt' => count($attempts) - 1
-    ]);
-}
-
-function buildApiUrl($id, $type, $season = null, $episode = null) {
-    $url = "https://streamdata.vaplayer.ru/api.php?imdb=" . urlencode($id) . "&type=" . $type;
     
-    if ($type === 'tv' && $season && $episode) {
-        $url .= "&season=" . $season . "&episode=" . $episode;
+    // Detectar fuente del grupo (ej: TS-OnlyFlix)
+    if (empty($info['fuente'])) {
+        if (preg_match('/\b(ts|cam|tc|scr)\b[-.]/i', $fileNameLower, $m)) {
+            $sourceLabels = ['ts' => 'TS', 'cam' => 'CAM', 'tc' => 'TC', 'scr' => 'SCR'];
+            $info['fuente'] = $sourceLabels[$m[1]] ?? strtoupper($m[1]);
+        }
     }
     
-    return $url;
-}
-
-function consultarAPI($url) {
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL => $url,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_TIMEOUT => 15,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_SSL_VERIFYHOST => false,
-        CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json, text/javascript, */*; q=0.01',
-            'Accept-Language: es-ES,es;q=0.9,en;q=0.8',
-            'Referer: https://brightpathsignals.com/embed/movie/' . basename($url),
-            'Origin: https://brightpathsignals.com',
-            'X-Requested-With: XMLHttpRequest'
-        ]
-    ]);
+    // 2. RESOLUCIÓN
+    $resolutionMap = [
+        '2160p (4K)' => ['2160p', '4k', 'uhd'],
+        '1440p (2K)' => ['1440p', '2k'],
+        '1080p'      => ['1080p', '1080 ', '.1080.', 'fhd', 'full hd'],
+        '720p'       => ['720p', '720 ', '.720.', 'hd ', ' hd.'],
+        '480p'       => ['480p', '480 ', '.480.', 'sd'],
+        '360p'       => ['360p', '360 ', '.360.'],
+    ];
     
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $error = curl_error($ch);
-    curl_close($ch);
-    
-    if ($error) {
-        return [
-            'disponible' => false,
-            'httpCode' => 0,
-            'error' => "Error cURL: $error",
-            'raw_response' => null,
-            'raw_data' => null
-        ];
+    foreach ($resolutionMap as $label => $patterns) {
+        foreach ($patterns as $pattern) {
+            if (strpos($fileNameLower, $pattern) !== false) {
+                $info['resolucion'] = $label;
+                break 2;
+            }
+        }
     }
     
-    $data = json_decode($response, true);
+    // 3. CODEC
+    $codecMap = [
+        'H.265/HEVC' => ['hevc', 'h265', 'h.265', 'x265'],
+        'H.264/AVC'  => ['avc', 'h264', 'h.264', 'x264'],
+        'AV1'        => ['av1'],
+        'XviD'       => ['xvid'],
+    ];
     
-    if (!$data) {
-        return [
-            'disponible' => false,
-            'httpCode' => $httpCode,
-            'error' => 'Respuesta no es JSON válido',
-            'raw_response' => $response,
-            'raw_data' => null
-        ];
+    foreach ($codecMap as $label => $patterns) {
+        foreach ($patterns as $pattern) {
+            if (strpos($fileNameLower, $pattern) !== false) {
+                $info['codec'] = $label;
+                break 2;
+            }
+        }
     }
     
-    $rawData = isset($data['data']) && is_array($data['data']) ? $data['data'] : [];
-    $streamUrls = isset($rawData['stream_urls']) && is_array($rawData['stream_urls']) ? $rawData['stream_urls'] : [];
-    $tieneStreams = !empty($streamUrls);
-    $tieneEpisodios = isset($rawData['eps']) && !empty($rawData['eps']);
-    $statusCode = isset($data['status_code']) ? $data['status_code'] : null;
-    $isSuccess = ($statusCode === '200' || $statusCode === 200);
-    $disponible = $isSuccess && ($tieneStreams || $tieneEpisodios);
-
+    // 4. AUDIO
+    $audioMap = [
+        'Atmos'    => ['atmos'],
+        'DTS-HD'   => ['dts-hd', 'dtshd'],
+        'DTS 5.1'  => ['dts', 'dts5.1'],
+        'DDP 5.1'  => ['ddp5.1', 'ddp 5.1', 'eac3 5.1', 'e-ac3 5.1'],
+        'DDP 2.0'  => ['ddp2.0', 'ddp 2.0'],
+        'AC3 5.1'  => ['ac3', 'dd5.1', 'dd 5.1'],
+        'AAC 2.0'  => ['aac'],
+        'FLAC'     => ['flac'],
+    ];
+    
+    foreach ($audioMap as $label => $patterns) {
+        foreach ($patterns as $pattern) {
+            if (strpos($fileNameLower, $pattern) !== false) {
+                $info['audio'] = $label;
+                break 2;
+            }
+        }
+    }
+    
+    // 5. GRUPO
+    $groups = ['YTS', 'YIFY', 'RARBG', 'FGT', 'EVO', 'GALAXY', 'MZABI', 'QXR', 'Tigole', 'UTR', 'OnlyFlix', 'ShinGod', 'NOGRP', 'UNiON'];
+    
+    foreach ($groups as $group) {
+        if (stripos($fileName, $group) !== false) {
+            $info['grupo'] = $group;
+            break;
+        }
+    }
+    
+    // 6. ETIQUETA
+    $partes = [];
+    if (!empty($info['fuente'])) $partes[] = $info['fuente'];
+    if (!empty($info['resolucion'])) $partes[] = $info['resolucion'];
+    if (!empty($info['codec'])) $partes[] = $info['codec'];
+    if (!empty($info['audio'])) $partes[] = $info['audio'];
+    if (!empty($info['grupo'])) $partes[] = $info['grupo'];
+    
     return [
-        'disponible' => $disponible,
-        'httpCode' => $httpCode,
-        'api_status_code' => $statusCode,
-        'tiene_streams' => $tieneStreams,
-        'tiene_episodios' => $tieneEpisodios,
-        'num_streams' => count($streamUrls),
-        'num_temporadas' => $tieneEpisodios ? count($rawData['eps']) : 0,
-        'title' => $rawData['title'] ?? null,
-        'imdb_id' => $rawData['imdb_id'] ?? null,
-        'file_name' => $rawData['file_name'] ?? null,
-        'backdrop' => $rawData['backdrop'] ?? null,
-        'season' => $rawData['season'] ?? null,
-        'episode' => $rawData['episode'] ?? null,
-        'media_type' => $rawData['type'] ?? ($tieneEpisodios ? 'tv' : 'movie'),
-        'stream_urls' => $streamUrls,
-        'stream_url' => count($streamUrls) === 1 ? $streamUrls[0] : null,
-        'sources' => buildStreamSources($streamUrls, $rawData),
-        'error' => null,
-        'raw_response' => $data,
-        'raw_data' => $rawData
+        'detalles' => !empty($partes) ? implode(' / ', $partes) : 'No detectado',
+        'fuente' => $info['fuente'] ?? null,
+        'resolucion' => $info['resolucion'] ?? null,
+        'codec' => $info['codec'] ?? null,
+        'audio' => $info['audio'] ?? null,
+        'grupo' => $info['grupo'] ?? null
     ];
 }
 
-function buildStreamSources(array $streamUrls, array $rawData = []) {
-    $sources = [];
+$id = isset($_GET['id']) && !empty($_GET['id']) ? $_GET['id'] : 'tt0371746';
+$type = isset($_GET['type']) && !empty($_GET['type']) ? $_GET['type'] : 'movie';
 
-    foreach ($streamUrls as $streamUrl) {
-        $quality = detectStreamQuality($streamUrl, $rawData['file_name'] ?? null);
-        $sources[] = [
-            'url' => $streamUrl,
-            'type' => detectStreamType($streamUrl),
-            'quality' => $quality,
-            'label' => $quality ?: 'auto',
-            'provider' => parse_url($streamUrl, PHP_URL_HOST) ?: null
-        ];
-    }
+$api_url = "https://streamdata.vaplayer.ru/api.php?imdb=" . $id . "&type=" . $type;
 
-    return $sources;
+$respuesta = [
+    'status_code' => null,
+    'disponible' => false,
+    'file_name' => null,
+    'source' => null,
+    'resolution' => null,
+    'calidad_detalles' => null,
+    'codec' => null,
+    'audio' => null,
+    'grupo' => null,
+    'default_subs' => null,
+    'title' => null,
+    'imdb_id' => null,
+    'error' => null
+];
+
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $api_url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'Origin: https://nextgencloudfabric.com',
+    'Referer: https://nextgencloudfabric.com/',
+    'Accept: application/json'
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+if ($response === false) {
+    $respuesta['error'] = "Error de conexión";
+    echo json_encode($respuesta, JSON_UNESCAPED_SLASHES);
+    exit;
 }
 
-function detectStreamType($url) {
-    $path = parse_url($url, PHP_URL_PATH) ?: '';
-    $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+$data = json_decode($response, true);
+
+if (json_last_error() !== JSON_ERROR_NONE) {
+    $respuesta['error'] = "Error decodificando JSON";
+    echo json_encode($respuesta, JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+// Tomar status_code de la respuesta JSON (no del HTTP)
+if (isset($data['status_code'])) {
+    $respuesta['status_code'] = $data['status_code'];
+}
+
+// Verificar si la respuesta tiene datos
+if (isset($data['data']) && is_array($data['data'])) {
+    // Tomar el filename directamente de data->filename
+    if (isset($data['data']['filename']) && !empty($data['data']['filename'])) {
+        $respuesta['disponible'] = true;
+        $respuesta['file_name'] = $data['data']['filename'];
+        
+        // Detectar calidad desde el nombre del archivo
+        $calidad = detectQuality($data['data']['filename']);
+        $respuesta['source'] = $calidad['fuente'];
+        $respuesta['resolution'] = $calidad['resolucion'];
+        $respuesta['calidad_detalles'] = $calidad['detalles'];
+        $respuesta['codec'] = $calidad['codec'];
+        $respuesta['audio'] = $calidad['audio'];
+        $respuesta['grupo'] = $calidad['grupo'];
+    }
     
-    if ($extension === 'm3u8') {
-        return 'hls';
+    // Tomar title desde data->title
+    if (isset($data['data']['title']) && !empty($data['data']['title'])) {
+        $respuesta['title'] = $data['data']['title'];
     }
-    if ($extension === 'mpd') {
-        return 'dash';
-    }
-
-    return 'direct';
-}
-
-function detectStreamQuality($url, $fileName = null) {
-    $qualities = ['2160p', '1080p', '720p', '480p', '360p', '240p'];
-    $haystack = strtolower($url . ' ' . ($fileName ?? ''));
-
-    foreach ($qualities as $quality) {
-        if (strpos($haystack, strtolower($quality)) !== false) {
-            return $quality;
-        }
-    }
-
-    return 'auto';
-}
-
-$resultado = verificarAPIStreaming($id, $type, $season, $episode);
-$resultado['id'] = $id;
-$resultado['timestamp'] = date('Y-m-d H:i:s');
-$resultado['url_verificada'] = "https://streamimdb.ru/embed/movie/$id";
-$resultado['api_endpoint'] = $resultado['api_url'] ?? null;
-
-$embedUrl = "https://streamimdb.ru/embed/movie/$id";
-if (strpos($resultado['tipo_probado'] ?? '', 'tv') !== false) {
-    $embedUrl = "https://streamimdb.ru/embed/tv/$id";
-    if (!empty($resultado['season']) && !empty($resultado['episode'])) {
-        $embedUrl .= "/{$resultado['season']}/{$resultado['episode']}/";
+    
+    // Tomar imdb_id desde data->imdb_id
+    if (isset($data['data']['imdb_id']) && !empty($data['data']['imdb_id'])) {
+        $respuesta['imdb_id'] = $data['data']['imdb_id'];
     }
 }
-$resultado['embed_url'] = $embedUrl;
 
-http_response_code(200);
-echo json_encode($resultado, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+// Buscar default_subs en la raíz de la respuesta (no dentro de data)
+if (isset($data['default_subs']) && !empty($data['default_subs'])) {
+    $respuesta['default_subs'] = $data['default_subs'];
+}
+
+// Si no se encontró en data->filename, intentar otras estructuras por compatibilidad
+if (!$respuesta['disponible']) {
+    if (isset($data['filename']) && !empty($data['filename'])) {
+        $respuesta['disponible'] = true;
+        $respuesta['file_name'] = $data['filename'];
+        $calidad = detectQuality($data['filename']);
+        $respuesta['source'] = $calidad['fuente'];
+        $respuesta['resolution'] = $calidad['resolucion'];
+        $respuesta['calidad_detalles'] = $calidad['detalles'];
+        $respuesta['codec'] = $calidad['codec'];
+        $respuesta['audio'] = $calidad['audio'];
+        $respuesta['grupo'] = $calidad['grupo'];
+    } elseif (isset($data['data']['file_name']) && !empty($data['data']['file_name'])) {
+        $respuesta['disponible'] = true;
+        $respuesta['file_name'] = $data['data']['file_name'];
+        $calidad = detectQuality($data['data']['file_name']);
+        $respuesta['source'] = $calidad['fuente'];
+        $respuesta['resolution'] = $calidad['resolucion'];
+        $respuesta['calidad_detalles'] = $calidad['detalles'];
+        $respuesta['codec'] = $calidad['codec'];
+        $respuesta['audio'] = $calidad['audio'];
+        $respuesta['grupo'] = $calidad['grupo'];
+    } elseif ($respuesta['status_code'] !== 200) {
+        $respuesta['error'] = "La API devolvió status_code: " . $respuesta['status_code'];
+    } else {
+        $respuesta['error'] = "No se encontró el nombre del archivo en la respuesta";
+    }
+}
+
+echo json_encode($respuesta, JSON_UNESCAPED_SLASHES);
 ?>

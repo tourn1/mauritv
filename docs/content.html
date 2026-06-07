@@ -360,7 +360,7 @@
         .hero-content .ver-mas-btn,
         .hero-content #media-selectors select,
         .hero-content #sub-selectors select,
-        .hero-buttons > * {
+        .hero-buttons>* {
             margin: 6px 6px;
         }
 
@@ -837,7 +837,7 @@
             .hero-content .ver-mas-btn,
             .hero-content #media-selectors select,
             .hero-content #sub-selectors select,
-            .hero-buttons > * {
+            .hero-buttons>* {
                 margin-left: 10px;
                 margin-right: 10px;
             }
@@ -978,10 +978,12 @@
         const TMDB_API_KEY = '12916916a032ac4a2da17601cbc119bd';
         const HISTORY_KEY = 'movie_history_v1';
         const HIDDEN_RESOLUTIONS = ['CAM', 'TS', 'TC'];
-        const VERIFY_API_URL = 'https://imobiledeals.com/service/BKP/verify';
+        //const VERIFY_API_URL = 'https://imobiledeals.com/service/BKP/verify';
+        const VERIFY_API_URL = 'https://tourn1.page.gd/verify.php';
+        //const VERIFY_API_URL = 'https://imobiledeals.com/service/verify';
 
         // Poner en `false` para reactivar verify.php cuando vuelva a funcionar
-        const BYPASS_VERIFY = true;
+        const BYPASS_VERIFY = false;
 
         /* ========== STATE ========== */
         let ytPlayer = null;
