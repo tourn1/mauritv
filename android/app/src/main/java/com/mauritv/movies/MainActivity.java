@@ -4,6 +4,8 @@ import android.content.Context;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
@@ -29,13 +31,55 @@ public class MainActivity extends BridgeActivity {
     // Virtual Cursor Variables
     private boolean isCursorActive = false;
     private ImageView cursorView;
+    private ImageView cursorBorder; // Segundo ImageView para el borde con la misma forma
     private float cursorX = 0;
     private float cursorY = 0;
     private int screenWidth = 0;
     private int screenHeight = 0;
-    private int cursorSpeed = 25; // Velocidad ajustada
-    private long lastCenterClickTime = 0;
-    private int centerClickCount = 0;
+    private int cursorSpeed = 38; // Incrementado un 50% (de 25 a 38)
+    private final Handler hideHandler = new Handler(Looper.getMainLooper());
+    private final Runnable hideCursorRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (cursorView != null) {
+                cursorView.setVisibility(View.GONE);
+                if (cursorBorder != null) cursorBorder.setVisibility(View.GONE);
+                isCursorActive = false;
+                
+                // Quitar foco solo si no estamos en un dropdown para ocultar controles del player
+                WebView webView = getBridge().getWebView();
+                if (webView != null && isPlayerPage()) {
+                    webView.evaluateJavascript(
+                        "(function() {" +
+                        "  var active = document.activeElement;" +
+                        "  if (!active) return;" +
+                        "  var isDropdown = active.tagName === 'SELECT' || " +
+                        "                   active.getAttribute('role') === 'listbox' || " +
+                        "                   active.className.includes('select') || " +
+                        "                   active.className.includes('dropdown') || " +
+                        "                   !!active.closest('.dropdown, .select-items, select');" +
+                        "  if (!isDropdown) {" +
+                        "    active.blur();" +
+                        "    window.focus();" +
+                        "  }" +
+                        "})();", null);
+                }
+            }
+        }
+    };
+
+    private void resetHideTimer() {
+        hideHandler.removeCallbacks(hideCursorRunnable);
+        hideHandler.postDelayed(hideCursorRunnable, 3000);
+    }
+
+    private boolean isPlayerPage() {
+        WebView webView = getBridge().getWebView();
+        if (webView != null && webView.getUrl() != null) {
+            return webView.getUrl().contains("player.html");
+        }
+        return false;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,41 +94,46 @@ public class MainActivity extends BridgeActivity {
     }
 
     private void initVirtualCursor() {
-        // Obtener dimensiones reales de la pantalla
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
         screenWidth = metrics.widthPixels;
         screenHeight = metrics.heightPixels;
 
-        // Tamaño del cursor en DP para que sea consistente
-        int cursorSizePx = (int) (30 * metrics.density);
+        int cursorSizePx = (int) (28 * metrics.density);
+        int borderSizePx = (int) (31 * metrics.density); // Ligeramente más grande para el borde
 
+        // ImageView para el BORDE (Negro)
+        cursorBorder = new ImageView(this);
+        cursorBorder.setImageResource(android.R.drawable.ic_menu_send);
+        cursorBorder.setColorFilter(Color.BLACK, PorterDuff.Mode.SRC_IN);
+        cursorBorder.setRotation(-135);
+        cursorBorder.setElevation(998);
+        cursorBorder.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        
+        // ImageView para el CURSOR (Blanco)
         cursorView = new ImageView(this);
-        // Usar un icono más pequeño y limpio
         cursorView.setImageResource(android.R.drawable.ic_menu_send); 
         cursorView.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
-        cursorView.setRotation(-135); // Apuntar hacia arriba-izquierda
-        cursorView.setElevation(999); // Máxima elevación
+        cursorView.setRotation(-135);
+        cursorView.setElevation(999);
         cursorView.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        cursorView.setPadding(0, 0, 0, 0);
         
-        // Configurar el layout para que NO sea pantalla completa, sino el tamaño del icono
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(cursorSizePx, cursorSizePx);
-        params.gravity = Gravity.TOP | Gravity.START;
+        FrameLayout.LayoutParams borderParams = new FrameLayout.LayoutParams(borderSizePx, borderSizePx);
+        FrameLayout.LayoutParams cursorParams = new FrameLayout.LayoutParams(cursorSizePx, cursorSizePx);
         
-        // Añadir a la ventana
-        addContentView(cursorView, params);
+        addContentView(cursorBorder, borderParams);
+        addContentView(cursorView, cursorParams);
+        
         cursorView.setVisibility(View.GONE);
+        cursorBorder.setVisibility(View.GONE);
 
-        // Posición inicial: centro
         cursorX = screenWidth / 2f;
         cursorY = screenHeight / 2f;
         updateCursorPosition();
     }
 
     private void updateCursorPosition() {
-        if (cursorView != null) {
-            // Asegurar que el cursor se mantenga dentro de los límites de la pantalla
+        if (cursorView != null && cursorBorder != null) {
             if (cursorX < 0) cursorX = 0;
             if (cursorX > screenWidth) cursorX = screenWidth;
             if (cursorY < 0) cursorY = 0;
@@ -92,21 +141,37 @@ public class MainActivity extends BridgeActivity {
 
             cursorView.setX(cursorX);
             cursorView.setY(cursorY);
+            
+            // Centrar el borde respecto al cursor
+            float offset = (cursorBorder.getWidth() - cursorView.getWidth()) / 2f;
+            cursorBorder.setX(cursorX - offset);
+            cursorBorder.setY(cursorY - offset);
         }
     }
 
     private void toggleCursor() {
+        if (!isPlayerPage()) return;
+        
         isCursorActive = !isCursorActive;
-        cursorView.setVisibility(isCursorActive ? View.VISIBLE : View.GONE);
+        int visibility = isCursorActive ? View.VISIBLE : View.GONE;
+        cursorView.setVisibility(visibility);
+        cursorBorder.setVisibility(visibility);
         if (isCursorActive) {
-            // Resetear posición al activar por si acaso
-            cursorX = screenWidth / 2f;
-            cursorY = screenHeight / 2f;
             updateCursorPosition();
-            Toast.makeText(this, "Modo Mouse: ACTIVADO", Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(this, "Modo Mouse: DESACTIVADO", Toast.LENGTH_SHORT).show();
+            resetHideTimer();
         }
+    }
+
+    private void showCursor() {
+        if (!isPlayerPage()) return;
+        
+        if (!isCursorActive) {
+            isCursorActive = true;
+            cursorView.setVisibility(View.VISIBLE);
+            cursorBorder.setVisibility(View.VISIBLE);
+        }
+        updateCursorPosition();
+        resetHideTimer();
     }
 
     @Override
@@ -114,33 +179,29 @@ public class MainActivity extends BridgeActivity {
         int keyCode = event.getKeyCode();
         int action = event.getAction();
 
+        boolean isDpadArrow = keyCode == KeyEvent.KEYCODE_DPAD_UP ||
+                             keyCode == KeyEvent.KEYCODE_DPAD_DOWN ||
+                             keyCode == KeyEvent.KEYCODE_DPAD_LEFT ||
+                             keyCode == KeyEvent.KEYCODE_DPAD_RIGHT;
+
         // Evitar que el teclado se abra automáticamente al navegar con flechas
-        if (action == KeyEvent.ACTION_DOWN) {
-            if (keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_DPAD_DOWN ||
-                keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-                hideKeyboard();
+        if (action == KeyEvent.ACTION_DOWN && isDpadArrow) {
+            // Inmediatamente intentar ocultar y también programar un intento posterior
+            hideKeyboard();
+            WebView webView = getBridge().getWebView();
+            if (webView != null) {
+                webView.postDelayed(this::hideKeyboard, 10);
+                webView.postDelayed(this::hideKeyboard, 50);
             }
         }
 
-        // Triple Click central
-        if (action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
-            long currentTime = System.currentTimeMillis();
-            if (currentTime - lastCenterClickTime < 600) {
-                centerClickCount++;
-            } else {
-                centerClickCount = 1;
-            }
-            lastCenterClickTime = currentTime;
-
-            if (centerClickCount == 3) {
-                toggleCursor();
-                centerClickCount = 0;
-                return true;
-            }
+        // Activar cursor en player.html con cualquier direccional
+        if (action == KeyEvent.ACTION_DOWN && isDpadArrow && isPlayerPage()) {
+            showCursor();
         }
 
         // Navegación con el cursor activo
-        if (isCursorActive) {
+        if (isCursorActive && isPlayerPage()) {
             if (action == KeyEvent.ACTION_DOWN || action == KeyEvent.ACTION_MULTIPLE) {
                 switch (keyCode) {
                     case KeyEvent.KEYCODE_DPAD_UP:
@@ -149,7 +210,7 @@ public class MainActivity extends BridgeActivity {
                             cursorY = 0;
                             scrollWebView(-200);
                         }
-                        updateCursorPosition();
+                        showCursor();
                         return true;
                     case KeyEvent.KEYCODE_DPAD_DOWN:
                         cursorY += cursorSpeed;
@@ -157,26 +218,26 @@ public class MainActivity extends BridgeActivity {
                             cursorY = screenHeight;
                             scrollWebView(200);
                         }
-                        updateCursorPosition();
+                        showCursor();
                         return true;
                     case KeyEvent.KEYCODE_DPAD_LEFT:
                         cursorX -= cursorSpeed;
-                        updateCursorPosition();
+                        showCursor();
                         return true;
                     case KeyEvent.KEYCODE_DPAD_RIGHT:
                         cursorX += cursorSpeed;
-                        updateCursorPosition();
+                        showCursor();
                         return true;
                     case KeyEvent.KEYCODE_DPAD_CENTER:
                     case KeyEvent.KEYCODE_ENTER:
                         simulateClick(cursorX, cursorY);
+                        resetHideTimer();
                         return true;
                 }
             }
             
             // Bloquear escape del foco si el mouse está activo
-            if (keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_DPAD_DOWN || 
-                keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+            if (isDpadArrow) {
                 return true;
             }
         }
@@ -188,26 +249,36 @@ public class MainActivity extends BridgeActivity {
         WebView webView = getBridge().getWebView();
         if (webView == null) return;
 
+        // Avisar al JS que este foco es legítimo
+        webView.evaluateJavascript("window.isMouseClick = true; setTimeout(function(){ window.isMouseClick = false; }, 500);", null);
+
         long downTime = SystemClock.uptimeMillis();
-        
-        // Simular evento Touch Down
         MotionEvent downEvent = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, x, y, 0);
         webView.dispatchTouchEvent(downEvent);
         
-        // Simular evento Touch Up un poco después
         MotionEvent upEvent = MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_UP, x, y, 0);
         webView.dispatchTouchEvent(upEvent);
         
         downEvent.recycle();
         upEvent.recycle();
+
+        // Forzar mostrar el teclado SOLO si NO estamos en player.html
+        if (!isPlayerPage()) {
+            webView.postDelayed(() -> {
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.showSoftInput(webView, InputMethodManager.SHOW_IMPLICIT);
+                }
+            }, 100);
+        }
     }
 
     private void hideKeyboard() {
-        View view = this.getCurrentFocus();
-        if (view != null) {
+        WebView webView = getBridge().getWebView();
+        if (webView != null) {
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             if (imm != null) {
-                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                imm.hideSoftInputFromWindow(webView.getWindowToken(), 0);
             }
         }
     }
@@ -244,6 +315,22 @@ public class MainActivity extends BridgeActivity {
         webView.setFocusableInTouchMode(false);
         
         webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                // Inyectar script para bloquear foco automático que dispara el teclado
+                // Solo bloqueamos si el evento NO es disparado por un click o si no estamos activamente queriendo enfocar
+                view.evaluateJavascript(
+                    "window.addEventListener('focusin', function(e) {" +
+                    "  if (e.target.tagName === 'INPUT' && !window.isMouseClick) {" +
+                    "    e.preventDefault();" +
+                    "    e.stopPropagation();" +
+                    "    // Si el foco viene de navegación por flechas, lo permitimos visualmente pero cerramos teclado" +
+                    "    setTimeout(function() { if(!window.isMouseClick) e.target.blur(); }, 1);" +
+                    "  }" +
+                    "}, true);", null);
+            }
+
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 if (url.contains("tourn1.com") || url.contains("page.gd")) {
