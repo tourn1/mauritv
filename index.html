@@ -100,7 +100,8 @@
             gap: 1rem;
         }
 
-        .header-left, .header-right {
+        .header-left,
+        .header-right {
             flex: 1;
             display: flex;
         }
@@ -140,7 +141,8 @@
             outline: none;
         }
 
-        .icon-btn:hover, .icon-btn:focus {
+        .icon-btn:hover,
+        .icon-btn:focus {
             color: var(--accent-color);
             background: rgba(255, 255, 255, 0.1);
             transform: scale(1.1);
@@ -591,7 +593,9 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             width: fit-content;
         }
-        .back-btn:hover, .back-btn:focus {
+
+        .back-btn:hover,
+        .back-btn:focus {
             background: rgba(255, 255, 255, 0.2);
             border-color: #ffffff;
             outline: none !important;
@@ -769,7 +773,7 @@
             header {
                 display: grid;
                 grid-template-columns: 1fr auto 1fr;
-                grid-template-areas: 
+                grid-template-areas:
                     ". logo right"
                     "search search search";
                 gap: 1rem;
@@ -1198,7 +1202,11 @@
         }
 
         .settings-input:focus {
-            border-color: var(--accent-color);
+            border-color: #ffffff !important;
+            background: rgba(0, 0, 0, 0.5) !important;
+            color: var(--text-primary) !important;
+            transform: none !important;
+            outline: none !important;
         }
 
         .settings-actions {
@@ -1221,7 +1229,8 @@
             outline: none;
         }
 
-        .settings-btn:hover, .settings-btn:focus {
+        .settings-btn:hover,
+        .settings-btn:focus {
             background: var(--accent-hover);
         }
 
@@ -1230,7 +1239,8 @@
             color: var(--text-primary);
         }
 
-        .settings-btn-secondary:hover, .settings-btn-secondary:focus {
+        .settings-btn-secondary:hover,
+        .settings-btn-secondary:focus {
             background: rgba(255, 255, 255, 0.2);
         }
 
@@ -1244,8 +1254,12 @@
 
         .switch input {
             opacity: 0;
-            width: 0;
-            height: 0;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            z-index: 2;
+            cursor: pointer;
+            margin: 0;
         }
 
         .slider {
@@ -1270,15 +1284,19 @@
             transition: .4s;
         }
 
-        input:checked + .slider {
+        .switch input:focus {
+            outline: none !important;
+        }
+
+        input:checked+.slider {
             background-color: var(--accent-color);
         }
 
-        input:focus + .slider {
-            box-shadow: 0 0 1px var(--accent-color);
+        input:focus+.slider {
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
         }
 
-        input:checked + .slider:before {
+        input:checked+.slider:before {
             transform: translateX(26px);
         }
 
@@ -1296,7 +1314,7 @@
         //const VERIFY_API_URL = 'https://tourn1.page.gd/verify.php';
         //const VERIFY_API_URL = 'https://imobiledeals.com/service/BKP/verify';
         //const VERIFY_API_URL = 'https://tourn1.page.gd/verify.php';
-        let VERIFY_API_URL = localStorage.getItem('verify_api_url') || 'https://verify.mauritv.net/verify.php';
+        let VERIFY_API_URL = localStorage.getItem('verify_api_url') || 'https://imobiledeals.com/service/verify';
         let VERIFY_DISPONIBILIDAD = localStorage.getItem('verify_disponibilidad') === 'true';
         let BLOCK_LOW_RES = localStorage.getItem('block_low_res') !== 'false';
 
@@ -1334,8 +1352,8 @@
                 <div class="search-container">
                     <div class="search-bar" id="search-bar-container">
                         <span class="material-icons search-icon">search</span>
-                        <input type="text" id="movie-input" placeholder="Buscar películas o series..." autocomplete="off"
-                            tabindex="1">
+                        <input type="text" id="movie-input" placeholder="Buscar películas o series..."
+                            autocomplete="off" tabindex="1">
                         <button id="mic-btn" class="navigable" title="Búsqueda por voz" tabindex="2">
                             <span class="material-icons">mic</span>
                         </button>
@@ -1375,8 +1393,10 @@
                 </label>
             </div>
             <div class="settings-actions">
-                <button id="settings-clear-cache-btn" class="settings-btn settings-btn-secondary navigable" style="margin-right: auto;" tabindex="0">Borrar Caché</button>
-                <button id="settings-cancel-btn" class="settings-btn settings-btn-secondary navigable" tabindex="0">Cancelar</button>
+                <button id="settings-clear-cache-btn" class="settings-btn settings-btn-secondary navigable"
+                    style="margin-right: auto;" tabindex="0">Borrar Caché</button>
+                <button id="settings-cancel-btn" class="settings-btn settings-btn-secondary navigable"
+                    tabindex="0">Cancelar</button>
                 <button id="settings-save-btn" class="settings-btn navigable" tabindex="0">Guardar</button>
             </div>
         </div>
@@ -1402,14 +1422,18 @@
                 <div id="movies-section" style="margin-bottom: 2.5rem;">
                     <h2 class="section-title">Top 10 Películas</h2>
                     <div id="movies-grid" class="results-grid">
-                        <div class="empty-state"><p>Cargando...</p></div>
+                        <div class="empty-state">
+                            <p>Cargando...</p>
+                        </div>
                     </div>
                 </div>
 
                 <div id="series-section" style="margin-bottom: 2.5rem;">
                     <h2 class="section-title">Top 10 Series</h2>
                     <div id="series-grid" class="results-grid">
-                        <div class="empty-state"><p>Cargando...</p></div>
+                        <div class="empty-state">
+                            <p>Cargando...</p>
+                        </div>
                     </div>
                 </div>
 
@@ -1479,8 +1503,8 @@
 
         // ========== UI HELPERS ==========
         /** Toggle logo visibility (Disabled) */
-        const showLogo = () => {};
-        const hideLogo = () => {};
+        const showLogo = () => { };
+        const hideLogo = () => { };
 
         // Logo click/activation logic
         if (logoNavWrapper) {
@@ -1769,10 +1793,10 @@
         /** Load trending movies or series */
         async function loadTrendingContent(type = 'movies') {
             showLogo();
-            
+
             const targetGrid = type === 'movies' ? moviesGrid : seriesGrid;
             if (!targetGrid) return;
-            
+
             loadHistory();
 
             const cacheKey = `trending${type.charAt(0).toUpperCase() + type.slice(1)}Cache_v1`;
@@ -2159,6 +2183,13 @@
 
             // Tab selection
             if (active.classList.contains('tab-btn') && (e.key === 'Enter' || e.key === 'Select' || e.keyCode === 23)) {
+                active.click();
+                return;
+            }
+
+            // Generic Enter for buttons and checkboxes
+            if ((active.tagName === 'BUTTON' || active.type === 'checkbox') && (e.key === 'Enter' || e.key === 'Select' || e.keyCode === 23)) {
+                e.preventDefault();
                 active.click();
                 return;
             }
