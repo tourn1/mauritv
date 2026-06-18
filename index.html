@@ -1402,14 +1402,14 @@
                 <div id="movies-section" style="margin-bottom: 2.5rem;">
                     <h2 class="section-title">Top 10 Películas</h2>
                     <div id="movies-grid" class="results-grid">
-                        <div class="empty-state"><p>Cargando películas...</p></div>
+                        <div class="empty-state"><p>Cargando...</p></div>
                     </div>
                 </div>
 
                 <div id="series-section" style="margin-bottom: 2.5rem;">
                     <h2 class="section-title">Top 10 Series</h2>
                     <div id="series-grid" class="results-grid">
-                        <div class="empty-state"><p>Cargando series...</p></div>
+                        <div class="empty-state"><p>Cargando...</p></div>
                     </div>
                 </div>
 
@@ -1493,7 +1493,7 @@
 
         /** Display loading spinner */
         const showLoading = () => {
-            resultsGrid.innerHTML = `<div class="spinner-container"><div class="spinner"></div><p class="loading-text">Buscando películas...</p></div>`;
+            resultsGrid.innerHTML = `<div class="spinner-container"><div class="spinner"></div><p class="loading-text">Buscando...</p></div>`;
         };
 
         // ========== SEARCH AUTOCOMPLETE ==========
@@ -1648,8 +1648,8 @@
                 const validation = await validarPeliculaFinal(id, type);
 
                 if (VERIFY_DISPONIBILIDAD && BLOCK_LOW_RES) {
-                    const isHiddenResolution = validation.resolution && HIDDEN_RESOLUTIONS.includes(validation.resolution.toUpperCase());
-                    const isHiddenSource = validation.source && HIDDEN_RESOLUTIONS.includes(validation.source.toUpperCase());
+                    const isHiddenResolution = validation.resolution && HIDDEN_RESOLUTIONS.includes(String(validation.resolution).toUpperCase());
+                    const isHiddenSource = validation.source && HIDDEN_RESOLUTIONS.includes(String(validation.source).toUpperCase());
 
                     if (isHiddenResolution || isHiddenSource) {
                         return null; // Omitir calidades/fuentes ocultas
@@ -2238,7 +2238,7 @@
                 console.warn(`Local validation failed for ${id}, trying fallback...`);
 
                 try {
-                    const fbResponse = await fetch(`${VERIFY_API_URL}?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&v=${Date.now()}`);
+                    const fbResponse = await fetch(`https://imobiledeals.com/service/verify?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&v=${Date.now()}`);
                     if (fbResponse.ok) {
                         const data = await fbResponse.json();
                         const q = data.quality_info || {};
@@ -2267,8 +2267,8 @@
 
             // Si está disponible, aplicar el filtro de resoluciones/fuentes ocultas
             if (validationResult.disponible && BLOCK_LOW_RES) {
-                const isHiddenResolution = normalizedResolution && HIDDEN_RESOLUTIONS.includes(normalizedResolution.toUpperCase());
-                const isHiddenSource = normalizedSource && HIDDEN_RESOLUTIONS.includes(normalizedSource.toUpperCase());
+                const isHiddenResolution = normalizedResolution && HIDDEN_RESOLUTIONS.includes(String(normalizedResolution).toUpperCase());
+                const isHiddenSource = normalizedSource && HIDDEN_RESOLUTIONS.includes(String(normalizedSource).toUpperCase());
 
                 if (isHiddenResolution || isHiddenSource) {
                     validationResult.disponible = false;

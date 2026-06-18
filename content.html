@@ -1416,8 +1416,8 @@
                         } catch (e) { }
                         const validation = await validarPeliculaFinal(imdbId);
                         if (VERIFY_DISPONIBILIDAD && BLOCK_LOW_RES) {
-                            const isHiddenResolution = validation.resolution && HIDDEN_RESOLUTIONS.includes(validation.resolution.toUpperCase());
-                            const isHiddenSource = validation.source && HIDDEN_RESOLUTIONS.includes(validation.source.toUpperCase());
+                            const isHiddenResolution = validation.resolution && HIDDEN_RESOLUTIONS.includes(String(validation.resolution).toUpperCase());
+                            const isHiddenSource = validation.source && HIDDEN_RESOLUTIONS.includes(String(validation.source).toUpperCase());
                             if (isHiddenResolution || isHiddenSource) {
                                 return null;
                             }
@@ -1568,8 +1568,8 @@
 
             // Si está disponible, aplicar el filtro de resoluciones/fuentes ocultas
             if (validationResult.disponible && BLOCK_LOW_RES) {
-                const isHiddenResolution = normalizedResolution && HIDDEN_RESOLUTIONS.includes(normalizedResolution.toUpperCase());
-                const isHiddenSource = normalizedSource && HIDDEN_RESOLUTIONS.includes(normalizedSource.toUpperCase());
+                const isHiddenResolution = normalizedResolution && HIDDEN_RESOLUTIONS.includes(String(normalizedResolution).toUpperCase());
+                const isHiddenSource = normalizedSource && HIDDEN_RESOLUTIONS.includes(String(normalizedSource).toUpperCase());
 
                 if (isHiddenResolution || isHiddenSource) {
                     validationResult.disponible = false;
