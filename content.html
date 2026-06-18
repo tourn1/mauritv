@@ -1063,8 +1063,8 @@
         function mostrarErrorTrailer(titulo = '', trailerKey = null) {
             const container = document.getElementById('trailerContainer');
             const searchQuery = titulo ? `${titulo} trailer oficial` : 'trailer';
-            const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`;
-            const directUrl = trailerKey ? `https://www.youtube.com/watch?v=${trailerKey}` : youtubeSearchUrl;
+            const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}&gl=AR&hl=es-419`;
+            const directUrl = trailerKey ? `https://www.youtube.com/watch?v=${trailerKey}&gl=AR&hl=es-419` : youtubeSearchUrl;
 
             container.innerHTML = `
                 <div class="trailer-error">
@@ -1113,7 +1113,9 @@
                         fs: 1,
                         playsinline: 1,
                         origin: window.location.origin,
-                        widget_referrer: window.location.href
+                        widget_referrer: window.location.href,
+                        hl: 'es-419',
+                        gl: 'AR'
                     },
                     events: {
                         onReady: onPlayerReady,
@@ -1152,7 +1154,7 @@
                 default: errorMessage = 'Error desconocido';
             }
             const titulo = document.getElementById('title').textContent;
-            const youtubeUrl = `https://www.youtube.com/watch?v=${currentTrailerKey}`;
+            const youtubeUrl = `https://www.youtube.com/watch?v=${currentTrailerKey}&gl=AR&hl=es-419`;
             const container = document.getElementById('trailerContainer');
             container.innerHTML = `
                 <div class="trailer-error">
