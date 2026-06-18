@@ -48,22 +48,15 @@
 
         /* Logo */
         .logo-container {
-            width: 100%;
             display: flex;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
-            margin-bottom: 1.5rem;
             transition: opacity 0.4s ease, max-height 0.5s ease, margin 0.5s ease;
             overflow: hidden;
-            max-height: 200px;
+            max-height: 80px;
         }
 
-        .logo-container.hidden {
-            opacity: 0;
-            max-height: 0;
-            margin-bottom: 0;
-            pointer-events: none;
-        }
+        /* .logo-container.hidden removed to prevent logo hiding */
 
         .logo-nav-wrapper {
             display: inline-flex;
@@ -90,8 +83,8 @@
         }
 
         .app-logo {
-            max-height: 120px;
-            max-width: 80%;
+            max-height: 60px;
+            max-width: 100%;
             object-fit: contain;
             filter: drop-shadow(0 4px 20px rgba(229, 9, 20, 0.4));
         }
@@ -101,13 +94,56 @@
             width: 100%;
             margin-bottom: 2rem;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            justify-content: space-between;
             align-items: center;
+            gap: 1rem;
+        }
+
+        .header-left, .header-right {
+            flex: 1;
+            display: flex;
+        }
+
+        .header-left {
+            justify-content: flex-start;
+        }
+
+        .header-right {
+            justify-content: flex-end;
+        }
+
+        .header-center {
+            flex: 2;
+            display: flex;
+            justify-content: center;
+            width: 100%;
         }
 
         .search-container {
             width: 100%;
             max-width: 800px;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+            outline: none;
+        }
+
+        .icon-btn:hover, .icon-btn:focus {
+            color: var(--accent-color);
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.1);
         }
 
         .search-bar {
@@ -541,6 +577,26 @@
             opacity: 0.5;
         }
 
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: fit-content;
+        }
+        .back-btn:hover, .back-btn:focus {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #ffffff;
+            outline: none !important;
+        }
+
         /* --- Pre-Play Overlay --- */
         .pre-play-overlay {
             position: fixed;
@@ -638,11 +694,51 @@
             white-space: normal;
         }
 
+        .verified-badge {
+            position: absolute;
+            top: 36px;
+            right: 10px;
+            background: rgba(30, 215, 96, 0.2);
+            color: #1ed760;
+            border: 1px solid rgba(30, 215, 96, 0.4);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            z-index: 12;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            backdrop-filter: blur(4px);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .not-verified-badge {
+            position: absolute;
+            top: 36px;
+            right: 10px;
+            background: rgba(255, 152, 0, 0.2);
+            color: #ff9800;
+            border: 1px solid rgba(255, 152, 0, 0.4);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            z-index: 12;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            backdrop-filter: blur(4px);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
         /* Badge de Información Extra (Fuente y Resolución combinadas) */
         .info-badge {
             position: absolute;
-            top: 42px;
-            /* Debajo del type-badge */
+            top: 62px;
+            /* Debajo del verified-badge */
             right: 10px;
             padding: 4px 10px;
             border-radius: 4px;
@@ -670,6 +766,33 @@
 
         /* Mobile Adjustments */
         @media (max-width: 600px) {
+            header {
+                display: grid;
+                grid-template-columns: 1fr auto 1fr;
+                grid-template-areas: 
+                    ". logo right"
+                    "search search search";
+                gap: 1rem;
+                align-items: center;
+            }
+
+            .header-left {
+                grid-area: logo;
+                justify-content: center;
+                width: 100%;
+            }
+
+            .header-center {
+                grid-area: search;
+                width: 100%;
+            }
+
+            .header-right {
+                grid-area: right;
+                justify-content: flex-end;
+                width: 100%;
+            }
+
             #app {
                 padding: 1rem;
             }
@@ -1010,6 +1133,162 @@
         #virtual-cursor {
             display: none !important;
         }
+
+        /* Settings Panel */
+        .settings-panel {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            margin-left: auto;
+            margin-right: auto;
+            transition: max-height 0.3s ease, padding 0.3s ease, margin 0.3s ease, opacity 0.3s ease;
+            overflow: hidden;
+            max-height: 400px;
+            opacity: 1;
+        }
+
+        .settings-panel.hidden {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-bottom: 0;
+            opacity: 0;
+            border-color: transparent;
+            pointer-events: none;
+        }
+
+        .settings-title {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            text-align: center;
+        }
+
+        .settings-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .url-option {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .settings-input {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.5);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color var(--transition-speed);
+        }
+
+        .settings-input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .settings-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 0.5rem;
+            gap: 1rem;
+        }
+
+        .settings-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: background var(--transition-speed);
+            outline: none;
+        }
+
+        .settings-btn:hover, .settings-btn:focus {
+            background: var(--accent-hover);
+        }
+
+        .settings-btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .settings-btn-secondary:hover, .settings-btn-secondary:focus {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #555;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-color);
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px var(--accent-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .slider.round {
+            border-radius: 24px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
     </style>
     <script>
         /* ========== CONFIGURATION ========== */
@@ -1017,10 +1296,9 @@
         //const VERIFY_API_URL = 'https://tourn1.page.gd/verify.php';
         //const VERIFY_API_URL = 'https://imobiledeals.com/service/BKP/verify';
         //const VERIFY_API_URL = 'https://tourn1.page.gd/verify.php';
-        const VERIFY_API_URL = 'https://imobiledeals.com/service/verify';
-
-        // Poner en `false` para reactivar verify.php cuando vuelva a funcionar
-        const BYPASS_VERIFY = false;
+        let VERIFY_API_URL = localStorage.getItem('verify_api_url') || 'https://verify.mauritv.net/verify.php';
+        let VERIFY_DISPONIBILIDAD = localStorage.getItem('verify_disponibilidad') === 'true';
+        let BLOCK_LOW_RES = localStorage.getItem('block_low_res') !== 'false';
 
         //var version = new Date().getTime();
         var version = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -1044,48 +1322,103 @@
 <body class="tv-mode">
     <div id="app">
         <header>
-            <div class="logo-container" id="logo-container">
-                <div class="logo-nav-wrapper navigable" id="logo-nav-wrapper" tabindex="0" role="button"
-                    aria-label="Recargar e ir al inicio">
-                    <img src="mauritv.png" alt="MauriTV" id="app-logo" class="app-logo">
+            <div class="header-left">
+                <div class="logo-container" id="logo-container">
+                    <div class="logo-nav-wrapper navigable" id="logo-nav-wrapper" tabindex="0" role="button"
+                        aria-label="Recargar e ir al inicio">
+                        <img src="mauritv.png" alt="MauriTV" id="app-logo" class="app-logo">
+                    </div>
                 </div>
             </div>
-            <div class="search-container">
-                <div class="search-bar" id="search-bar-container">
-                    <span class="material-icons search-icon">search</span>
-                    <input type="text" id="movie-input" placeholder="Buscar películas o series..." autocomplete="off"
-                        tabindex="1">
-                    <button id="mic-btn" class="navigable" title="Búsqueda por voz" tabindex="2">
-                        <span class="material-icons">mic</span>
-                    </button>
-                    <button id="clear-btn" class="navigable hidden" title="Limpiar búsqueda" tabindex="3">
-                        <span class="material-icons">close</span>
-                    </button>
+            <div class="header-center">
+                <div class="search-container">
+                    <div class="search-bar" id="search-bar-container">
+                        <span class="material-icons search-icon">search</span>
+                        <input type="text" id="movie-input" placeholder="Buscar películas o series..." autocomplete="off"
+                            tabindex="1">
+                        <button id="mic-btn" class="navigable" title="Búsqueda por voz" tabindex="2">
+                            <span class="material-icons">mic</span>
+                        </button>
+                        <button id="clear-btn" class="navigable hidden" title="Limpiar búsqueda" tabindex="3">
+                            <span class="material-icons">close</span>
+                        </button>
+                    </div>
+                    <div id="autocomplete-results" class="autocomplete-dropdown hidden"></div>
                 </div>
-                <div id="autocomplete-results" class="autocomplete-dropdown hidden"></div>
+            </div>
+            <div class="header-right">
+                <button id="settings-btn" class="navigable icon-btn" title="Configuración" tabindex="4">
+                    <span class="material-icons">settings</span>
+                </button>
             </div>
         </header>
 
-        <main>
-            <div id="tabs-container" class="tabs-container hidden" style="margin-bottom: 1.5rem;">
-                <button id="tab-movies" class="tab-btn navigable active" tabindex="4">Top 10 Películas</button>
-                <button id="tab-series" class="tab-btn navigable" tabindex="5">Top 10 Series</button>
+        <!-- Settings Panel -->
+        <div id="settings-panel" class="settings-panel hidden">
+            <h3 class="settings-title">Configuración</h3>
+            <div class="settings-option url-option">
+                <span class="settings-label">URL de Verificación</span>
+                <input type="text" id="verify-url-input" class="settings-input navigable" tabindex="0">
             </div>
-            <h2 id="section-title" class="section-title hidden" style="display:none;">Top 10 nuevas películas
-                disponibles</h2>
-            <div id="results-grid" class="results-grid">
-                <!-- Los resultados aparecerán aquí -->
-                <div class="empty-state">
-                    <p>Empieza a escribir para buscar películas...</p>
+            <div class="settings-option">
+                <span class="settings-label">Verificar Disponibilidad</span>
+                <label class="switch">
+                    <input type="checkbox" id="verify-toggle" class="navigable" tabindex="0">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            <div class="settings-option">
+                <span class="settings-label">Bloquear Calidades Bajas (CAM, TS)</span>
+                <label class="switch">
+                    <input type="checkbox" id="block-low-res-toggle" class="navigable" tabindex="0">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            <div class="settings-actions">
+                <button id="settings-clear-cache-btn" class="settings-btn settings-btn-secondary navigable" style="margin-right: auto;" tabindex="0">Borrar Caché</button>
+                <button id="settings-cancel-btn" class="settings-btn settings-btn-secondary navigable" tabindex="0">Cancelar</button>
+                <button id="settings-save-btn" class="settings-btn navigable" tabindex="0">Guardar</button>
+            </div>
+        </div>
+
+        <main>
+            <!-- Search Results Section -->
+            <div id="search-section" class="hidden">
+                <div style="margin-bottom: 1.5rem; text-align: left;">
+                    <a href="index.html" class="navigable back-btn" tabindex="0">
+                        <span class="material-icons">arrow_back</span> Atrás
+                    </a>
+                </div>
+                <h2 id="section-title" class="section-title" style="display:none;">Resultados de búsqueda</h2>
+                <div id="results-grid" class="results-grid">
+                    <div class="empty-state">
+                        <p>Buscando...</p>
+                    </div>
                 </div>
             </div>
 
-            <div id="history-section" class="hidden">
-                <div class="section-header">
-                    <h2 class="section-title">Las últimas que buscaste</h2>
+            <!-- Home Content -->
+            <div id="home-content">
+                <div id="movies-section" style="margin-bottom: 2.5rem;">
+                    <h2 class="section-title">Top 10 Películas</h2>
+                    <div id="movies-grid" class="results-grid">
+                        <div class="empty-state"><p>Cargando películas...</p></div>
+                    </div>
                 </div>
-                <div id="history-grid" class="results-grid">
-                    <!-- El historial aparecerá aquí -->
+
+                <div id="series-section" style="margin-bottom: 2.5rem;">
+                    <h2 class="section-title">Top 10 Series</h2>
+                    <div id="series-grid" class="results-grid">
+                        <div class="empty-state"><p>Cargando series...</p></div>
+                    </div>
+                </div>
+
+                <div id="history-section" class="hidden" style="margin-bottom: 2.5rem;">
+                    <div class="section-header">
+                        <h2 class="section-title">Las últimas que buscaste</h2>
+                    </div>
+                    <div id="history-grid" class="results-grid">
+                    </div>
                 </div>
             </div>
         </main>
@@ -1123,9 +1456,10 @@
         const historySection = document.getElementById('history-section');
         const historyGrid = document.getElementById('history-grid');
         const autocompleteResults = document.getElementById('autocomplete-results');
-        const tabsContainer = document.getElementById('tabs-container');
-        const tabMovies = document.getElementById('tab-movies');
-        const tabSeries = document.getElementById('tab-series');
+        const searchSection = document.getElementById('search-section');
+        const homeContent = document.getElementById('home-content');
+        const moviesGrid = document.getElementById('movies-grid');
+        const seriesGrid = document.getElementById('series-grid');
 
         // ========== CONFIGURATION ==========
         const HISTORY_KEY = 'movie_history_v1';
@@ -1140,39 +1474,17 @@
         let trendingCache = { movies: null, series: null };
 
 
-        // ========== TAB NAVIGATION ==========
-        if (tabMovies && tabSeries) {
-            tabMovies.addEventListener('click', () => {
-                tabMovies.classList.toggle('active');
-                tabSeries.classList.remove('active');
-                loadTrendingContent('movies');
-            });
-
-            tabSeries.addEventListener('click', () => {
-                tabSeries.classList.toggle('active');
-                tabMovies.classList.remove('active');
-                loadTrendingContent('series');
-            });
-        }
+        // Tab navigation removed - Sequential layout
 
 
         // ========== UI HELPERS ==========
-        /** Toggle logo visibility */
-        const showLogo = () => logoContainer?.classList.remove('hidden');
-        const hideLogo = () => logoContainer?.classList.add('hidden');
+        /** Toggle logo visibility (Disabled) */
+        const showLogo = () => {};
+        const hideLogo = () => {};
 
         // Logo click/activation logic
         if (logoNavWrapper) {
             logoNavWrapper.addEventListener('click', () => {
-                // Limpiar caches de trending (Top 10)
-                localStorage.removeItem('trendingMoviesCache_v1');
-                localStorage.removeItem('trendingMoviesCache_v1Time');
-                localStorage.removeItem('trendingSeriesCache_v1');
-                localStorage.removeItem('trendingSeriesCache_v1Time');
-
-                // Limpiar historial (Las últimas que buscaste)
-                clearHistory();
-
                 // Recargar página al inicio y asegurar foco en input
                 movieInput.focus();
                 window.location.href = window.location.pathname;
@@ -1247,15 +1559,26 @@
             if (query.length > 0) {
                 clearBtn.classList.remove('hidden');
                 hideLogo();
+                if (homeContent && searchSection) {
+                    homeContent.classList.add('hidden');
+                    searchSection.classList.remove('hidden');
+                }
             } else {
                 clearBtn.classList.add('hidden');
                 autocompleteResults.classList.add('hidden');
                 showLogo();
+                if (homeContent && searchSection) {
+                    homeContent.classList.remove('hidden');
+                    searchSection.classList.add('hidden');
+                }
             }
 
             if (query.length < 2) {
                 autocompleteResults.classList.add('hidden');
-                if (query.length === 0) loadTrendingContent('movies');
+                if (query.length === 0) {
+                    loadTrendingContent('movies');
+                    loadTrendingContent('series');
+                }
                 return;
             }
 
@@ -1268,7 +1591,12 @@
             clearBtn.classList.add('hidden');
             const newUrl = window.location.pathname + window.location.hash;
             window.history.replaceState(null, '', newUrl);
+            if (homeContent && searchSection) {
+                homeContent.classList.remove('hidden');
+                searchSection.classList.add('hidden');
+            }
             loadTrendingContent('movies');
+            loadTrendingContent('series');
             loadHistory();
             movieInput.focus();
         });
@@ -1319,11 +1647,13 @@
                 const id = details.imdbId || item.id;
                 const validation = await validarPeliculaFinal(id, type);
 
-                const isHiddenResolution = validation.resolution && HIDDEN_RESOLUTIONS.includes(validation.resolution.toUpperCase());
-                const isHiddenSource = validation.source && HIDDEN_RESOLUTIONS.includes(validation.source.toUpperCase());
+                if (VERIFY_DISPONIBILIDAD && BLOCK_LOW_RES) {
+                    const isHiddenResolution = validation.resolution && HIDDEN_RESOLUTIONS.includes(validation.resolution.toUpperCase());
+                    const isHiddenSource = validation.source && HIDDEN_RESOLUTIONS.includes(validation.source.toUpperCase());
 
-                if (isHiddenResolution || isHiddenSource) {
-                    return null; // Omitir calidades/fuentes ocultas
+                    if (isHiddenResolution || isHiddenSource) {
+                        return null; // Omitir calidades/fuentes ocultas
+                    }
                 }
 
                 return {
@@ -1347,12 +1677,15 @@
         async function searchByPerson(personId, personName) {
             hideLogo();
             showLoading();
+            if (homeContent && searchSection) {
+                homeContent.classList.add('hidden');
+                searchSection.classList.remove('hidden');
+            }
             if (sectionTitle) {
                 sectionTitle.textContent = `Películas y series con ${personName}`;
                 sectionTitle.classList.remove('hidden');
+                sectionTitle.style.display = '';
             }
-            if (tabsContainer) tabsContainer.classList.add('hidden');
-            if (historySection) historySection.classList.add('hidden');
 
             try {
                 const data = await fetchTMDB(`/person/${personId}/combined_credits`, { language: 'es-MX' });
@@ -1392,9 +1725,11 @@
         async function searchMovies(query) {
             hideLogo();
             showLoading();
-            if (sectionTitle) sectionTitle.classList.add('hidden');
-            if (tabsContainer) tabsContainer.classList.add('hidden');
-            if (historySection) historySection.classList.add('hidden');
+            if (sectionTitle) {
+                sectionTitle.textContent = 'Resultados de búsqueda';
+                sectionTitle.classList.remove('hidden');
+                sectionTitle.style.display = '';
+            }
 
             try {
                 let data = await fetchTMDB('/search/multi', { query, language: 'es-MX', page: 1, include_adult: false });
@@ -1434,17 +1769,10 @@
         /** Load trending movies or series */
         async function loadTrendingContent(type = 'movies') {
             showLogo();
-            if (sectionTitle) sectionTitle.classList.add('hidden');
-            if (tabsContainer) tabsContainer.classList.remove('hidden');
-
-            if (type === 'movies' && tabMovies) {
-                tabMovies.classList.add('active');
-                if (tabSeries) tabSeries.classList.remove('active');
-            } else if (type === 'series' && tabSeries) {
-                tabSeries.classList.add('active');
-                if (tabMovies) tabMovies.classList.remove('active');
-            }
-
+            
+            const targetGrid = type === 'movies' ? moviesGrid : seriesGrid;
+            if (!targetGrid) return;
+            
             loadHistory();
 
             const cacheKey = `trending${type.charAt(0).toUpperCase() + type.slice(1)}Cache_v1`;
@@ -1452,7 +1780,7 @@
 
             // Check cache
             if (trendingCache[type]) {
-                renderResults(trendingCache[type]);
+                renderToGrid(trendingCache[type], targetGrid, 0);
                 return;
             }
 
@@ -1461,14 +1789,14 @@
             if (stored && storedTime && Date.now() - parseInt(storedTime) < ONE_DAY) {
                 try {
                     trendingCache[type] = JSON.parse(stored);
-                    renderResults(trendingCache[type]);
+                    renderToGrid(trendingCache[type], targetGrid, 0);
                     return;
                 } catch (e) {
                     console.warn('Cache parse error', e);
                 }
             }
 
-            showLoading();
+            targetGrid.innerHTML = '<div class="empty-state"><p>Cargando...</p></div>';
             const endpoint = type === 'movies' ? '/discover/movie' : '/tv/popular';
             let validContent = [];
             let page = 1;
@@ -1540,14 +1868,14 @@
                     console.warn('Storage error', e);
                 }
 
-                renderResults(validContent);
+                renderToGrid(validContent, targetGrid, 0);
                 if (validContent.length === 0) {
-                    resultsGrid.innerHTML = `<div class="empty-state"><p>No hay ${type === 'movies' ? 'películas' : 'series'} disponibles en este momento.</p></div>`;
+                    targetGrid.innerHTML = `<div class="empty-state"><p>No hay ${type === 'movies' ? 'películas' : 'series'} disponibles en este momento.</p></div>`;
                     showLogo();
                 }
             } catch (error) {
                 console.error(`Error loading trending ${type}:`, error);
-                resultsGrid.innerHTML = '<div class="empty-state"><p>Error al cargar contenido.</p></div>';
+                targetGrid.innerHTML = '<div class="empty-state"><p>Error al cargar contenido.</p></div>';
                 showLogo();
             }
         }
@@ -1612,9 +1940,18 @@
                 const disponibleBadge = movie.disponible === false ? '<div class="availability-badge unavailable">No disponible</div>' : '';
                 const extraBadges = movie.disponible !== false && (movie.source || movie.resolution)
                     ? `<div class="info-badge">${[movie.source, movie.resolution].filter(Boolean).join(' ')}</div>` : '';
+                let verifiedIndicator = '';
+                if (movie.disponible !== false) {
+                    if (VERIFY_DISPONIBILIDAD) {
+                        verifiedIndicator = `<div class="verified-badge" title="Disponibilidad Verificada"><span class="material-icons" style="font-size: 11px;">verified</span> Verificada</div>`;
+                    } else {
+                        verifiedIndicator = `<div class="not-verified-badge" title="Disponibilidad Sin Verificar"><span class="material-icons" style="font-size: 11px;">help_outline</span> Sin Verificar</div>`;
+                    }
+                }
 
                 return `<div class="movie-card navigable${unavailableClass}" tabindex="${index + 3 + tabindexOffset}" data-index="${index}" data-id="${movie.id}" data-type="${type}" data-year="${year}" data-release-date="${movie.releaseDate || ''}" data-release-digital="${movie.digitalReleaseDate || ''}" data-file-name="${movie.file_name || ''}" data-movie-obj='${JSON.stringify(movie).replace(/'/g, "&apos;")}'>
             <div class="type-badge">${typeDisplay}</div>
+            ${verifiedIndicator}
             ${extraBadges}
             ${disponibleBadge}
             <img src="${imageUrl}" class="movie-poster" alt="${title}" loading="lazy">
@@ -1696,17 +2033,14 @@
         }
 
         // Click handlers for grids
-        resultsGrid.addEventListener('click', (e) => {
-            const card = e.target.closest('.movie-card');
-            if (card) openContentPage(JSON.parse(card.dataset.movieObj));
+        [resultsGrid, historyGrid, moviesGrid, seriesGrid].forEach(grid => {
+            if (grid) {
+                grid.addEventListener('click', (e) => {
+                    const card = e.target.closest('.movie-card');
+                    if (card) openContentPage(JSON.parse(card.dataset.movieObj));
+                });
+            }
         });
-
-        if (historyGrid) {
-            historyGrid.addEventListener('click', (e) => {
-                const card = e.target.closest('.movie-card');
-                if (card) openContentPage(JSON.parse(card.dataset.movieObj));
-            });
-        }
 
         // ========== VOICE INPUT ==========
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1863,6 +2197,7 @@
             } else {
                 movieInput.focus();
                 loadTrendingContent('movies');
+                loadTrendingContent('series');
             }
         };
 
@@ -1885,8 +2220,8 @@
                 type = 'tv';
             }
 
-            // Bypass: saltear verificación y marcar todo como disponible
-            if (BYPASS_VERIFY) return { disponible: true, resolution: '', source: '', file_name: '' };
+            // Si no se quiere verificar, saltear y marcar todo como disponible
+            if (!VERIFY_DISPONIBILIDAD) return { disponible: true, resolution: '', source: '', file_name: '' };
 
             let validationResult = { disponible: false };
 
@@ -1931,7 +2266,7 @@
             validationResult.file_name = normalizedFileName;
 
             // Si está disponible, aplicar el filtro de resoluciones/fuentes ocultas
-            if (validationResult.disponible) {
+            if (validationResult.disponible && BLOCK_LOW_RES) {
                 const isHiddenResolution = normalizedResolution && HIDDEN_RESOLUTIONS.includes(normalizedResolution.toUpperCase());
                 const isHiddenSource = normalizedSource && HIDDEN_RESOLUTIONS.includes(normalizedSource.toUpperCase());
 
@@ -1941,6 +2276,98 @@
             }
 
             return validationResult;
+        }
+
+        // ========== SETTINGS LOGIC ==========
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsPanel = document.getElementById('settings-panel');
+        const verifyToggle = document.getElementById('verify-toggle');
+        const blockLowResToggle = document.getElementById('block-low-res-toggle');
+        const verifyUrlInput = document.getElementById('verify-url-input');
+        const settingsSaveBtn = document.getElementById('settings-save-btn');
+
+        if (settingsBtn && settingsPanel && verifyToggle && blockLowResToggle && verifyUrlInput && settingsSaveBtn) {
+            // Set initial state
+            verifyToggle.checked = VERIFY_DISPONIBILIDAD;
+            blockLowResToggle.checked = BLOCK_LOW_RES;
+            verifyUrlInput.value = VERIFY_API_URL;
+
+            // Toggle panel visibility
+            settingsBtn.addEventListener('click', () => {
+                if (settingsPanel.classList.contains('hidden')) {
+                    verifyToggle.checked = VERIFY_DISPONIBILIDAD;
+                    blockLowResToggle.checked = BLOCK_LOW_RES;
+                    verifyUrlInput.value = VERIFY_API_URL;
+                }
+                settingsPanel.classList.toggle('hidden');
+            });
+
+            // Handle clear cache button
+            const settingsClearCacheBtn = document.getElementById('settings-clear-cache-btn');
+            if (settingsClearCacheBtn) {
+                settingsClearCacheBtn.addEventListener('click', () => {
+                    localStorage.removeItem('trendingMoviesCache_v1');
+                    localStorage.removeItem('trendingMoviesCache_v1Time');
+                    localStorage.removeItem('trendingSeriesCache_v1');
+                    localStorage.removeItem('trendingSeriesCache_v1Time');
+                    clearHistory();
+                    movieInput.focus();
+                    window.location.href = window.location.pathname;
+                });
+            }
+
+            // Handle cancel button
+            const settingsCancelBtn = document.getElementById('settings-cancel-btn');
+            if (settingsCancelBtn) {
+                settingsCancelBtn.addEventListener('click', () => {
+                    verifyToggle.checked = VERIFY_DISPONIBILIDAD;
+                    blockLowResToggle.checked = BLOCK_LOW_RES;
+                    verifyUrlInput.value = VERIFY_API_URL;
+                    settingsPanel.classList.add('hidden');
+                });
+            }
+
+            // Handle save button
+            settingsSaveBtn.addEventListener('click', async () => {
+                VERIFY_API_URL = verifyUrlInput.value.trim();
+                VERIFY_DISPONIBILIDAD = verifyToggle.checked;
+                BLOCK_LOW_RES = blockLowResToggle.checked;
+                localStorage.setItem('verify_api_url', VERIFY_API_URL);
+                localStorage.setItem('verify_disponibilidad', VERIFY_DISPONIBILIDAD ? 'true' : 'false');
+                localStorage.setItem('block_low_res', BLOCK_LOW_RES ? 'true' : 'false');
+                settingsPanel.classList.add('hidden');
+
+                showLoading();
+
+                // Clear trending caches
+                localStorage.removeItem('trendingMoviesCache_v1');
+                localStorage.removeItem('trendingMoviesCache_v1Time');
+                localStorage.removeItem('trendingSeriesCache_v1');
+                localStorage.removeItem('trendingSeriesCache_v1Time');
+
+                // Re-validate history
+                let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+                if (history.length > 0) {
+                    for (let i = 0; i < history.length; i++) {
+                        const item = history[i];
+                        const validation = await validarPeliculaFinal(item.id, item.qid);
+                        item.disponible = validation.disponible;
+                        item.resolution = validation.resolution;
+                        item.source = validation.source;
+                        item.file_name = validation.file_name || validation.filename || '';
+                    }
+                    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+                }
+
+                // Reload appropriate content
+                if (movieInput.value.trim().length > 0) {
+                    searchMovies(movieInput.value.trim());
+                } else {
+                    loadTrendingContent('movies');
+                    loadTrendingContent('series');
+                    loadHistory();
+                }
+            });
         }
 
     </script>

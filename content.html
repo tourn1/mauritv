@@ -70,24 +70,27 @@
             position: fixed;
             top: 20px;
             left: 20px;
-            width: 52px;
-            height: 52px;
-            border: none;
-            border-radius: 50%;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(12px);
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            color: white;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text);
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: fit-content;
             cursor: pointer;
             z-index: 100;
-            transition: 0.25s;
+            backdrop-filter: blur(12px);
         }
 
-        .back-button:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: scale(1.05);
+        .back-button:hover, .back-button:focus {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #ffffff;
+            outline: none;
         }
 
         .hero-section {
@@ -654,9 +657,49 @@
             white-space: normal;
         }
 
+        .verified-badge {
+            position: absolute;
+            top: 36px;
+            right: 10px;
+            background: rgba(30, 215, 96, 0.2);
+            color: #1ed760;
+            border: 1px solid rgba(30, 215, 96, 0.4);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            z-index: 12;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            backdrop-filter: blur(4px);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .not-verified-badge {
+            position: absolute;
+            top: 36px;
+            right: 10px;
+            background: rgba(255, 152, 0, 0.2);
+            color: #ff9800;
+            border: 1px solid rgba(255, 152, 0, 0.4);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            z-index: 12;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            backdrop-filter: blur(4px);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
         .info-badge {
             position: absolute;
-            top: 42px;
+            top: 62px;
             right: 10px;
             padding: 4px 10px;
             border-radius: 4px;
@@ -978,12 +1021,9 @@
         const TMDB_API_KEY = '12916916a032ac4a2da17601cbc119bd';
         const HISTORY_KEY = 'movie_history_v1';
         const HIDDEN_RESOLUTIONS = ['CAM', 'TS', 'TC'];
-        //const VERIFY_API_URL = 'https://imobiledeals.com/service/BKP/verify';
-        //const VERIFY_API_URL = 'https://tourn1.page.gd/verify.php';
-        const VERIFY_API_URL = 'https://imobiledeals.com/service/verify';
-
-        // Poner en `false` para reactivar verify.php cuando vuelva a funcionar
-        const BYPASS_VERIFY = false;
+        const VERIFY_API_URL = localStorage.getItem('verify_api_url') || 'https://verify.mauritv.net/verify.php';
+        const VERIFY_DISPONIBILIDAD = localStorage.getItem('verify_disponibilidad') === 'true';
+        const BLOCK_LOW_RES = localStorage.getItem('block_low_res') !== 'false';
 
         /* ========== STATE ========== */
         let ytPlayer = null;
@@ -1315,6 +1355,24 @@
                 `;
 
                 const imdbId = data.external_ids?.imdb_id;
+                
+                const mainValidation = await validarPeliculaFinal(imdbId || id);
+                if (mainValidation.disponible === false) {
+                    const playBtn = document.getElementById('play-btn');
+                    if (playBtn) {
+                        playBtn.style.opacity = '0.5';
+                        playBtn.style.pointerEvents = 'none';
+                        playBtn.innerHTML = '<span class="material-icons">block</span> No Disponible';
+                    }
+                }
+                
+                if (mainValidation.disponible !== false) {
+                    if (VERIFY_DISPONIBILIDAD) {
+                        document.getElementById('meta').innerHTML += ` <span style="color:#1ed760; border-color:#1ed760; background:rgba(30,215,96,0.1);"><span class="material-icons" style="font-size:14px; vertical-align:middle; margin-right:4px;">verified</span>Verificada</span>`;
+                    } else {
+                        document.getElementById('meta').innerHTML += ` <span style="color:#ff9800; border-color:#ff9800; background:rgba(255,152,0,0.1);"><span class="material-icons" style="font-size:14px; vertical-align:middle; margin-right:4px;">help_outline</span>Sin Verificar</span>`;
+                    }
+                }
 
                 const movieObj = {
                     id: imdbId || id,
@@ -1357,7 +1415,13 @@
                             }
                         } catch (e) { }
                         const validation = await validarPeliculaFinal(imdbId);
-                        if (!validation.disponible) return null;
+                        if (VERIFY_DISPONIBILIDAD && BLOCK_LOW_RES) {
+                            const isHiddenResolution = validation.resolution && HIDDEN_RESOLUTIONS.includes(validation.resolution.toUpperCase());
+                            const isHiddenSource = validation.source && HIDDEN_RESOLUTIONS.includes(validation.source.toUpperCase());
+                            if (isHiddenResolution || isHiddenSource) {
+                                return null;
+                            }
+                        }
                         return { ...item, validation, imdbId };
                     }));
                     const validSimilares = batchResults.filter(Boolean);
@@ -1369,14 +1433,26 @@
                             const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
                             const typeDisplay = type === 'movie' ? 'PELÍCULA' : 'SERIE';
                             const val = item.validation;
-                            const extraBadges = (val.source || val.resolution) ? `<div class="info-badge">${[val.source, val.resolution].filter(Boolean).join(' ')}</div>` : '';
+                            const unavailableClass = val.disponible === false ? ' unavailable' : '';
+                            const disponibleBadge = val.disponible === false ? '<div class="availability-badge unavailable">No disponible</div>' : '';
+                            const extraBadges = val.disponible !== false && (val.source || val.resolution) ? `<div class="info-badge">${[val.source, val.resolution].filter(Boolean).join(' ')}</div>` : '';
+                            let verifiedIndicator = '';
+                            if (val.disponible !== false) {
+                                if (VERIFY_DISPONIBILIDAD) {
+                                    verifiedIndicator = `<div class="verified-badge" title="Disponibilidad Verificada"><span class="material-icons" style="font-size: 11px;">verified</span> Verificada</div>`;
+                                } else {
+                                    verifiedIndicator = `<div class="not-verified-badge" title="Disponibilidad Sin Verificar"><span class="material-icons" style="font-size: 11px;">help_outline</span> Sin Verificar</div>`;
+                                }
+                            }
                             let url = `content.html?id=${item.id}&type=${type}`;
                             if (val.file_name) url += `&file_name=${encodeURIComponent(val.file_name)}`;
                             if (val.resolution) url += `&res=${encodeURIComponent(val.resolution)}`;
                             if (val.source) url += `&src=${encodeURIComponent(val.source)}`;
-                            return `<div class="movie-card navigable" tabindex="0" onclick="window.location.href='${url}'" onkeydown="if(event.key==='Enter') this.click()" aria-label="${itemTitle}">
+                            return `<div class="movie-card navigable${unavailableClass}" tabindex="0" onclick="window.location.href='${url}'" onkeydown="if(event.key==='Enter') this.click()" aria-label="${itemTitle}">
                                 <div class="type-badge">${typeDisplay}</div>
+                                ${verifiedIndicator}
                                 ${extraBadges}
+                                ${disponibleBadge}
                                 <img src="${imageUrl}" class="movie-poster" alt="${itemTitle}" loading="lazy">
                                 <div class="movie-info">
                                     <div class="movie-meta">
@@ -1452,8 +1528,7 @@
         async function validarPeliculaFinal(id) {
             if (!id) return { disponible: false };
 
-            // Bypass: saltear verificación y marcar todo como disponible
-            if (BYPASS_VERIFY) return { disponible: true, resolution: '', source: '', file_name: '' };
+            if (!VERIFY_DISPONIBILIDAD) return { disponible: true, resolution: '', source: '', file_name: '' };
 
             let validationResult = { disponible: false };
             try {
@@ -1492,7 +1567,7 @@
             validationResult.file_name = normalizedFileName;
 
             // Si está disponible, aplicar el filtro de resoluciones/fuentes ocultas
-            if (validationResult.disponible) {
+            if (validationResult.disponible && BLOCK_LOW_RES) {
                 const isHiddenResolution = normalizedResolution && HIDDEN_RESOLUTIONS.includes(normalizedResolution.toUpperCase());
                 const isHiddenSource = normalizedSource && HIDDEN_RESOLUTIONS.includes(normalizedSource.toUpperCase());
 
@@ -1566,10 +1641,9 @@
 
 <body>
     <main>
-        <button class="back-button navigable" id="backBtn" onclick="window.location.href='index.html'"
-            aria-label="Volver" tabindex="0">
-            <span class="material-icons">arrow_back</span>
-        </button>
+        <a href="index.html" class="back-button navigable" id="backBtn" aria-label="Volver" tabindex="0">
+            <span class="material-icons">arrow_back</span> Atrás
+        </a>
 
         <section class="hero-section" id="hero" style="background-color:#000;">
             <div class="hero-overlay"></div>
