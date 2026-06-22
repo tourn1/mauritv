@@ -1889,6 +1889,9 @@
                 homeContent.classList.add('hidden');
                 searchSection.classList.remove('hidden');
             }
+            if (heroBanner) {
+                heroBanner.classList.add('hidden');
+            }
             if (sectionTitle) {
                 sectionTitle.textContent = `Películas y series con ${personName}`;
                 sectionTitle.classList.remove('hidden');
@@ -1933,6 +1936,13 @@
         async function searchMovies(query) {
             hideLogo();
             showLoading();
+            if (homeContent && searchSection) {
+                homeContent.classList.add('hidden');
+                searchSection.classList.remove('hidden');
+            }
+            if (heroBanner) {
+                heroBanner.classList.add('hidden');
+            }
             if (sectionTitle) {
                 sectionTitle.textContent = 'Resultados de búsqueda';
                 sectionTitle.classList.remove('hidden');
@@ -2218,8 +2228,12 @@
             heroItems = enrichedItems.filter(Boolean);
 
             if (heroItems.length > 0) {
-                heroBanner.classList.remove('hidden');
-                homeContent.classList.remove('no-hero');
+                if (searchSection && !searchSection.classList.contains('hidden')) {
+                    heroBanner.classList.add('hidden');
+                } else {
+                    heroBanner.classList.remove('hidden');
+                    homeContent.classList.remove('no-hero');
+                }
                 createHeroPagination();
                 updateHeroContent(0);
                 startHeroCarousel();
