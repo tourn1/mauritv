@@ -44,6 +44,154 @@
             flex-direction: column;
             min-height: 100vh;
             padding: 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Hero Banner */
+        .hero-banner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 90vh;
+            z-index: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+        }
+
+        .hero-banner.hidden {
+            display: none;
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .hero-bg img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top center;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .hero-bg img.active {
+            opacity: 1;
+        }
+
+        .hero-vignette {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(20,20,20,0.1) 0%, rgba(20,20,20,0.5) 60%, var(--bg-color) 100%),
+                        linear-gradient(90deg, rgba(20,20,20,0.8) 0%, rgba(20,20,20,0) 60%);
+        }
+
+        .hero-content {
+            position: absolute;
+            bottom: 15%;
+            left: 5%;
+            width: 50%;
+            z-index: 2;
+            animation: fadeIn 1s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            font-family: 'Outfit', sans-serif;
+            line-height: 1.1;
+        }
+
+        .hero-desc {
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+
+        .hero-play-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0.8rem 2.5rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
+            margin-top: 2rem;
+        }
+
+        .hero-play-btn:hover, .hero-play-btn:focus {
+            background-color: var(--accent-hover);
+            transform: scale(1.05);
+            outline: none;
+            box-shadow: 0 6px 20px rgba(229, 9, 20, 0.6);
+        }
+
+        .hero-pagination {
+            position: absolute;
+            bottom: 5%;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            z-index: 2;
+        }
+
+        .hero-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            padding: 0;
+        }
+
+        .hero-dot.active {
+            background-color: white;
+            transform: scale(1.2);
+        }
+
+        .hero-dot:focus {
+            outline: 2px solid var(--accent-color);
+            outline-offset: 2px;
+        }
+
+        #home-content {
+            margin-top: 75vh;
+            position: relative;
+            z-index: 10;
+            transition: margin-top 0.5s ease;
+        }
+
+        #home-content.no-hero {
+            margin-top: 0;
         }
 
         /* Logo */
@@ -770,6 +918,10 @@
 
         /* Mobile Adjustments */
         @media (max-width: 600px) {
+            .hero-content {
+                width: 90%;
+            }
+
             header {
                 display: grid;
                 grid-template-columns: 1fr auto 1fr;
@@ -1338,6 +1490,19 @@
 </head>
 
 <body class="tv-mode">
+    <div id="hero-banner" class="hero-banner hidden">
+        <div class="hero-bg">
+            <img id="hero-img" src="" alt="Banner">
+            <div class="hero-vignette"></div>
+        </div>
+        <div class="hero-content">
+            <h1 id="hero-title"></h1>
+            <p id="hero-desc"></p>
+            <button id="hero-play-btn" class="navigable hero-play-btn" tabindex="0">Ver</button>
+        </div>
+        <div class="hero-pagination" id="hero-pagination">
+        </div>
+    </div>
     <div id="app">
         <header>
             <div class="header-left">
@@ -1437,9 +1602,17 @@
                     </div>
                 </div>
 
+                <div id="related-history-section" class="hidden" style="margin-bottom: 2.5rem;">
+                    <div class="section-header">
+                        <h2 class="section-title">Relacionado a tus busquedas</h2>
+                    </div>
+                    <div id="related-history-grid" class="results-grid">
+                    </div>
+                </div>
+
                 <div id="history-section" class="hidden" style="margin-bottom: 2.5rem;">
                     <div class="section-header">
-                        <h2 class="section-title">Las últimas que buscaste</h2>
+                        <h2 class="section-title">Vistos recientemente</h2>
                     </div>
                     <div id="history-grid" class="results-grid">
                     </div>
@@ -1479,11 +1652,19 @@
         const sectionTitle = document.getElementById('section-title');
         const historySection = document.getElementById('history-section');
         const historyGrid = document.getElementById('history-grid');
+        const relatedHistorySection = document.getElementById('related-history-section');
+        const relatedHistoryGrid = document.getElementById('related-history-grid');
         const autocompleteResults = document.getElementById('autocomplete-results');
         const searchSection = document.getElementById('search-section');
         const homeContent = document.getElementById('home-content');
         const moviesGrid = document.getElementById('movies-grid');
         const seriesGrid = document.getElementById('series-grid');
+        const heroBanner = document.getElementById('hero-banner');
+        const heroImg = document.getElementById('hero-img');
+        const heroTitle = document.getElementById('hero-title');
+        const heroDesc = document.getElementById('hero-desc');
+        const heroPagination = document.getElementById('hero-pagination');
+        const heroPlayBtn = document.getElementById('hero-play-btn');
 
         // ========== CONFIGURATION ==========
         const HISTORY_KEY = 'movie_history_v1';
@@ -1495,7 +1676,10 @@
 
         // ========== STATE ==========
         let debounceTimer, autocompleteDebounceTimer, currentResults = [];
-        let trendingCache = { movies: null, series: null };
+        let trendingCache = { movies: null, series: null, related: null };
+        let heroItems = [];
+        let currentHeroIndex = 0;
+        let heroInterval;
 
 
         // Tab navigation removed - Sequential layout
@@ -1897,6 +2081,7 @@
                     targetGrid.innerHTML = `<div class="empty-state"><p>No hay ${type === 'movies' ? 'películas' : 'series'} disponibles en este momento.</p></div>`;
                     showLogo();
                 }
+                triggerHeroBannerBuild();
             } catch (error) {
                 console.error(`Error loading trending ${type}:`, error);
                 targetGrid.innerHTML = '<div class="empty-state"><p>Error al cargar contenido.</p></div>';
@@ -1919,9 +2104,176 @@
             if (history.length > 0) {
                 historySection.classList.remove('hidden');
                 renderToGrid(history, historyGrid, 100);
+                loadRelatedHistory();
             } else {
                 historySection.classList.add('hidden');
+                if (relatedHistorySection) relatedHistorySection.classList.add('hidden');
             }
+        }
+
+        /** Load related history items based on the last search */
+        async function loadRelatedHistory() {
+            const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+            if (history.length === 0) {
+                relatedHistorySection.classList.add('hidden');
+                return;
+            }
+
+            const lastItem = history[0];
+            const type = (lastItem.qid === 'tvSeries' || lastItem.type === 'tv' || lastItem.qid === 'tv') ? 'tv' : 'movie';
+            const id = lastItem.tmdbId || lastItem.id;
+            
+            if (!id) return;
+
+            try {
+                const endpoint = `/${type}/${id}/recommendations`;
+                const data = await fetchTMDB(endpoint, { language: 'es-MX', page: 1 });
+                
+                if (data && data.results && data.results.length > 0) {
+                    relatedHistorySection.classList.remove('hidden');
+                    let results = data.results.filter(item => item.poster_path).slice(0, 10);
+                    
+                    const batchResults = await Promise.all(results.map(async (item) => {
+                        const itemType = type === 'tv' ? 'tv' : 'movie';
+                        const details = await getMovieDetails(item.id, itemType);
+                        
+                        return {
+                            id: details.imdbId || item.id,
+                            tmdbId: item.id,
+                            l: item.title || item.name,
+                            y: item.release_date?.substring(0, 4) || item.first_air_date?.substring(0, 4) || '',
+                            releaseDate: item.release_date || item.first_air_date || '',
+                            digitalReleaseDate: details.digitalReleaseDate || '',
+                            qid: type === 'tv' ? 'tvSeries' : 'movie',
+                            i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
+                            rating: item.vote_average?.toFixed(1) || 'N/A'
+                        };
+                    }));
+                    
+                    trendingCache.related = batchResults;
+                    renderToGrid(batchResults, relatedHistoryGrid, 110);
+                    triggerHeroBannerBuild();
+                } else {
+                    relatedHistorySection.classList.add('hidden');
+                    trendingCache.related = [];
+                    triggerHeroBannerBuild();
+                    relatedHistorySection.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Error loading related history:', error);
+                relatedHistorySection.classList.add('hidden');
+            }
+        }
+
+        let heroDebounceTimer;
+        function triggerHeroBannerBuild() {
+            clearTimeout(heroDebounceTimer);
+            heroDebounceTimer = setTimeout(buildHeroBanner, 1000);
+        }
+
+        // ========== HERO BANNER ==========
+        async function buildHeroBanner() {
+            const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+            const topMovies = trendingCache.movies || [];
+            const topSeries = trendingCache.series || [];
+            const related = trendingCache.related || [];
+
+            let candidates = [
+                ...topMovies.slice(0, 4).map(item => ({ ...item, sourceLabel: 'Top Películas' })),
+                ...topSeries.slice(0, 4).map(item => ({ ...item, sourceLabel: 'Top Series' })),
+                ...related.slice(0, 4).map(item => ({ ...item, sourceLabel: 'Sugerencias' })),
+                ...history.slice(0, 4).map(item => ({ ...item, sourceLabel: 'Vistos recientemente' }))
+            ];
+
+            if (candidates.length === 0) return;
+
+            const uniqueIds = new Set();
+            candidates = candidates.filter(item => {
+                const id = item.tmdbId || item.id;
+                if (!id || uniqueIds.has(id)) return false;
+                uniqueIds.add(id);
+                return true;
+            }).slice(0, 10);
+
+            const enrichedItems = await Promise.all(candidates.map(async (item) => {
+                const type = item.qid === 'tvSeries' || item.qid === 'tv' || item.type === 'tv' ? 'tv' : 'movie';
+                const tmdbId = item.tmdbId || item.id;
+                
+                try {
+                    const data = await fetchTMDB(`/${type}/${tmdbId}`, { language: 'es-MX' });
+                    if (data.backdrop_path && data.overview) {
+                        return {
+                            ...item,
+                            backdrop_path: data.backdrop_path,
+                            overview: data.overview,
+                            bannerTitle: data.title || data.name || item.l
+                        };
+                    }
+                } catch (e) {
+                    console.warn('Error fetching details for hero banner', e);
+                }
+                return null;
+            }));
+
+            heroItems = enrichedItems.filter(Boolean);
+
+            if (heroItems.length > 0) {
+                heroBanner.classList.remove('hidden');
+                homeContent.classList.remove('no-hero');
+                createHeroPagination();
+                updateHeroContent(0);
+                startHeroCarousel();
+            } else {
+                heroBanner.classList.add('hidden');
+                homeContent.classList.add('no-hero');
+            }
+        }
+
+        function createHeroPagination() {
+            heroPagination.innerHTML = '';
+            heroItems.forEach((_, index) => {
+                const dot = document.createElement('button');
+                dot.className = 'hero-dot';
+                dot.tabIndex = -1;
+                dot.onclick = () => updateHeroContent(index);
+                heroPagination.appendChild(dot);
+            });
+        }
+
+        function updateHeroContent(index) {
+            if (heroItems.length === 0) return;
+            
+            currentHeroIndex = index;
+            const item = heroItems[currentHeroIndex];
+            
+            const newImg = new Image();
+            newImg.src = `https://image.tmdb.org/t/p/original${item.backdrop_path}`;
+            newImg.onload = () => {
+                heroImg.src = newImg.src;
+                heroImg.classList.add('active');
+            };
+            heroImg.classList.remove('active');
+
+            heroTitle.textContent = item.bannerTitle;
+            heroDesc.textContent = item.overview;
+            
+            heroPlayBtn.onclick = () => {
+                openContentPage(item);
+            };
+
+            document.querySelectorAll('.hero-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+
+            startHeroCarousel();
+        }
+
+        function startHeroCarousel() {
+            clearInterval(heroInterval);
+            heroInterval = setInterval(() => {
+                let nextIndex = (currentHeroIndex + 1) % heroItems.length;
+                updateHeroContent(nextIndex);
+            }, 10000);
         }
 
         /** Clear all browsing history */
@@ -2205,7 +2557,28 @@
                 });
 
                 const direction = e.key.replace('Arrow', '').toLowerCase();
-                const closest = findClosestNavigable(active.getBoundingClientRect(), navigables, direction);
+
+                if (active === heroPlayBtn) {
+                    if (direction === 'left') {
+                        let prevIndex = (currentHeroIndex - 1 + heroItems.length) % heroItems.length;
+                        updateHeroContent(prevIndex);
+                        return;
+                    } else if (direction === 'right') {
+                        let nextIndex = (currentHeroIndex + 1) % heroItems.length;
+                        updateHeroContent(nextIndex);
+                        return;
+                    }
+                }
+
+                let closest = null;
+
+                if (direction === 'down' && active.closest('header') && !heroBanner.classList.contains('hidden')) {
+                    closest = heroPlayBtn;
+                } else if (direction === 'up' && active === heroPlayBtn) {
+                    closest = movieInput;
+                } else {
+                    closest = findClosestNavigable(active.getBoundingClientRect(), navigables, direction);
+                }
 
                 if (closest) {
                     closest.focus();
