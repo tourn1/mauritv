@@ -87,7 +87,8 @@
             backdrop-filter: blur(12px);
         }
 
-        .back-button:hover, .back-button:focus {
+        .back-button:hover,
+        .back-button:focus {
             background: rgba(255, 255, 255, 0.2);
             border-color: #ffffff;
             outline: none;
@@ -167,7 +168,7 @@
         }
 
         #filename-display {
-            width: 100%;
+            width: fit-content;
             display: block;
             background: rgba(0, 0, 0, 0.35);
             padding: 0.45rem 0.65rem;
@@ -1340,24 +1341,25 @@
                 const year = data.release_date?.substring(0, 4) || data.first_air_date?.substring(0, 4) || 'N/A';
                 const rating = data.vote_average ? data.vote_average.toFixed(1) : 'N/A';
                 const seasonsLabel = type === 'tv' && data.number_of_seasons
-                    ? `<span>${data.number_of_seasons} temporada${data.number_of_seasons === 1 ? '' : 's'}</span>`
-                    : `<span>${data.runtime || 'HD'} min</span>`;
+                    ? `<span id="durationBadge">${data.number_of_seasons} temporada${data.number_of_seasons === 1 ? '' : 's'}</span>`
+                    : `<span id="durationBadge">${data.runtime || 'HD'} min</span>`;
+                const imdbId = data.external_ids?.imdb_id;
+                const imdbBadgeHtml = imdbId ? `<span id="imdbId">${imdbId}</span>` : '';
                 const badgeText = [src, res].filter(Boolean).join(' ');
-                const badgeHtml = badgeText ? `<span class="quality-badge">${badgeText}</span>` : '';
+                const badgeHtml = badgeText ? `<span id="qualityBadge" class="quality-badge">${badgeText}</span>` : '';
                 const genresHtml = data.genres && data.genres.length > 0
-                    ? `<span>${data.genres.slice(0, 3).map(g => g.name).join(' / ')}</span>`
+                    ? `<span id="genresBadge">${data.genres.slice(0, 3).map(g => g.name).join(' / ')}</span>`
                     : '';
                 document.getElementById('meta').innerHTML = `
+                    ${imdbBadgeHtml}
                     ${badgeHtml}
                     ${genresHtml}
-                    <span>${year}</span>
-                    <span>⭐ ${rating}</span>
+                    <span id="yearBadge">${year}</span>
+                    <span id="ratingBadge">⭐ ${rating}</span>
                     ${seasonsLabel}
-                    <span>${type === 'movie' ? 'Película' : 'Serie'}</span>
+                    <span id="typeBadge">${type === 'movie' ? 'Película' : 'Serie'}</span>
                 `;
 
-                const imdbId = data.external_ids?.imdb_id;
-                
                 const mainValidation = await validarPeliculaFinal(imdbId || id);
                 if (mainValidation.disponible === false) {
                     const playBtn = document.getElementById('play-btn');
@@ -1367,12 +1369,12 @@
                         playBtn.innerHTML = '<span class="material-icons">block</span> No Disponible';
                     }
                 }
-                
+
                 if (mainValidation.disponible !== false) {
                     if (VERIFY_DISPONIBILIDAD) {
-                        document.getElementById('meta').innerHTML += ` <span style="color:#1ed760; border-color:#1ed760; background:rgba(30,215,96,0.1);"><span class="material-icons" style="font-size:14px; vertical-align:middle; margin-right:4px;">verified</span>Verificada</span>`;
+                        document.getElementById('meta').innerHTML += ` <span id="verificationBadge" style="color:#1ed760; border-color:#1ed760; background:rgba(30,215,96,0.1); display: inline-flex; align-items: center;"><i class="material-icons" style="font-size:16px; margin-right:6px;">verified</i>Verificada</span>`;
                     } else {
-                        document.getElementById('meta').innerHTML += ` <span style="color:#ff9800; border-color:#ff9800; background:rgba(255,152,0,0.1);"><span class="material-icons" style="font-size:14px; vertical-align:middle; margin-right:4px;">help_outline</span>Sin Verificar</span>`;
+                        document.getElementById('meta').innerHTML += ` <span id="verificationBadge" style="color:#ff9800; border-color:#ff9800; background:rgba(255,152,0,0.1); display: inline-flex; align-items: center;"><i class="material-icons" style="font-size:16px; margin-right:6px;">help_outline</i>Sin Verificar</span>`;
                     }
                 }
 
