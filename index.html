@@ -2243,7 +2243,7 @@
 
         // ========== VALIDATION ==========
         /** Validate content availability from local or remote service */
-        async function validarPeliculaFinal(id, type) {
+        async function validarPeliculaFinal(id, type, season = 1, episode = 1) {
             if (!id) return { disponible: false };
 
             if (type === 'tvSeries') {
@@ -2254,10 +2254,15 @@
             // Si no se quiere verificar, saltear y marcar todo como disponible
             if (!VERIFY_DISPONIBILIDAD) return { disponible: true, resolution: '', source: '', file_name: '' };
 
+            let qs = `id=${encodeURIComponent(id)}`;
+            if (type) qs += `&type=${encodeURIComponent(type)}`;
+            if (type === 'tv') qs += `&season=${season}&episode=${episode}`;
+            qs += `&v=${Date.now()}`;
+
             let validationResult = { disponible: false };
 
             try {
-                const response = await fetch(`${VERIFY_API_URL}?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&v=${Date.now()}`, {
+                const response = await fetch(`${VERIFY_API_URL}?${qs}`, {
                     method: 'GET',
                     cache: 'no-store',
                     headers: { 'Accept': 'application/json' }
@@ -2269,7 +2274,12 @@
                 console.warn(`Local validation failed for ${id}, trying fallback...`);
 
                 try {
-                    const fbResponse = await fetch(`https://imobiledeals.com/service/verify?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&v=${Date.now()}`);
+                    let fbQs = `id=${encodeURIComponent(id)}`;
+                    if (type) fbQs += `&type=${encodeURIComponent(type)}`;
+                    if (type === 'tv') fbQs += `&season=${season}&episode=${episode}`;
+                    fbQs += `&v=${Date.now()}`;
+
+                    const fbResponse = await fetch(`https://imobiledeals.com/service/verify?${fbQs}`);
                     if (fbResponse.ok) {
                         const data = await fbResponse.json();
                         const q = data.quality_info || {};

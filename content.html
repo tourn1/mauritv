@@ -1360,7 +1360,7 @@
                     <span id="typeBadge">${type === 'movie' ? 'Película' : 'Serie'}</span>
                 `;
 
-                const mainValidation = await validarPeliculaFinal(imdbId || id);
+                const mainValidation = await validarPeliculaFinal(imdbId || id, type);
                 if (mainValidation.disponible === false) {
                     const playBtn = document.getElementById('play-btn');
                     if (playBtn) {
@@ -1418,7 +1418,7 @@
                                 if (extData.imdb_id) imdbId = extData.imdb_id;
                             }
                         } catch (e) { }
-                        const validation = await validarPeliculaFinal(imdbId);
+                        const validation = await validarPeliculaFinal(imdbId, type);
                         if (VERIFY_DISPONIBILIDAD && BLOCK_LOW_RES) {
                             const isHiddenResolution = validation.resolution && HIDDEN_RESOLUTIONS.includes(String(validation.resolution).toUpperCase());
                             const isHiddenSource = validation.source && HIDDEN_RESOLUTIONS.includes(String(validation.source).toUpperCase());
@@ -1529,14 +1529,21 @@
             }
         }
 
-        async function validarPeliculaFinal(id) {
+        async function validarPeliculaFinal(id, type = 'movie', season = 1, episode = 1) {
             if (!id) return { disponible: false };
+
+            if (type === 'tvSeries') type = 'tv';
 
             if (!VERIFY_DISPONIBILIDAD) return { disponible: true, resolution: '', source: '', file_name: '' };
 
+            let qs = `id=${encodeURIComponent(id)}`;
+            if (type) qs += `&type=${encodeURIComponent(type)}`;
+            if (type === 'tv') qs += `&season=${season}&episode=${episode}`;
+            qs += `&v=${Date.now()}`;
+
             let validationResult = { disponible: false };
             try {
-                const response = await fetch(`${VERIFY_API_URL}?id=${encodeURIComponent(id)}&v=${Date.now()}`, {
+                const response = await fetch(`${VERIFY_API_URL}?${qs}`, {
                     method: 'GET',
                     cache: 'no-store',
                     headers: { 'Accept': 'application/json' }
@@ -1546,7 +1553,11 @@
             } catch (error) {
                 console.warn(`Local validation failed for ${id}, trying fallback...`);
                 try {
-                    const fbResponse = await fetch(`https://imobiledeals.com/service/verify?id=${encodeURIComponent(id)}`);
+                    let fbQs = `id=${encodeURIComponent(id)}`;
+                    if (type) fbQs += `&type=${encodeURIComponent(type)}`;
+                    if (type === 'tv') fbQs += `&season=${season}&episode=${episode}`;
+                    
+                    const fbResponse = await fetch(`https://imobiledeals.com/service/verify?${fbQs}`);
                     if (fbResponse.ok) {
                         const data = await fbResponse.json();
                         const q = data.quality_info || {};
