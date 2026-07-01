@@ -266,7 +266,7 @@
             </div>
             <iframe id="player-iframe" class="navigable" tabindex="3" src=""
                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-top-navigation-by-user-activation"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
                 allowfullscreen></iframe>
         </div>
     </div>
@@ -320,7 +320,8 @@
         const CONF_THUMBNAILS = ''; // Habilitar miniaturas
 
         // Configuraciones internas
-        const PLAYER_HOST = 'https://vaplayer.ru';
+        let savedPlayerUrl = localStorage.getItem('player_url');
+        const PLAYER_HOST = savedPlayerUrl ? savedPlayerUrl.replace(/\/$/, '') : 'https://vaplayer.ru';
         const CONF_SKIN = 'netflix';
 
         /**
@@ -422,7 +423,9 @@
             }
 
             //document.location.href = playUrl;
-
+            if (PLAYER_HOST.includes('vidsrcme')) {
+                playerIframe.removeAttribute('sandbox');
+            }
             playerIframe.src = playUrl;
         };
 
@@ -466,6 +469,7 @@
          * Previene la apertura de pop-ups bloqueando las llamadas window.open dentro del iframe
          */
         const preventIframePopups = () => {
+            if (PLAYER_HOST.includes('vidsrcme')) return;
             try {
                 const iframeWin = playerIframe.contentWindow;
                 if (iframeWin) {
