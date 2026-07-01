@@ -100,6 +100,24 @@
             opacity: 1;
         }
 
+        .hero-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            z-index: 2;
+        }
+
+        .hero-spinner.hidden {
+            display: none;
+        }
+
         .hero-vignette {
             position: absolute;
             top: 0;
@@ -1538,6 +1556,7 @@
     <div id="hero-banner" class="hero-banner hidden">
         <div class="hero-bg">
             <img id="hero-img" src="" alt="Banner">
+            <div id="hero-spinner" class="hero-spinner hidden"></div>
             <div class="hero-vignette"></div>
         </div>
         <div class="hero-content">
@@ -1745,6 +1764,7 @@
         const seriesGrid = document.getElementById('series-grid');
         const heroBanner = document.getElementById('hero-banner');
         const heroImg = document.getElementById('hero-img');
+        const heroSpinner = document.getElementById('hero-spinner');
         const heroTitle = document.getElementById('hero-title');
         const heroDesc = document.getElementById('hero-desc');
         const heroPagination = document.getElementById('hero-pagination');
@@ -2325,6 +2345,11 @@
         let heroDebounceTimer;
         function triggerHeroBannerBuild() {
             clearTimeout(heroDebounceTimer);
+            if (heroItems.length === 0 && heroBanner && (!searchSection || searchSection.classList.contains('hidden'))) {
+                heroBanner.classList.remove('hidden');
+                if (homeContent) homeContent.classList.remove('no-hero');
+                if (heroSpinner) heroSpinner.classList.remove('hidden');
+            }
             heroDebounceTimer = setTimeout(buildHeroBanner, 1000);
         }
 
@@ -2407,12 +2432,14 @@
             currentHeroIndex = index;
             const item = heroItems[currentHeroIndex];
             
+            if (heroSpinner) heroSpinner.classList.remove('hidden');
             const newImg = new Image();
-            newImg.src = `https://image.tmdb.org/t/p/original${item.backdrop_path}`;
             newImg.onload = () => {
                 heroImg.src = newImg.src;
                 heroImg.classList.add('active');
+                if (heroSpinner) heroSpinner.classList.add('hidden');
             };
+            newImg.src = `https://image.tmdb.org/t/p/original${item.backdrop_path}`;
             heroImg.classList.remove('active');
 
             heroTitle.textContent = item.bannerTitle;
@@ -2479,9 +2506,7 @@
                     ? `<div class="info-badge">${[movie.source, movie.resolution].filter(Boolean).join(' ')}</div>` : '';
                 let verifiedIndicator = '';
                 if (movie.disponible !== false) {
-                    if (VERIFY_DISPONIBILIDAD) {
-                        verifiedIndicator = `<div class="verified-badge" title="Disponibilidad Verificada"><span class="material-icons" style="font-size: 11px;">verified</span> Verificada</div>`;
-                    } else {
+                    if (!VERIFY_DISPONIBILIDAD) {
                         verifiedIndicator = `<div class="not-verified-badge" title="Disponibilidad Sin Verificar"><span class="material-icons" style="font-size: 11px;">help_outline</span> Sin Verificar</div>`;
                     }
                 }

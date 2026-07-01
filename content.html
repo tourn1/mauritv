@@ -1349,7 +1349,7 @@
                 const badgeText = [src, res].filter(Boolean).join(' ');
                 const badgeHtml = badgeText ? `<span id="qualityBadge" class="quality-badge">${badgeText}</span>` : '';
                 const genresHtml = data.genres && data.genres.length > 0
-                    ? `<span id="genresBadge">${data.genres.slice(0, 3).map(g => g.name).join(' / ')}</span>`
+                    ? `<span id="genresBadge">${data.genres.slice(0, 2).map(g => g.name).join(' / ')}</span>`
                     : '';
                 const countryHtml = data.production_countries && data.production_countries.length > 0
                     ? `<span id="countryBadge">${data.production_countries[0].name}</span>`
@@ -1376,9 +1376,7 @@
                 }
 
                 if (mainValidation.disponible !== false) {
-                    if (VERIFY_DISPONIBILIDAD) {
-                        document.getElementById('meta').innerHTML += ` <span id="verificationBadge" style="color:#1ed760; border-color:#1ed760; background:rgba(30,215,96,0.1); display: inline-flex; align-items: center;"><i class="material-icons" style="font-size:16px; margin-right:6px;">verified</i>Verificada</span>`;
-                    } else {
+                    if (!VERIFY_DISPONIBILIDAD) {
                         document.getElementById('meta').innerHTML += ` <span id="verificationBadge" style="color:#ff9800; border-color:#ff9800; background:rgba(255,152,0,0.1); display: inline-flex; align-items: center;"><i class="material-icons" style="font-size:16px; margin-right:6px;">help_outline</i>Sin Verificar</span>`;
                     }
                 }
@@ -1447,9 +1445,7 @@
                             const extraBadges = val.disponible !== false && (val.source || val.resolution) ? `<div class="info-badge">${[val.source, val.resolution].filter(Boolean).join(' ')}</div>` : '';
                             let verifiedIndicator = '';
                             if (val.disponible !== false) {
-                                if (VERIFY_DISPONIBILIDAD) {
-                                    verifiedIndicator = `<div class="verified-badge" title="Disponibilidad Verificada"><span class="material-icons" style="font-size: 11px;">verified</span> Verificada</div>`;
-                                } else {
+                                if (!VERIFY_DISPONIBILIDAD) {
                                     verifiedIndicator = `<div class="not-verified-badge" title="Disponibilidad Sin Verificar"><span class="material-icons" style="font-size: 11px;">help_outline</span> Sin Verificar</div>`;
                                 }
                             }
