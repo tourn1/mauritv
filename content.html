@@ -1351,10 +1351,14 @@
                 const genresHtml = data.genres && data.genres.length > 0
                     ? `<span id="genresBadge">${data.genres.slice(0, 3).map(g => g.name).join(' / ')}</span>`
                     : '';
+                const countryHtml = data.production_countries && data.production_countries.length > 0
+                    ? `<span id="countryBadge">${data.production_countries[0].name}</span>`
+                    : '';
                 document.getElementById('meta').innerHTML = `
                     ${imdbBadgeHtml}
                     ${badgeHtml}
                     ${genresHtml}
+                    ${countryHtml}
                     <span id="yearBadge">${year}</span>
                     <span id="ratingBadge">⭐ ${rating}</span>
                     ${seasonsLabel}

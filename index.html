@@ -46,6 +46,21 @@
             padding: 2rem;
             position: relative;
             z-index: 10;
+            pointer-events: none;
+        }
+
+        #app > header,
+        #app > #settings-panel,
+        #app > #status-panel {
+            pointer-events: auto;
+        }
+
+        #app > main {
+            pointer-events: none;
+        }
+        
+        #search-section {
+            pointer-events: auto;
         }
 
         /* Hero Banner */
@@ -188,19 +203,23 @@
             position: relative;
             z-index: 10;
             transition: margin-top 0.5s ease;
+            pointer-events: none;
+        }
+
+        #home-content > * {
+            pointer-events: auto;
         }
 
         #home-content.no-hero {
             margin-top: 0;
         }
 
-        /* Logo */
         .logo-container {
             display: flex;
             justify-content: flex-start;
             align-items: center;
             transition: opacity 0.4s ease, max-height 0.5s ease, margin 0.5s ease;
-            overflow: hidden;
+            overflow: visible;
             max-height: 80px;
         }
 
@@ -211,30 +230,31 @@
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            padding: 10px;
+            width: 70px;
+            height: 70px;
+            padding: 0;
             transition: all var(--transition-speed);
             outline: none;
-            border-radius: 15px;
+            border-radius: 50%; /* Redondo perfecto */
         }
 
         .logo-nav-wrapper:focus {
             background: transparent !important;
-            border: none !important;
-            border-color: transparent !important;
-            transform: none !important;
-            box-shadow: none !important;
-            outline: none !important;
+            transform: scale(1.05);
+            outline: var(--focus-border) !important;
+            outline-offset: 2px !important;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3) !important;
         }
 
         .logo-nav-wrapper:focus .app-logo {
-            filter: grayscale(1) !important;
+            /* Remove grayscale to keep it nice, or keep it if wanted. We'll remove it. */
         }
 
         .app-logo {
-            max-height: 60px;
-            max-width: 100%;
+            max-height: 50px;
+            max-width: 50px;
             object-fit: contain;
-            filter: drop-shadow(0 4px 20px rgba(229, 9, 20, 0.4));
+            /* Se quitó el filter: drop-shadow rojo */
         }
 
         /* Header & Search */
@@ -1459,6 +1479,31 @@
         .slider.round:before {
             border-radius: 50%;
         }
+
+        /* Status Panel */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #888;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        .status-dot.green { background-color: #4CAF50; box-shadow: 0 0 10px rgba(76, 175, 80, 0.6); }
+        .status-dot.yellow { background-color: #FFC107; box-shadow: 0 0 10px rgba(255, 193, 7, 0.6); }
+        .status-dot.red { background-color: #F44336; box-shadow: 0 0 10px rgba(244, 67, 54, 0.6); }
+        .status-time {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            min-width: 70px;
+            text-align: right;
+            font-family: monospace;
+        }
     </style>
     <script>
         /* ========== CONFIGURATION ========== */
@@ -1529,8 +1574,11 @@
                     <div id="autocomplete-results" class="autocomplete-dropdown hidden"></div>
                 </div>
             </div>
-            <div class="header-right">
-                <button id="settings-btn" class="navigable icon-btn" title="Configuración" tabindex="4">
+            <div class="header-right" style="display: flex; gap: 10px;">
+                <button id="profile-btn" class="navigable icon-btn" title="Perfil" tabindex="4" style="padding: 5px;">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='50' fill='%232a2a2a'/%3E%3Ccircle cx='50' cy='38' r='18' fill='%23555'/%3E%3Cellipse cx='50' cy='82' rx='28' ry='20' fill='%23555'/%3E%3C/svg%3E" alt="Perfil" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                </button>
+                <button id="settings-btn" class="navigable icon-btn" title="Configuración" tabindex="5">
                     <span class="material-icons">settings</span>
                 </button>
             </div>
@@ -1563,6 +1611,39 @@
                 <button id="settings-cancel-btn" class="settings-btn settings-btn-secondary navigable"
                     tabindex="0">Cancelar</button>
                 <button id="settings-save-btn" class="settings-btn navigable" tabindex="0">Guardar</button>
+            </div>
+        </div>
+
+        <!-- Status Panel -->
+        <div id="status-panel" class="settings-panel hidden">
+            <h3 class="settings-title">Estado de Conexión</h3>
+            <div class="settings-option">
+                <span class="settings-label">Validación de Contenido</span>
+                <div class="status-indicator" id="status-verify">
+                    <span class="status-dot"></span> <span class="status-time">-- ms</span>
+                </div>
+            </div>
+            <div class="settings-option">
+                <span class="settings-label">API TMDb</span>
+                <div class="status-indicator" id="status-tmdb">
+                    <span class="status-dot"></span> <span class="status-time">-- ms</span>
+                </div>
+            </div>
+            <div class="settings-option">
+                <span class="settings-label">API OpenSubtitles</span>
+                <div class="status-indicator" id="status-subs">
+                    <span class="status-dot"></span> <span class="status-time">-- ms</span>
+                </div>
+            </div>
+            <div class="settings-option">
+                <span class="settings-label">API VAPlayer</span>
+                <div class="status-indicator" id="status-vaplayer">
+                    <span class="status-dot"></span> <span class="status-time">-- ms</span>
+                </div>
+            </div>
+            <div class="settings-actions">
+                <button id="status-refresh-btn" class="settings-btn settings-btn-secondary navigable" tabindex="0">Actualizar</button>
+                <button id="status-close-btn" class="settings-btn navigable" tabindex="0">Cerrar</button>
             </div>
         </div>
 
@@ -1649,6 +1730,9 @@
         const voiceIndicator = document.getElementById('voice-indicator');
         const logoContainer = document.getElementById('logo-container');
         const logoNavWrapper = document.getElementById('logo-nav-wrapper');
+        const statusPanel = document.getElementById('status-panel');
+        const statusRefreshBtn = document.getElementById('status-refresh-btn');
+        const statusCloseBtn = document.getElementById('status-close-btn');
         const sectionTitle = document.getElementById('section-title');
         const historySection = document.getElementById('history-section');
         const historyGrid = document.getElementById('history-grid');
@@ -1690,12 +1774,75 @@
         const showLogo = () => { };
         const hideLogo = () => { };
 
+        // ========== STATUS LOGIC ==========
+        async function checkConnection(url, elementId) {
+            const container = document.getElementById(elementId);
+            if (!container) return;
+            const dot = container.querySelector('.status-dot');
+            const timeText = container.querySelector('.status-time');
+            
+            dot.className = 'status-dot'; // Reset
+            timeText.textContent = 'Midiendo...';
+            
+            const start = performance.now();
+            try {
+                await fetch(url, { method: 'GET', mode: 'no-cors', cache: 'no-store' });
+                const end = performance.now();
+                const duration = Math.round(end - start);
+                
+                timeText.textContent = `${duration} ms`;
+                
+                if (duration < 300) {
+                    dot.classList.add('green');
+                } else if (duration < 800) {
+                    dot.classList.add('yellow');
+                } else {
+                    dot.classList.add('red');
+                }
+            } catch (err) {
+                timeText.textContent = 'Error';
+                dot.classList.add('red');
+            }
+        }
+
+        function updateAllStatuses() {
+            const tmdbCheckUrl = TMDB_BASE_URL + '/configuration?api_key=' + TMDB_API_KEY;
+            const subsCheckUrl = 'https://api.opensubtitles.com/api/v1/discover/most_downloaded';
+            const vaplayerCheckUrl = 'https://vaplayer.ru';
+            
+            checkConnection(VERIFY_API_URL, 'status-verify');
+            checkConnection(tmdbCheckUrl, 'status-tmdb');
+            checkConnection(subsCheckUrl, 'status-subs');
+            checkConnection(vaplayerCheckUrl, 'status-vaplayer');
+        }
+
+        if (statusRefreshBtn) {
+            statusRefreshBtn.addEventListener('click', updateAllStatuses);
+        }
+
+        if (statusCloseBtn) {
+            statusCloseBtn.addEventListener('click', () => {
+                statusPanel.classList.add('hidden');
+                movieInput.focus();
+            });
+        }
+
         // Logo click/activation logic
         if (logoNavWrapper) {
             logoNavWrapper.addEventListener('click', () => {
-                // Recargar página al inicio y asegurar foco en input
-                movieInput.focus();
-                window.location.href = window.location.pathname;
+                if (statusPanel.classList.contains('hidden')) {
+                    const settingsPanel = document.getElementById('settings-panel');
+                    if (settingsPanel && !settingsPanel.classList.contains('hidden')) {
+                        settingsPanel.classList.add('hidden');
+                    }
+                    
+                    statusPanel.classList.remove('hidden');
+                    if(statusRefreshBtn) statusRefreshBtn.focus();
+                    updateAllStatuses();
+                } else {
+                    statusPanel.classList.add('hidden');
+                    movieInput.focus();
+                }
             });
         }
 
