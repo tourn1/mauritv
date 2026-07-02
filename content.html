@@ -255,15 +255,11 @@
             text-decoration: none;
             transition: all 0.2s ease;
             display: inline-block;
-            border-bottom: 1px solid transparent;
             cursor: pointer;
         }
 
         .person-link:hover,
         .person-link:focus {
-            color: var(--accent);
-            border-bottom-color: var(--accent);
-            transform: translateY(-1px);
             outline: none;
         }
 
@@ -288,20 +284,38 @@
             display: block;
             margin: 0 auto;
             border: 2px solid rgba(255, 255, 255, 0.06);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
         .person-photo-link {
             display: inline-block;
         }
 
+        .person-photo-link:focus .person-photo,
+        .person-photo-link:hover .person-photo,
+        .person-photo-link.focused .person-photo {
+            border-color: #ffffff;
+            box-shadow: 0 0 0 2px #ffffff;
+        }
+
         .person-name {
             font-size: 0.85rem;
-            color: var(--text-secondary);
+            color: #ffffff;
             margin-top: 6px;
             max-width: 84px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+        }
+
+        .person-character {
+            font-size: calc(0.85rem - 1px);
+            color: #999999;
+            max-width: 84px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            line-height: 1.3;
         }
 
         .hero-buttons {
@@ -337,8 +351,41 @@
         .play-button.selected,
         .play-button:focus {
             background: var(--accent-hover);
-            transform: scale(1.04);
-            box-shadow: 0 0 0 4px rgba(229, 9, 20, 0.25);
+            box-shadow: 0 0 0 3px #ffffff;
+            outline: none;
+        }
+
+        .favorite-button {
+            border: none;
+            border-radius: 8px;
+            padding: 6px 14px; /* 50% height of play-button roughly */
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.25s;
+            background: #4a4a4a; /* Gris */
+            color: white;
+            width: 100%;
+            justify-content: center;
+            transform-origin: left center;
+        }
+
+        .favorite-button:hover,
+        .favorite-button.selected,
+        .favorite-button:focus {
+            background: #5c5c5c;
+            box-shadow: 0 0 0 3px #ffffff;
+            outline: none;
+        }
+        
+        .play-button-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
         }
 
         .tv-select {
@@ -360,6 +407,7 @@
         /* Márgenes pequeños seguros para controles en el hero
            Evitan que el borde/focus se recorte al estar pegados al borde */
         .hero-content .play-button,
+        .hero-content .favorite-button,
         .hero-content .tv-select,
         .hero-content .ver-mas-btn,
         .hero-content #media-selectors select,
@@ -376,8 +424,7 @@
         .tv-select:focus {
             background: rgba(255, 255, 255, 0.25);
             border-color: #ffffff;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-            transform: scale(1.02);
+            box-shadow: 0 0 0 3px #ffffff;
             z-index: 10;
         }
 
@@ -445,7 +492,7 @@
         }
 
         .trailer-container:focus {
-            box-shadow: 0 0 0 4px rgba(229, 9, 20, 0.35);
+            box-shadow: 0 0 0 3px #ffffff;
         }
 
         #youtube-player {
@@ -544,7 +591,6 @@
 
         .movie-card:focus {
             border-color: #ffffff;
-            transform: scale(1.05);
             z-index: 100;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
         }
@@ -793,8 +839,11 @@
                 z-index: 3;
             }
 
+            .play-button-wrapper {
+                width: max-content;
+            }
+
             .play-button {
-                width: auto;
                 padding: 14px 26px;
                 /* Al escalar, expande hacia la derecha en lugar de la izquierda */
                 transform-origin: left center;
@@ -890,7 +939,7 @@
             /* Reducir la extensión del foco para que no se salga del viewport */
             .play-button:focus,
             .play-button.selected {
-                box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.28);
+                box-shadow: 0 0 0 3px #ffffff;
                 transform: none;
             }
         }
@@ -944,8 +993,11 @@
                 margin-bottom: 1rem;
             }
 
+            .play-button-wrapper {
+                width: max-content;
+            }
+
             .play-button {
-                width: auto;
                 padding: 14px 26px;
             }
 
@@ -989,7 +1041,7 @@
             }
 
             .movie-card:focus {
-                transform: scale(1.1);
+                transform: none;
             }
         }
 
@@ -999,7 +1051,7 @@
         ================================================================ */
         @media (max-width: 520px) {
             .play-button:focus {
-                box-shadow: 0 0 0 4px rgba(229, 9, 20, 0.28);
+                box-shadow: 0 0 0 3px #ffffff;
                 transform: none;
             }
 
@@ -1044,6 +1096,12 @@
 
         /* ========== HISTORY MANAGEMENT ========== */
         function saveToHistory(movie) {
+            // Si auth-drive.js está cargado y el usuario logueado, usar historial unificado (localStorage + Drive)
+            if (typeof guardarReciente === 'function') {
+                guardarReciente(movie);
+                return;
+            }
+            // Fallback: solo localStorage
             let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
             const existingIndex = history.findIndex(item =>
                 String(item.id) === String(movie.id) ||
@@ -1323,6 +1381,7 @@
                                     <img src="${img}" alt="${c.name}" class="person-photo" loading="lazy" onerror="this.onerror=null;this.src=placeholderProfile;">
                                 </a>
                                 <div class="person-name">${c.name}</div>
+                                ${c.character ? `<div class="person-character">${c.character}</div>` : ''}
                             </div>`;
                     });
                 } else {
@@ -1520,8 +1579,59 @@
                 };
                 if (playBtn) {
                     playBtn.onclick = () => handlePlay('player.html');
-                    playBtn.classList.add('selected');
                     playBtn.focus();
+                }
+
+                // Configurar el botón de Favorito
+                const favoriteBtn = document.getElementById('favoriteBtn');
+                if (favoriteBtn) {
+                    favoriteBtn.style.display = 'flex'; // Make visible immediately
+
+                    const checkIsFav = () => {
+                        const targetId = imdbId || id;
+                        if (typeof esFavorito === 'function') {
+                            return esFavorito(targetId);
+                        }
+                        // Fallback in case auth-drive.js is still parsing
+                        try {
+                            const config = JSON.parse(localStorage.getItem('mauritv_config') || '{}');
+                            const favs = config.favorites || [];
+                            return favs.some(f => String(f.id) === String(targetId));
+                        } catch (e) {
+                            return false;
+                        }
+                    };
+
+                    const updateFavoriteUI = () => {
+                        const isFav = checkIsFav();
+                        if (isFav) {
+                            favoriteBtn.innerHTML = `<span class="material-icons">remove</span> Quitar de favoritos`;
+                        } else {
+                            favoriteBtn.innerHTML = `<span class="material-icons">add</span> Agregar a favorito`;
+                        }
+                    };
+
+                    updateFavoriteUI(); // Update instantly without delay
+
+                    favoriteBtn.onclick = () => {
+                        const isFav = checkIsFav();
+                        const targetId = imdbId || id;
+                        if (isFav) {
+                            if (typeof removerFavorito === 'function') removerFavorito(targetId);
+                        } else {
+                            if (typeof agregarFavorito === 'function') agregarFavorito(movieObj);
+                        }
+                        setTimeout(updateFavoriteUI, 50);
+                    };
+
+                    // El browser dispara un click nativo al presionar Enter en un <button>
+                    // El handler global TAMBIÉN llama active.click() → doble toggle → estado no cambia
+                    // Prevenimos el click nativo del browser; el handler global se encarga de disparar onclick una sola vez
+                    favoriteBtn.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault(); // cancela el click nativo del navegador
+                        }
+                    });
                 }
             } catch (err) {
                 console.error('Error loading content:', err);
@@ -1557,7 +1667,7 @@
                     let fbQs = `id=${encodeURIComponent(id)}`;
                     if (type) fbQs += `&type=${encodeURIComponent(type)}`;
                     if (type === 'tv') fbQs += `&season=${season}&episode=${episode}`;
-                    
+
                     const fbResponse = await fetch(`https://imobiledeals.com/service/verify?${fbQs}`);
                     if (fbResponse.ok) {
                         const data = await fbResponse.json();
@@ -1686,10 +1796,16 @@
                             aria-label="Seleccionar subtítulo" style="display: none;"></select>
                     </div>
                     <div class="hero-buttons">
-                        <button class="play-button navigable" id="playBtn">
-                            <span class="material-icons">play_arrow</span>
-                            Reproducir
-                        </button>
+                        <div class="play-button-wrapper">
+                            <button class="play-button navigable" id="playBtn">
+                                <span class="material-icons">play_arrow</span>
+                                Reproducir
+                            </button>
+                            <button class="favorite-button navigable" id="favoriteBtn" style="display: none;">
+                                <span class="material-icons">add</span>
+                                Agregar a favorito
+                            </button>
+                        </div>
                     </div>
                     <div class="hero-cast-director" id="castDirector"></div>
                 </div>
@@ -1705,6 +1821,11 @@
             <div class="results-grid" id="carousel"></div>
         </section>
     </main>
+
+    <!-- Tu script con la lógica de autenticación y Drive para favoritos -->
+    <script src="auth-drive.js?v=12"></script>
+    <script async defer src="https://apis.google.com/js/api.js" onload="if(typeof gapiLoaded === 'function') gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="if(typeof gisLoaded === 'function') gisLoaded()"></script>
 </body>
 
 </html>
