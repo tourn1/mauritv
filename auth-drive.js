@@ -258,8 +258,9 @@ async function syncWithDrive() {
       await createInDrive(localConfig);
     }
 
-    // Notificar a la página que el historial puede haber cambiado (siempre, tras cualquier sync)
+    // Notificar a la página que los datos pueden haber cambiado (siempre, tras cualquier sync)
     window.dispatchEvent(new CustomEvent('recentlyWatchedUpdated'));
+    window.dispatchEvent(new CustomEvent('favoritesUpdated'));
 
   } catch (error) {
     console.error('Error en sincronización con Drive:', error);

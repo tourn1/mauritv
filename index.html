@@ -2932,9 +2932,12 @@
             if (document.visibilityState === 'visible') { loadHistory(); loadFavorites(); }
         });
 
-        // Refrescar historial cuando Drive trae datos más recientes (evento disparado por auth-drive.js)
+        // Refrescar historial y favoritos cuando Drive trae datos más recientes (eventos disparados por auth-drive.js)
         window.addEventListener('recentlyWatchedUpdated', () => {
             loadHistory();
+        });
+        window.addEventListener('favoritesUpdated', () => {
+            loadFavorites();
         });
 
 
