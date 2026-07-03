@@ -1616,7 +1616,7 @@
                 <div class="logo-container" id="logo-container">
                     <div class="logo-nav-wrapper navigable" id="logo-nav-wrapper" tabindex="0" role="button"
                         aria-label="Recargar e ir al inicio">
-                        <img src="mauritv.png" alt="MauriTV" id="app-logo" class="app-logo">
+                        <img src="assets/logo.png" alt="MauriTV" id="app-logo" class="app-logo">
                     </div>
                 </div>
             </div>
@@ -1638,14 +1638,20 @@
             </div>
             <div class="header-right" style="display: flex; gap: 10px; position: relative;">
                 <button id="profile-btn" class="navigable icon-btn" title="Perfil" tabindex="4" style="padding: 5px;">
-                    <img id="profile-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='50' fill='%232a2a2a'/%3E%3Ccircle cx='50' cy='38' r='18' fill='%23555'/%3E%3Cellipse cx='50' cy='82' rx='28' ry='20' fill='%23555'/%3E%3C/svg%3E"
+                    <img id="profile-img"
+                        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='50' fill='%232a2a2a'/%3E%3Ccircle cx='50' cy='38' r='18' fill='%23555'/%3E%3Cellipse cx='50' cy='82' rx='28' ry='20' fill='%23555'/%3E%3C/svg%3E"
                         alt="Perfil" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
                 </button>
-                
+
                 <!-- Profile Dropdown -->
-                <div id="profile-dropdown" class="hidden" style="position: absolute; top: calc(100% + 10px); right: 50px; background: #2a2a2a; border-radius: 8px; padding: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000; min-width: 150px; border: 1px solid #444;">
-                    <div id="profile-name" style="color: white; padding: 5px 10px; border-bottom: 1px solid #444; margin-bottom: 5px; font-size: 14px; text-align: center;">Usuario</div>
-                    <button id="btn-logout" class="navigable" style="background: none; border: none; color: #ff4444; cursor: pointer; width: 100%; text-align: center; padding: 8px; border-radius: 4px; font-weight: bold; transition: background 0.2s;">Cerrar Sesión</button>
+                <div id="profile-dropdown" class="hidden"
+                    style="position: absolute; top: calc(100% + 10px); right: 50px; background: #2a2a2a; border-radius: 8px; padding: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000; min-width: 150px; border: 1px solid #444;">
+                    <div id="profile-name"
+                        style="color: white; padding: 5px 10px; border-bottom: 1px solid #444; margin-bottom: 5px; font-size: 14px; text-align: center;">
+                        Usuario</div>
+                    <button id="btn-logout" class="navigable"
+                        style="background: none; border: none; color: #ff4444; cursor: pointer; width: 100%; text-align: center; padding: 8px; border-radius: 4px; font-weight: bold; transition: background 0.2s;">Cerrar
+                        Sesión</button>
                 </div>
 
                 <button id="settings-btn" class="navigable icon-btn" title="Configuración" tabindex="5">
@@ -1685,7 +1691,8 @@
             <div class="settings-actions">
                 <button id="settings-clear-cache-btn" class="settings-btn settings-btn-secondary navigable"
                     style="margin-right: auto;" tabindex="0">Borrar Caché</button>
-                <button id="settings-save-btn" class="settings-btn settings-btn-secondary navigable" tabindex="0">Guardar</button>
+                <button id="settings-save-btn" class="settings-btn settings-btn-secondary navigable"
+                    tabindex="0">Guardar</button>
                 <button id="settings-cancel-btn" class="settings-btn settings-btn-danger navigable"
                     tabindex="0">Cerrar</button>
             </div>
@@ -1721,7 +1728,8 @@
             <div class="settings-actions">
                 <button id="status-refresh-btn" class="settings-btn settings-btn-secondary navigable"
                     tabindex="0">Actualizar</button>
-                <button id="status-close-btn" class="settings-btn settings-btn-danger navigable" tabindex="0">Cerrar</button>
+                <button id="status-close-btn" class="settings-btn settings-btn-danger navigable"
+                    tabindex="0">Cerrar</button>
             </div>
         </div>
 
@@ -3134,13 +3142,13 @@
         }
 
     </script>
-    
+
     <!-- Tu script con la lógica de autenticación y Drive -->
     <script src="auth-drive.js?v=12"></script>
-    
+
     <!-- Librería para la API de Google (Drive v3) -->
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-    
+
     <!-- Librería de Google Identity Services (GSI) -->
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 </body>
