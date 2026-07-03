@@ -2729,7 +2729,7 @@
         }
 
         // Click handlers for grids
-        [resultsGrid, historyGrid, moviesGrid, seriesGrid, favoritesGrid].forEach(grid => {
+        [resultsGrid, historyGrid, moviesGrid, seriesGrid, favoritesGrid, relatedHistoryGrid].forEach(grid => {
             if (grid) {
                 grid.addEventListener('click', (e) => {
                     const card = e.target.closest('.movie-card');

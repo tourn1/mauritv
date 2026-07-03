@@ -358,7 +358,8 @@
         .favorite-button {
             border: none;
             border-radius: 8px;
-            padding: 6px 14px; /* 50% height of play-button roughly */
+            padding: 6px 14px;
+            /* 50% height of play-button roughly */
             display: flex;
             align-items: center;
             gap: 10px;
@@ -366,7 +367,8 @@
             font-weight: 600;
             cursor: pointer;
             transition: 0.25s;
-            background: #4a4a4a; /* Gris */
+            background: #4a4a4a;
+            /* Gris */
             color: white;
             width: 100%;
             justify-content: center;
@@ -380,7 +382,7 @@
             box-shadow: 0 0 0 3px #ffffff;
             outline: none;
         }
-        
+
         .play-button-wrapper {
             display: flex;
             flex-direction: column;
@@ -1075,7 +1077,7 @@
         const TMDB_API_KEY = '12916916a032ac4a2da17601cbc119bd';
         const HISTORY_KEY = 'movie_history_v1';
         const HIDDEN_RESOLUTIONS = ['CAM', 'TS', 'TC'];
-        const VERIFY_API_URL = localStorage.getItem('verify_api_url') || 'https://verify.mauritv.net/verify.php';
+        const VERIFY_API_URL = localStorage.getItem('verify_api_url') || 'https://imobiledeals.com/service/verify';
         const VERIFY_DISPONIBILIDAD = localStorage.getItem('verify_disponibilidad') === 'true';
         const BLOCK_LOW_RES = localStorage.getItem('block_low_res') !== 'false';
 
@@ -1254,7 +1256,70 @@
             return null;
         }
 
-        async function fetchSubtitles(imdbId, type, season, episode) {
+        /**
+         * SmartMatch: normaliza un nombre de archivo/release para comparación.
+         */
+        function smartMatchNormalize(name) {
+            if (!name) return '';
+            // Extraer solo el nombre de archivo (sin ruta)
+            name = name.split(/[\/\\]/).pop();
+            // Quitar extensión
+            name = name.replace(/\.(mp4|mkv|avi|mov|srt|ass|ssa|sub|idx)$/i, '');
+            // Lowercase y reemplazar delimitadores por espacio
+            return name.toLowerCase().replace(/[\s._\-()[\]]+/g, ' ').trim();
+        }
+
+        /**
+         * SmartMatch: detecta el grupo de release en un nombre normalizado.
+         * Retorna el grupo en lowercase o null.
+         */
+        function smartMatchGroup(normalizedName) {
+            const groupRegex = /(yts|rarbg|psa|galaxyrg|ion10|evo|flxtv|hazel|shaanig|nitro|vision|bifos|web-dl|amzn)/gi;
+            const matches = normalizedName.match(groupRegex);
+            return matches ? matches[matches.length - 1].toLowerCase() : null;
+        }
+
+        /**
+         * SmartMatch: calcula el score de coincidencia entre el archivo de video
+         * y un nombre de release de subtítulo.
+         */
+        function smartMatchScore(videoFileName, subtitleRelease) {
+            const normVideo = smartMatchNormalize(videoFileName);
+            const normSub = smartMatchNormalize(subtitleRelease);
+
+            if (!normVideo || !normSub) return 0;
+
+            // 1. Coincidencia exacta
+            if (normVideo === normSub) return 10.0;
+
+            let score = 0;
+
+            // 2. Inclusión total
+            if (normVideo.includes(normSub) || normSub.includes(normVideo)) {
+                score += 2.0;
+            }
+
+            // 3. Comparación por tokens
+            const videoTokens = new Set(normVideo.split(' ').filter(t => t.length >= 3));
+            const subTokens = normSub.split(' ').filter(t => t.length >= 3);
+            const significant = subTokens.length;
+            if (significant > 0) {
+                const found = subTokens.filter(t => videoTokens.has(t)).length;
+                const tokenScore = found / significant;
+                score += tokenScore;
+
+                // 4. Bonus por grupo (el más importante)
+                const videoGroup = smartMatchGroup(normVideo);
+                const subGroup = smartMatchGroup(normSub);
+                if (videoGroup && subGroup && videoGroup === subGroup && tokenScore > 0.2) {
+                    score += 5.0;
+                }
+            }
+
+            return score;
+        }
+
+        async function fetchSubtitles(imdbId, type, season, episode, videoFileName) {
             const subSelect = document.getElementById('sub-select');
             if (!imdbId) {
                 subSelect.style.display = 'none';
@@ -1279,13 +1344,35 @@
                 });
                 const data = await response.json();
                 if (data.data && data.data.length > 0) {
-                    let options = '<option value="">Seleccionar subtítulos externos</option>';
-                    data.data.forEach(item => {
+                    // --- SmartMatch scoring ---
+                    const THRESHOLD = 1.0;
+                    let bestIndex = 0;   // fallback: primer subtítulo real (índice 0 en data.data)
+                    let maxScore = -1;
+                    const hasVideo = !!videoFileName;
+
+                    const scored = data.data.map((item, idx) => {
                         const fileId = item.attributes.files[0].file_id;
-                        const fileName = item.attributes.release || item.attributes.files[0].file_name;
-                        options += `<option value="${fileId}">${fileName}</option>`;
+                        const release = item.attributes.release || item.attributes.files[0].file_name || '';
+                        const score = hasVideo ? smartMatchScore(videoFileName, release) : 0;
+                        if (score > maxScore) { maxScore = score; bestIndex = idx; }
+                        return { fileId, release, score };
+                    });
+
+                    const recommended = hasVideo && maxScore >= THRESHOLD;
+
+                    let options = '<option value="">Seleccionar subtítulos externos</option>';
+                    scored.forEach((s, idx) => {
+                        const star = (recommended && idx === bestIndex) ? '⭐ ' : '';
+                        options += `<option value="${s.fileId}">${star}${s.release}</option>`;
                     });
                     subSelect.innerHTML = options;
+
+                    // Seleccionar automáticamente la mejor opción (índice +1 por el placeholder)
+                    subSelect.selectedIndex = bestIndex + 1;
+
+                    if (recommended) {
+                        console.log(`[SmartMatch] Recomendado: "${scored[bestIndex].release}" (score: ${maxScore.toFixed(2)})`);
+                    }
                 } else {
                     subSelect.innerHTML = '<option value="">Seleccionar subtítulos externos</option>';
                     if (type === 'movie') subSelect.style.display = 'none';
@@ -1293,8 +1380,6 @@
             } catch (e) {
                 console.error("Error loading subtitles", e);
                 subSelect.innerHTML = '<option value="">Error in subtitles</option>';
-            } finally {
-                if (subSelect.options.length > 1) subSelect.selectedIndex = 1;
             }
         }
 
@@ -1553,16 +1638,16 @@
                         };
                         seasonSelect.addEventListener('change', () => {
                             updateEpisodes();
-                            fetchSubtitles(imdbId, type, seasonSelect.value, episodeSelect.value);
+                            fetchSubtitles(imdbId, type, seasonSelect.value, episodeSelect.value, file_name);
                         });
                         episodeSelect.addEventListener('change', () => {
-                            fetchSubtitles(imdbId, type, seasonSelect.value, episodeSelect.value);
+                            fetchSubtitles(imdbId, type, seasonSelect.value, episodeSelect.value, file_name);
                         });
                         updateEpisodes();
-                        fetchSubtitles(imdbId, type, seasonSelect.value, episodeSelect.value);
+                        fetchSubtitles(imdbId, type, seasonSelect.value, episodeSelect.value, file_name);
                     }
                 } else {
-                    fetchSubtitles(imdbId, type);
+                    fetchSubtitles(imdbId, type, undefined, undefined, file_name);
                 }
 
                 const playBtn = document.getElementById('playBtn');
@@ -1824,8 +1909,10 @@
 
     <!-- Tu script con la lógica de autenticación y Drive para favoritos -->
     <script src="auth-drive.js?v=12"></script>
-    <script async defer src="https://apis.google.com/js/api.js" onload="if(typeof gapiLoaded === 'function') gapiLoaded()"></script>
-    <script async defer src="https://accounts.google.com/gsi/client" onload="if(typeof gisLoaded === 'function') gisLoaded()"></script>
+    <script async defer src="https://apis.google.com/js/api.js"
+        onload="if(typeof gapiLoaded === 'function') gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client"
+        onload="if(typeof gisLoaded === 'function') gisLoaded()"></script>
 </body>
 
 </html>
