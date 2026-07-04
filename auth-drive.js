@@ -5,6 +5,46 @@ const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/res
 const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile';
 const CONFIG_FILE_NAME = 'config_usuario.json';
 
+// --- CONFIGURACIÓN DE SESIÓN PERSISTENTE ---
+// Duración de la sesión "recordar usuario" (en días)
+const SESSION_DURATION_DAYS = 30;
+const SESSION_DURATION_MS   = SESSION_DURATION_DAYS * 24 * 60 * 60 * 1000;
+
+// Claves de localStorage para la sesión persistente
+const LS_ACCESS_TOKEN    = 'google_access_token';
+const LS_TOKEN_EXPIRY    = 'google_token_expiry';    // expira en ~1 h (vida del access token)
+const LS_SESSION_EXPIRY  = 'google_session_expiry';  // expira en SESSION_DURATION_DAYS
+const LS_USER_HINT       = 'google_user_hint';        // email para re-auth silenciosa
+
+(function reportSessionConfig() {
+  const sessionExpiry = localStorage.getItem(LS_SESSION_EXPIRY);
+  if (sessionExpiry) {
+    const remaining = parseInt(sessionExpiry, 10) - Date.now();
+    if (remaining > 0) {
+      const days  = Math.floor(remaining / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const mins  = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+      console.log(
+        `%c[MauriTV] Sesión configurada para ${SESSION_DURATION_DAYS} días.` +
+        ` Sesión actual expira en: ${days}d ${hours}h ${mins}m`,
+        'color: #4ade80; font-weight: bold;'
+      );
+    } else {
+      console.log(
+        `%c[MauriTV] Sesión configurada para ${SESSION_DURATION_DAYS} días. ` +
+        `No hay sesión activa guardada.`,
+        'color: #facc15; font-weight: bold;'
+      );
+    }
+  } else {
+    console.log(
+      `%c[MauriTV] Sesión configurada para ${SESSION_DURATION_DAYS} días. ` +
+      `No hay sesión activa guardada.`,
+      'color: #facc15; font-weight: bold;'
+    );
+  }
+})();
+
 const DEFAULT_PROFILE_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='50' fill='%232a2a2a'/%3E%3Ccircle cx='50' cy='38' r='18' fill='%23555'/%3E%3Cellipse cx='50' cy='82' rx='28' ry='20' fill='%23555'/%3E%3C/svg%3E";
 
 let tokenClient;
@@ -55,34 +95,72 @@ function saveLocalConfig() {
 }
 
 // --- 2. GESTIÓN DE SESIÓN DE GOOGLE ---
-function checkPersistedSession() {
-  const storedToken = localStorage.getItem('google_access_token');
-  const expiry = localStorage.getItem('google_token_expiry');
 
-  if (storedToken && expiry && Date.now() < parseInt(expiry, 10)) {
-    console.log('Sesión válida encontrada en localStorage');
+/**
+ * checkPersistedSession:
+ * 1. Si el access token sigue vigente → lo usa directamente.
+ * 2. Si el access token expiró PERO la sesión de 30 días sigue vigente
+ *    → intenta re-autenticación silenciosa (sin popup).
+ * 3. Si ninguna condición se cumple → logout limpio.
+ */
+function checkPersistedSession() {
+  const storedToken    = localStorage.getItem(LS_ACCESS_TOKEN);
+  const tokenExpiry    = localStorage.getItem(LS_TOKEN_EXPIRY);
+  const sessionExpiry  = localStorage.getItem(LS_SESSION_EXPIRY);
+  const now            = Date.now();
+
+  const tokenValido   = storedToken && tokenExpiry   && now < parseInt(tokenExpiry,   10);
+  const sesionActiva  =               sessionExpiry  && now < parseInt(sessionExpiry,  10);
+
+  if (tokenValido) {
+    // El access token sigue siendo válido
+    console.log('[MauriTV] Access token vigente. Sesión restaurada.');
     accessToken = storedToken;
     updateProfileUI();
-    // Inicia sincronización silenciosa si ya cargaron las APIs
     if (gapiInited) syncWithDrive();
+  } else if (sesionActiva) {
+    // El token expiró pero la sesión de 30 días sigue en pie → re-auth silenciosa
+    console.log('[MauriTV] Token expirado, pero sesión de 30 días vigente. Re-autenticando en silencio...');
+    // La re-auth se dispara en gisLoaded() una vez que la librería esté lista
+    window._needsSilentReauth = true;
   } else {
-    handleLogout(false); // Limpia si expiró
+    // Todo expiró → logout limpio sin mensaje
+    handleLogout(false);
   }
 }
 
-function saveSession(token, expiresIn) {
+/**
+ * saveSession: guarda el access token (~1 h) Y la sesión larga (SESSION_DURATION_DAYS).
+ * La sesión larga se renueva en cada login exitoso.
+ */
+function saveSession(token, expiresIn, userEmail) {
   accessToken = token;
-  // expiresIn viene en segundos, le restamos un margen de seguridad (ej. 1 minuto)
-  const expiryTime = Date.now() + (expiresIn - 60) * 1000;
-  localStorage.setItem('google_access_token', token);
-  localStorage.setItem('google_token_expiry', expiryTime.toString());
+  // expiresIn viene en segundos; restamos 60 s de margen de seguridad
+  const tokenExpiryTime   = Date.now() + (expiresIn - 60) * 1000;
+  const sessionExpiryTime = Date.now() + SESSION_DURATION_MS;
+
+  localStorage.setItem(LS_ACCESS_TOKEN,   token);
+  localStorage.setItem(LS_TOKEN_EXPIRY,   tokenExpiryTime.toString());
+  localStorage.setItem(LS_SESSION_EXPIRY, sessionExpiryTime.toString());
+  if (userEmail) localStorage.setItem(LS_USER_HINT, userEmail);
+
+  const sessionDays = Math.round(SESSION_DURATION_MS / (1000 * 60 * 60 * 24));
+  console.log(
+    `%c[MauriTV] Sesión guardada. El access token dura ~${Math.round((expiresIn - 60) / 60)} min. ` +
+    `La sesión persiste ${sessionDays} días.`,
+    'color: #4ade80; font-weight: bold;'
+  );
+
   updateProfileUI();
 }
 
 function handleLogout(interactive = true) {
   accessToken = null;
-  localStorage.removeItem('google_access_token');
-  localStorage.removeItem('google_token_expiry');
+  window._needsSilentReauth = false;
+  localStorage.removeItem(LS_ACCESS_TOKEN);
+  localStorage.removeItem(LS_TOKEN_EXPIRY);
+  localStorage.removeItem(LS_SESSION_EXPIRY);
+  localStorage.removeItem(LS_USER_HINT);
 
   // Restaurar UI
   const profileImg = document.getElementById('profile-img');
@@ -92,7 +170,7 @@ function handleLogout(interactive = true) {
   if (dropdown) dropdown.classList.add('hidden');
 
   if (interactive) {
-    console.log('Sesión cerrada');
+    console.log('[MauriTV] Sesión cerrada manualmente.');
   }
 }
 
@@ -144,12 +222,20 @@ function gisLoaded() {
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
-    callback: (resp) => {
+    callback: async (resp) => {
       if (resp.error !== undefined) {
+        // Si la re-auth silenciosa falla (por ejemplo, el usuario revocó permisos)
+        // hacemos logout limpio y NO mostramos error
+        if (resp.error === 'interaction_required' || resp.error === 'login_required') {
+          console.warn('[MauriTV] Re-auth silenciosa no posible. El usuario deberá loguearse manualmente.');
+          handleLogout(false);
+          return;
+        }
         throw (resp);
       }
 
       // Verificar si el usuario realmente aprobó el permiso de Drive
+      // (sólo relevante en login interactivo, no en silent re-auth)
       if (!google.accounts.oauth2.hasGrantedAllScopes(resp, 'https://www.googleapis.com/auth/drive.file')) {
         console.error('El usuario no otorgó los permisos requeridos.');
         alert('Debes marcar la casilla para darle permiso a la aplicación de guardar tus datos.');
@@ -157,9 +243,22 @@ function gisLoaded() {
         return;
       }
 
-      console.log('Login exitoso. Token y permisos obtenidos.');
-      // Guardar token en localStorage
-      saveSession(resp.access_token, resp.expires_in);
+      // Obtener email del usuario para futuras re-auths silenciosas
+      let userEmail = localStorage.getItem(LS_USER_HINT) || '';
+      if (!userEmail) {
+        try {
+          const profileResp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${resp.access_token}` }
+          });
+          if (profileResp.ok) {
+            const profileData = await profileResp.json();
+            userEmail = profileData.email || '';
+          }
+        } catch (_) { /* ignorar */ }
+      }
+
+      console.log('[MauriTV] Login exitoso. Token y permisos obtenidos.');
+      saveSession(resp.access_token, resp.expires_in, userEmail);
 
       // Sincronizar
       if (gapiInited) syncWithDrive();
@@ -167,6 +266,14 @@ function gisLoaded() {
   });
   gisInited = true;
   maybeEnableButtons();
+
+  // Si checkPersistedSession detectó que necesitamos re-auth silenciosa, dispararla ahora
+  if (window._needsSilentReauth) {
+    window._needsSilentReauth = false;
+    const hint = localStorage.getItem(LS_USER_HINT) || '';
+    console.log('[MauriTV] Disparando re-autenticación silenciosa...');
+    tokenClient.requestAccessToken({ prompt: '', login_hint: hint });
+  }
 }
 
 function maybeEnableButtons() {
@@ -197,8 +304,16 @@ function handleAuthClick() {
       dropdown.classList.toggle('hidden');
     }
   } else {
-    // Si no estamos logueados, inicia flujo de Google
-    tokenClient.requestAccessToken({ prompt: 'consent' });
+    // Si no estamos logueados, inicia flujo de Google.
+    // Si hay una sesión de 30 días activa con email guardado, intentar sin prompt
+    // para que Google reutilice la cuenta ya autorizada sin mostrar selector.
+    const hint           = localStorage.getItem(LS_USER_HINT) || '';
+    const sessionExpiry  = localStorage.getItem(LS_SESSION_EXPIRY);
+    const sesionActiva   = sessionExpiry && Date.now() < parseInt(sessionExpiry, 10);
+    tokenClient.requestAccessToken({
+      prompt:     hint && sesionActiva ? '' : 'select_account',
+      login_hint: hint || undefined
+    });
   }
 }
 
