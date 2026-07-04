@@ -1934,7 +1934,7 @@
                     }
 
                     statusPanel.classList.remove('hidden');
-                    if (statusRefreshBtn) statusRefreshBtn.focus();
+                    if (statusCloseBtn) statusCloseBtn.focus();
                     updateAllStatuses();
                 } else {
                     statusPanel.classList.add('hidden');
@@ -3048,13 +3048,18 @@
 
             // Toggle panel visibility
             settingsBtn.addEventListener('click', () => {
-                if (settingsPanel.classList.contains('hidden')) {
+                const wasHidden = settingsPanel.classList.contains('hidden');
+                if (wasHidden) {
                     verifyToggle.checked = VERIFY_DISPONIBILIDAD;
                     blockLowResToggle.checked = BLOCK_LOW_RES;
                     verifyUrlInput.value = VERIFY_API_URL;
                     playerUrlInput.value = PLAYER_URL;
                 }
                 settingsPanel.classList.toggle('hidden');
+                if (wasHidden) {
+                    const settingsCancelBtnEl = document.getElementById('settings-cancel-btn');
+                    if (settingsCancelBtnEl) settingsCancelBtnEl.focus();
+                }
             });
 
             // Handle clear cache button
