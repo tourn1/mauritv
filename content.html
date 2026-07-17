@@ -19,16 +19,23 @@
     <!-- YouTube IFrame API -->
     <script src="https://www.youtube.com/iframe_api"></script>
 
-    
+
 
     <div id="virtual-cursor" style="display:none;"></div>
 
     <!-- Módulos API -->
-    <script src="assets/js/config.js?v=1"></script>
-    <script src="assets/js/tmdb.js?v=1"></script>
-    <script src="assets/js/vaplayer.js?v=1"></script>
-    <script src="assets/js/opensubtitles.js?v=1"></script>
-    <script src="assets/js/verify.js?v=1"></script>
+    <script>
+        // Versión única de scripts para cache busting. Puede ser un string fijo o autogenerado.
+        // const SCRIPT_VERSION = Math.random().toString(36).substring(2, 9);
+        const SCRIPT_VERSION = 1;
+        console.log('Script version: ' + SCRIPT_VERSION);
+
+        document.write(`<script src="assets/js/config.js?v=${SCRIPT_VERSION}"><\/script>`);
+        document.write(`<script src="assets/js/tmdb.js?v=${SCRIPT_VERSION}"><\/script>`);
+        document.write(`<script src="assets/js/vaplayer.js?v=${SCRIPT_VERSION}"><\/script>`);
+        document.write(`<script src="assets/js/opensubtitles.js?v=${SCRIPT_VERSION}"><\/script>`);
+        document.write(`<script src="assets/js/verify.js?v=${SCRIPT_VERSION}"><\/script>`);
+    </script>
 
     <script>
         /* ========== CONFIGURATION (lee de CONFIG y localStorage) ========== */
@@ -314,13 +321,10 @@
                 castSection += '</div>';
                 document.getElementById('castDirector').innerHTML = castSection + directorSection;
 
+                // El filename-display se actualizará después de mainValidation
+                // para asegurarse de usar el file_name correcto del IMDB ID real
                 const filenameDisplay = document.getElementById('filename-display');
-                if (file_name) {
-                    filenameDisplay.textContent = `(${file_name})`;
-                    filenameDisplay.style.display = 'block';
-                } else {
-                    filenameDisplay.style.display = 'none';
-                }
+                filenameDisplay.style.display = 'none';
 
                 const year = data.release_date?.substring(0, 4) || data.first_air_date?.substring(0, 4) || 'N/A';
                 const rating = data.vote_average ? data.vote_average.toFixed(1) : 'N/A';
@@ -349,6 +353,34 @@
                 `;
 
                 const mainValidation = await validarPeliculaFinal(imdbId || id, type);
+
+                // Usar el file_name, resolution y source de la validación real (basada en el IMDB ID
+                // correcto del contenido), no los parámetros URL que podrían ser de otra película.
+                const validated_file_name = mainValidation.file_name || '';
+                const validated_res = mainValidation.resolution || res;
+                const validated_src = mainValidation.source || src;
+
+                // Actualizar el filename display con el dato verificado
+                if (validated_file_name) {
+                    filenameDisplay.textContent = `(${validated_file_name})`;
+                    filenameDisplay.style.display = 'block';
+                } else {
+                    filenameDisplay.style.display = 'none';
+                }
+
+                // Actualizar el quality badge con los datos verificados
+                const validatedBadgeText = window.vaPlayer
+                    ? window.vaPlayer.getQualityBadgeText(validated_file_name, validated_res, validated_src)
+                    : [(validated_src || '').toUpperCase(), validated_res].filter(Boolean).join(' ');
+                const qualityBadgeEl = document.getElementById('qualityBadge');
+                if (qualityBadgeEl) {
+                    if (validatedBadgeText) {
+                        qualityBadgeEl.textContent = validatedBadgeText;
+                    } else {
+                        qualityBadgeEl.style.display = 'none';
+                    }
+                }
+
                 if (mainValidation.disponible === false) {
                     const playBtn = document.getElementById('play-btn');
                     if (playBtn) {
@@ -371,7 +403,7 @@
                     y: year,
                     rating: data.vote_average ? data.vote_average.toFixed(1) : 'N/A',
                     qid: type === 'movie' ? 'movie' : 'tvSeries',
-                    file_name: file_name,
+                    file_name: validated_file_name || file_name,
                     i: data.poster_path ? { imageUrl: `https://image.tmdb.org/t/p/w200${data.poster_path}` } : null
                 };
                 saveToHistory(movieObj);
@@ -403,10 +435,10 @@
                         } catch (e) { }
                         const validation = await validarPeliculaFinal(imdbId, type);
                         if (BLOCK_LOW_RES) {
-                            const badgeText = window.vaPlayer 
+                            const badgeText = window.vaPlayer
                                 ? window.vaPlayer.getQualityBadgeText(validation.file_name, validation.resolution, validation.source).toUpperCase()
                                 : [(validation.source || '').toUpperCase(), validation.resolution].filter(Boolean).join(' ').toUpperCase();
-                            
+
                             const isHidden = HIDDEN_RESOLUTIONS.some(res => badgeText.includes(res));
 
                             if (isHidden) {
@@ -497,17 +529,17 @@
                     let finalId = imdbId || id;
                     let s = null;
                     let e = null;
-                    
+
                     if (type === 'tv') {
                         s = seasonSelect.value;
                         e = episodeSelect.value;
                     }
-                    
+
                     const params = {
                         skin: 'netflix',
                         sub_default: '1'
                     };
-                    
+
                     let playUrl = window.vaPlayer.embedUrl(finalId, type, s, e, params);
 
                     if (subId) {
@@ -721,7 +753,7 @@
             scriptGapi.src = "https://apis.google.com/js/api.js";
             scriptGapi.async = true;
             scriptGapi.defer = true;
-            scriptGapi.onload = function() { if(typeof gapiLoaded === 'function') gapiLoaded(); };
+            scriptGapi.onload = function () { if (typeof gapiLoaded === 'function') gapiLoaded(); };
             document.body.appendChild(scriptGapi);
 
             // Librería de Google Identity Services (GSI)
@@ -729,7 +761,7 @@
             scriptGis.src = "https://accounts.google.com/gsi/client";
             scriptGis.async = true;
             scriptGis.defer = true;
-            scriptGis.onload = function() { if(typeof gisLoaded === 'function') gisLoaded(); };
+            scriptGis.onload = function () { if (typeof gisLoaded === 'function') gisLoaded(); };
             document.body.appendChild(scriptGis);
         } else {
             console.warn("Google Drive Sync and Authentication are disabled when running via file:// protocol.");

@@ -248,11 +248,18 @@
     </div>
 
     <!-- Módulos API -->
-    <script src="assets/js/config.js?v=1"></script>
-    <script src="assets/js/tmdb.js?v=1"></script>
-    <script src="assets/js/vaplayer.js?v=1"></script>
-    <script src="assets/js/opensubtitles.js?v=1"></script>
-    <script src="assets/js/verify.js?v=1"></script>
+    <script>
+        // Versión única de scripts para cache busting. Puede ser un string fijo o autogenerado.
+        // const SCRIPT_VERSION = Math.random().toString(36).substring(2, 9);
+        const SCRIPT_VERSION = 1;
+        console.log('Script version: ' + SCRIPT_VERSION);
+
+        document.write(`<script src="assets/js/config.js?v=${SCRIPT_VERSION}"><\/script>`);
+        document.write(`<script src="assets/js/tmdb.js?v=${SCRIPT_VERSION}"><\/script>`);
+        document.write(`<script src="assets/js/vaplayer.js?v=${SCRIPT_VERSION}"><\/script>`);
+        document.write(`<script src="assets/js/opensubtitles.js?v=${SCRIPT_VERSION}"><\/script>`);
+        document.write(`<script src="assets/js/verify.js?v=${SCRIPT_VERSION}"><\/script>`);
+    </script>
 
     <script>
         // ========== DOM ELEMENTS ==========
