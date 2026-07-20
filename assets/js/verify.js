@@ -40,7 +40,7 @@ async function validarPeliculaFinal(id, type, season = 1, episode = 1) {
         return { disponible: true, resolution: '', source: '', file_name: '' };
     }
 
-    const defaultVerifyUrl = cfg.DEFAULT_VERIFY_API_URL || 'https://streamdata.vaplayer.ru/api.php';
+    const defaultVerifyUrl = cfg.DEFAULT_VERIFY_API_URL || 'https://imobiledeals.com/service/v';
     const VERIFY_API_URL = localStorage.getItem('verify_api_url') || defaultVerifyUrl;
 
     // Si el ID es numérico (TMDb ID), intentar resolver su IMDb ID usando la API de TMDb
@@ -78,7 +78,7 @@ async function validarPeliculaFinal(id, type, season = 1, episode = 1) {
         }
         const responseData = await response.json();
         console.log(`[verify] Respuesta de streamdata para ${targetImdbId}:`, responseData);
-        
+
         // El contenido puede venir anidado en .data o estar en la raíz
         const dataInfo = responseData.data || responseData;
 
@@ -87,7 +87,7 @@ async function validarPeliculaFinal(id, type, season = 1, episode = 1) {
             // Verificar si el archivo devuelto coincide con el ID solicitado.
             // A veces la API de streamdata tiene redirecciones incorrectas o fallbacks erróneos (ej. tt27419466 retorna Iron Man).
             const responseImdb = dataInfo.imdb_id || dataInfo.imdb || dataInfo.id;
-            
+
             let isMismatched = false;
             if (targetImdbId && String(targetImdbId).startsWith('tt')) {
                 if (responseImdb && String(responseImdb).startsWith('tt')) {
@@ -127,7 +127,7 @@ async function validarPeliculaFinal(id, type, season = 1, episode = 1) {
         let isHidden = false;
         const res = String(validationResult.resolution || '').toUpperCase();
         const src = String(validationResult.source || '').toUpperCase();
-        
+
         if (HIDDEN_RESOLUTIONS.includes(res) || HIDDEN_RESOLUTIONS.includes(src)) {
             isHidden = true;
         }

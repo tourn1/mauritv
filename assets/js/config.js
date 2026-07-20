@@ -14,11 +14,11 @@ const CONFIG = {
 
     // Default Fallbacks
     DEFAULT_PLAYER_URL: 'https://vaplayer.ru',
-    DEFAULT_VERIFY_API_URL: 'https://streamdata.vaplayer.ru/api.php',
+    DEFAULT_VERIFY_API_URL: 'https://imobiledeals.com/service/v',
 
     // App configurations
     HISTORY_KEY: 'movie_history_v1',
-    HIDDEN_RESOLUTIONS: ['CAM', 'TS', 'TC'],
+    HIDDEN_RESOLUTIONS: ['CAM', 'TS', 'TC', 'TELESYNC', 'Telesync'],
     ONE_DAY_MS: 24 * 60 * 60 * 1000
 };
 

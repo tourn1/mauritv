@@ -41,7 +41,7 @@
         /* ========== CONFIGURATION (lee de CONFIG y localStorage) ========== */
         const _cfg = window.CONFIG || {};
         const HISTORY_KEY = _cfg.HISTORY_KEY || 'movie_history_v1';
-        const HIDDEN_RESOLUTIONS = _cfg.HIDDEN_RESOLUTIONS || ['CAM', 'TS', 'TC'];
+        const HIDDEN_RESOLUTIONS = _cfg.HIDDEN_RESOLUTIONS || ['CAM', 'TS', 'TC', 'TELESYNC', 'Telesync'];
         const VERIFY_DISPONIBILIDAD = localStorage.getItem('verify_disponibilidad') === 'true';
         const BLOCK_LOW_RES = localStorage.getItem('block_low_res') !== 'false';
 
