@@ -97,7 +97,16 @@
             <h3 class="settings-title">Configuración</h3>
             <div class="settings-option url-option">
                 <span class="settings-label">URL de Verificación</span>
-                <input type="text" id="verify-url-input" class="settings-input navigable" tabindex="0">
+                <div style="display: flex; gap: 0.5rem; width: 100%; align-items: center;">
+                    <input type="text" id="verify-url-input" class="settings-input navigable" tabindex="0">
+                    <button type="button" id="btn-test-verify-url" class="settings-btn settings-btn-secondary navigable"
+                        tabindex="0" title="Probar conexión de URL con ?id=tt8814476"
+                        style="padding: 0.6rem 0.8rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <span class="material-icons" style="font-size: 1.2rem;">cable</span>
+                    </button>
+                    <span id="test-verify-url-status"
+                        style="display: none; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;"></span>
+                </div>
             </div>
             <div class="settings-option url-option">
                 <span class="settings-label">URL de Reproductor (Player)</span>
@@ -1432,6 +1441,41 @@
                     if (settingsCancelBtnEl) settingsCancelBtnEl.focus();
                 }
             });
+
+            // Handle test verify URL button
+            const btnTestVerifyUrl = document.getElementById('btn-test-verify-url');
+            const testVerifyUrlStatus = document.getElementById('test-verify-url-status');
+            if (btnTestVerifyUrl && testVerifyUrlStatus) {
+                btnTestVerifyUrl.addEventListener('click', async () => {
+                    let baseUrl = verifyUrlInput.value.trim();
+                    if (!baseUrl) {
+                        testVerifyUrlStatus.style.display = 'inline-flex';
+                        testVerifyUrlStatus.innerHTML = '<span class="material-icons" style="color: #f44336;" title="URL vacía">error</span>';
+                        return;
+                    }
+                    const separator = baseUrl.includes('?') ? '&' : '?';
+                    const testUrl = `${baseUrl}${separator}id=tt8814476`;
+
+                    testVerifyUrlStatus.style.display = 'inline-flex';
+                    testVerifyUrlStatus.innerHTML = '<span class="material-icons spinning" style="color: #2196F3;" title="Verificando...">sync</span>';
+
+                    try {
+                        const response = await fetch(testUrl);
+                        if (!response.ok) throw new Error(`HTTP status ${response.status}`);
+                        const data = await response.json();
+
+                        // Valido o vacío: data.title es una cadena (incluso vacía "") o null/undefined si la estructura es JSON válida
+                        if (data && (typeof data.title === 'string' || data.title === undefined || data.title === null)) {
+                            testVerifyUrlStatus.innerHTML = '<span class="material-icons" style="color: #4CAF50;" title="Válido">check_circle</span>';
+                        } else {
+                            testVerifyUrlStatus.innerHTML = '<span class="material-icons" style="color: #f44336;" title="Estructura inválida">cancel</span>';
+                        }
+                    } catch (err) {
+                        console.error('Error al probar URL de verificación:', err);
+                        testVerifyUrlStatus.innerHTML = '<span class="material-icons" style="color: #f44336;" title="Error al consultar URL">error</span>';
+                    }
+                });
+            }
 
             // Handle clear cache button
             const settingsClearCacheBtn = document.getElementById('settings-clear-cache-btn');
