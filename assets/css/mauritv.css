@@ -938,8 +938,8 @@
         /* Badge de Información Extra (Fuente y Resolución combinadas) */
         .info-badge {
             position: absolute;
-            top: 62px;
-            /* Debajo del verified-badge */
+            top: 36px;
+            /* Encima del not-verified-badge */
             right: 10px;
             padding: 4px 10px;
             border-radius: 4px;
@@ -954,6 +954,26 @@
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* Badge de Género */
+        .genre-badge {
+            position: absolute;
+            top: 62px;
+            right: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.62rem;
+            font-weight: 700;
+            z-index: 12;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
             border: 1px solid rgba(255, 255, 255, 0.15);
             animation: fadeIn 0.5s ease;
         }
@@ -2296,7 +2316,7 @@
 
         .info-badge {
             position: absolute;
-            top: 62px;
+            top: 36px;
             right: 10px;
             padding: 4px 10px;
             border-radius: 4px;
@@ -2310,6 +2330,26 @@
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* Badge de Género */
+        .genre-badge {
+            position: absolute;
+            top: 62px;
+            right: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.62rem;
+            font-weight: 700;
+            z-index: 12;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
             border: 1px solid rgba(255, 255, 255, 0.15);
             animation: fadeIn 0.5s ease;
         }

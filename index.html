@@ -102,7 +102,7 @@
                     <button type="button" id="btn-test-verify-url" class="settings-btn settings-btn-secondary navigable"
                         tabindex="0" title="Probar conexión de URL con ?id=tt8814476"
                         style="padding: 0.6rem 0.8rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                        <span class="material-icons" style="font-size: 1.2rem;">cable</span>
+                        <span class="material-icons" style="font-size: 1.2rem;">electrical_services</span>
                     </button>
                     <span id="test-verify-url-status"
                         style="display: none; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;"></span>
@@ -527,7 +527,7 @@
                 if (BLOCK_LOW_RES) {
                     const badgeText = window.vaPlayer
                         ? window.vaPlayer.getQualityBadgeText(validation.file_name, validation.resolution, validation.source).toUpperCase()
-                        : [(validation.source || '').toUpperCase(), validation.resolution].filter(Boolean).join(' ').toUpperCase();
+                        : (validation.source || '').toUpperCase();
 
                     const isHidden = HIDDEN_RESOLUTIONS.some(res => badgeText.includes(res));
 
@@ -547,7 +547,8 @@
                     digitalReleaseDate: details.digitalReleaseDate || '',
                     qid: type,
                     i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
-                    rating: item.vote_average?.toFixed(1) || 'N/A'
+                    rating: item.vote_average?.toFixed(1) || 'N/A',
+                    genre_ids: item.genre_ids || []
                 };
             }));
             return results.filter(item => item !== null);
@@ -735,7 +736,8 @@
                                     digitalReleaseDate: details.digitalReleaseDate || '',
                                     qid: type === 'movies' ? 'movie' : 'tvSeries',
                                     i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
-                                    rating: item.vote_average?.toFixed(1) || 'N/A'
+                                    rating: item.vote_average?.toFixed(1) || 'N/A',
+                                    genre_ids: item.genre_ids || []
                                 };
                             }
                             return null;
@@ -860,7 +862,8 @@
                             digitalReleaseDate: details.digitalReleaseDate || '',
                             qid: type === 'tv' ? 'tvSeries' : 'movie',
                             i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
-                            rating: item.vote_average?.toFixed(1) || 'N/A'
+                            rating: item.vote_average?.toFixed(1) || 'N/A',
+                            genre_ids: item.genre_ids || []
                         };
                     }));
 
@@ -910,7 +913,7 @@
                 candidates = candidates.filter(item => {
                     const badgeText = window.vaPlayer
                         ? window.vaPlayer.getQualityBadgeText(item.file_name, item.resolution, item.source).toUpperCase()
-                        : [(item.source || '').toUpperCase(), item.resolution].filter(Boolean).join(' ').toUpperCase();
+                        : (item.source || '').toUpperCase();
 
                     const isHidden = HIDDEN_RESOLUTIONS.some(res => badgeText.includes(res));
                     return !isHidden;
@@ -1063,6 +1066,16 @@
         }
 
         // ========== RENDERING ==========
+        const TMDB_GENRES = {
+            28: 'Acción', 12: 'Aventura', 16: 'Animación', 35: 'Comedia',
+            80: 'Crimen', 99: 'Documental', 18: 'Drama', 10751: 'Familia',
+            14: 'Fantasía', 36: 'Historia', 27: 'Terror', 10402: 'Música',
+            9648: 'Misterio', 10749: 'Romance', 878: 'Ciencia Ficción',
+            10770: 'Película de TV', 53: 'Suspenso', 10752: 'Bélica', 37: 'Western',
+            10759: 'Acción', 10762: 'Niños', 10763: 'Noticias', 10764: 'Reality',
+            10765: 'Sci-Fi', 10766: 'Telenovela', 10767: 'Talk Show', 10768: 'Política'
+        };
+
         /** Render results to grid */
         const renderResults = (results) => renderToGrid(results, resultsGrid, 0);
 
@@ -1074,7 +1087,7 @@
                 results = results.filter(movie => {
                     const badgeText = window.vaPlayer
                         ? window.vaPlayer.getQualityBadgeText(movie.file_name, movie.resolution, movie.source).toUpperCase()
-                        : [(movie.source || '').toUpperCase(), movie.resolution].filter(Boolean).join(' ').toUpperCase();
+                        : (movie.source || '').toUpperCase();
 
                     const isHidden = HIDDEN_RESOLUTIONS.some(res => badgeText.includes(res));
                     return !isHidden;
@@ -1098,7 +1111,7 @@
                 const typeDisplay = type === 'tv' ? 'SERIE' : 'PELÍCULA';
                 const unavailableClass = movie.disponible === false ? ' unavailable' : '';
                 const disponibleBadge = movie.disponible === false ? '<div class="availability-badge unavailable">No disponible</div>' : '';
-                const badgeText = window.vaPlayer ? window.vaPlayer.getQualityBadgeText(movie.file_name, movie.resolution, movie.source) : [(movie.source || '').toUpperCase(), movie.resolution].filter(Boolean).join(' ');
+                const badgeText = window.vaPlayer ? window.vaPlayer.getQualityBadgeText(movie.file_name, movie.resolution, movie.source, false) : (movie.source || '').toUpperCase();
                 const extraBadges = movie.disponible !== false && badgeText
                     ? `<div class="info-badge">${badgeText}</div>` : '';
                 let verifiedIndicator = '';
@@ -1107,11 +1120,15 @@
                         verifiedIndicator = `<div class="not-verified-badge" title="Disponibilidad Sin Verificar"><span class="material-icons" style="font-size: 11px;">help_outline</span> Sin Verificar</div>`;
                     }
                 }
+                const firstGenreId = (movie.genre_ids || [])[0];
+                const genreBadge = firstGenreId && TMDB_GENRES[firstGenreId]
+                    ? `<div class="genre-badge">${TMDB_GENRES[firstGenreId]}</div>` : '';
 
                 return `<div class="movie-card navigable${unavailableClass}" tabindex="${index + 3 + tabindexOffset}" data-index="${index}" data-id="${movie.id}" data-type="${type}" data-year="${year}" data-release-date="${movie.releaseDate || ''}" data-release-digital="${movie.digitalReleaseDate || ''}" data-file-name="${movie.file_name || ''}" data-movie-obj='${JSON.stringify(movie).replace(/'/g, "&apos;")}'>
             <div class="type-badge">${typeDisplay}</div>
-            ${verifiedIndicator}
             ${extraBadges}
+            ${verifiedIndicator}
+            ${genreBadge}
             ${disponibleBadge}
             <img src="${imageUrl}" class="movie-poster" alt="${title}" loading="lazy">
             <div class="movie-info">

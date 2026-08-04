@@ -458,7 +458,7 @@
                             const val = item.validation;
                             const unavailableClass = val.disponible === false ? ' unavailable' : '';
                             const disponibleBadge = val.disponible === false ? '<div class="availability-badge unavailable">No disponible</div>' : '';
-                            const cBadgeText = window.vaPlayer ? window.vaPlayer.getQualityBadgeText(val.file_name, val.resolution, val.source) : [(val.source || '').toUpperCase(), val.resolution].filter(Boolean).join(' ');
+                            const cBadgeText = window.vaPlayer ? window.vaPlayer.getQualityBadgeText(val.file_name, val.resolution, val.source, false) : (val.source || '').toUpperCase();
                             const extraBadges = val.disponible !== false && cBadgeText ? `<div class="info-badge">${cBadgeText}</div>` : '';
                             let verifiedIndicator = '';
                             if (val.disponible !== false) {
@@ -466,14 +466,27 @@
                                     verifiedIndicator = `<div class="not-verified-badge" title="Disponibilidad Sin Verificar"><span class="material-icons" style="font-size: 11px;">help_outline</span> Sin Verificar</div>`;
                                 }
                             }
+                            const TMDB_GENRES_C = {
+                                28: 'Acción', 12: 'Aventura', 16: 'Animación', 35: 'Comedia',
+                                80: 'Crimen', 99: 'Documental', 18: 'Drama', 10751: 'Familia',
+                                14: 'Fantasía', 36: 'Historia', 27: 'Terror', 10402: 'Música',
+                                9648: 'Misterio', 10749: 'Romance', 878: 'Ciencia Ficción',
+                                10770: 'Película de TV', 53: 'Suspenso', 10752: 'Bélica', 37: 'Western',
+                                10759: 'Acción', 10762: 'Niños', 10764: 'Reality',
+                                10765: 'Sci-Fi', 10766: 'Telenovela', 10768: 'Política'
+                            };
+                            const firstGenreId = (item.genre_ids || [])[0];
+                            const genreBadge = firstGenreId && TMDB_GENRES_C[firstGenreId]
+                                ? `<div class="genre-badge">${TMDB_GENRES_C[firstGenreId]}</div>` : '';
                             let url = `content.html?id=${item.id}&type=${type}`;
                             if (val.file_name) url += `&file_name=${encodeURIComponent(val.file_name)}`;
                             if (val.resolution) url += `&res=${encodeURIComponent(val.resolution)}`;
                             if (val.source) url += `&src=${encodeURIComponent(val.source)}`;
                             return `<div class="movie-card navigable${unavailableClass}" tabindex="0" onclick="window.location.href='${url}'" onkeydown="if(event.key==='Enter') this.click()" aria-label="${itemTitle}">
                                 <div class="type-badge">${typeDisplay}</div>
-                                ${verifiedIndicator}
                                 ${extraBadges}
+                                ${verifiedIndicator}
+                                ${genreBadge}
                                 ${disponibleBadge}
                                 <img src="${imageUrl}" class="movie-poster" alt="${itemTitle}" loading="lazy">
                                 <div class="movie-info">

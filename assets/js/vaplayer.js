@@ -79,7 +79,7 @@ class VAPlayer {
      * @param {string} defaultSrc Fuente por defecto (fallback).
      * @returns {string} Texto formateado para el badge, ej: "1080p Webrip".
      */
-    getQualityBadgeText(fileName, defaultRes = '', defaultSrc = '') {
+    getQualityBadgeText(fileName, defaultRes = '', defaultSrc = '', includeResolution = true) {
         let extractedRes = '';
         let extractedSrc = '';
         if (fileName) {
@@ -88,7 +88,7 @@ class VAPlayer {
             if (resMatch) extractedRes = resMatch[1].toLowerCase();
             if (srcMatch) extractedSrc = srcMatch[1].toUpperCase();
         }
-        const displayRes = extractedRes || defaultRes;
+        const displayRes = includeResolution ? (extractedRes || defaultRes) : '';
         let displaySrc = extractedSrc || defaultSrc;
         if (displaySrc && !extractedSrc) {
             displaySrc = displaySrc.toUpperCase();
