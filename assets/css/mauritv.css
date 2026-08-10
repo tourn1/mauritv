@@ -535,6 +535,184 @@
             padding: 1rem 0;
         }
 
+        /* Carousel Component */
+        .carousel-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .carousel-track {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            scroll-snap-type: x mandatory;
+            gap: 1.5rem;
+            padding: 1.2rem 0.2rem;
+            width: 100%;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .carousel-track::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* 5 cards visible per page on Desktop */
+        .carousel-track .movie-card {
+            flex: 0 0 calc((100% - (4 * 1.5rem)) / 5);
+            min-width: calc((100% - (4 * 1.5rem)) / 5);
+            max-width: calc((100% - (4 * 1.5rem)) / 5);
+            scroll-snap-align: start;
+            box-sizing: border-box;
+        }
+
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 15;
+            width: 57px;
+            height: 57px;
+            border-radius: 50%;
+            background: rgba(20, 20, 20, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-primary, #ffffff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+        }
+
+        .carousel-btn.prev-btn {
+            left: -26px;
+        }
+
+        .carousel-btn.next-btn {
+            right: -26px;
+        }
+
+        .carousel-btn span.material-icons {
+            font-size: 36px;
+            line-height: 1;
+            user-select: none;
+        }
+
+        .carousel-btn:hover,
+        .carousel-btn:focus {
+            background: var(--accent-color, #e50914);
+            border-color: var(--accent-color, #e50914);
+            color: #ffffff;
+            transform: translateY(-50%) scale(1.15);
+            box-shadow: 0 0 15px rgba(229, 9, 20, 0.7);
+            outline: none;
+        }
+
+        .carousel-btn.disabled,
+        .carousel-btn:disabled {
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden;
+        }
+
+        /* Load More Card */
+        .load-more-card {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(30, 30, 35, 0.6);
+            border: 2px dashed rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .load-more-card:hover,
+        .load-more-card:focus {
+            background: rgba(229, 9, 20, 0.15);
+            border: 2px solid var(--accent-color, #e50914);
+            box-shadow: 0 0 20px rgba(229, 9, 20, 0.4);
+            transform: scale(1.05);
+            outline: none;
+        }
+
+        .load-more-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: var(--text-primary, #ffffff);
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .load-more-icon {
+            font-size: 3.2rem !important;
+            color: var(--accent-color, #e50914);
+            transition: transform 0.3s ease;
+        }
+
+        .load-more-card:hover .load-more-icon,
+        .load-more-card:focus .load-more-icon {
+            transform: scale(1.2) rotate(90deg);
+        }
+
+        .load-more-text {
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .material-icons.spinning {
+            animation: spin 1s infinite linear;
+        }
+
+        @media (max-width: 600px) {
+            .carousel-track {
+                gap: 0.8rem;
+                padding: 0.8rem 0.1rem;
+            }
+
+            /* 2 cards visible per page on Mobile */
+            .carousel-track .movie-card {
+                flex: 0 0 calc((100% - 0.8rem) / 2);
+                min-width: calc((100% - 0.8rem) / 2);
+                max-width: calc((100% - 0.8rem) / 2);
+            }
+
+            .carousel-btn {
+                width: 47px;
+                height: 47px;
+            }
+
+            .carousel-btn.prev-btn {
+                left: -13px;
+            }
+
+            .carousel-btn.next-btn {
+                right: -13px;
+            }
+
+            .carousel-btn span.material-icons {
+                font-size: 28px;
+            }
+        }
+
         /* Section Title */
         .section-title {
             font-size: 1.8rem;

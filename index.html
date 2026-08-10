@@ -194,19 +194,35 @@
             <div id="home-content">
                 <div id="movies-section" style="margin-bottom: 2.5rem;">
                     <h2 class="section-title">Top 10 Películas</h2>
-                    <div id="movies-grid" class="results-grid">
-                        <div class="empty-state">
-                            <p>Cargando...</p>
+                    <div class="carousel-container">
+                        <button class="carousel-btn prev-btn navigable" id="movies-prev-btn" aria-label="Anterior" tabindex="0">
+                            <span class="material-icons">chevron_left</span>
+                        </button>
+                        <div id="movies-grid" class="carousel-track">
+                            <div class="empty-state">
+                                <p>Cargando...</p>
+                            </div>
                         </div>
+                        <button class="carousel-btn next-btn navigable" id="movies-next-btn" aria-label="Siguiente" tabindex="0">
+                            <span class="material-icons">chevron_right</span>
+                        </button>
                     </div>
                 </div>
 
                 <div id="series-section" style="margin-bottom: 2.5rem;">
                     <h2 class="section-title">Top 10 Series</h2>
-                    <div id="series-grid" class="results-grid">
-                        <div class="empty-state">
-                            <p>Cargando...</p>
+                    <div class="carousel-container">
+                        <button class="carousel-btn prev-btn navigable" id="series-prev-btn" aria-label="Anterior" tabindex="0">
+                            <span class="material-icons">chevron_left</span>
+                        </button>
+                        <div id="series-grid" class="carousel-track">
+                            <div class="empty-state">
+                                <p>Cargando...</p>
+                            </div>
                         </div>
+                        <button class="carousel-btn next-btn navigable" id="series-next-btn" aria-label="Siguiente" tabindex="0">
+                            <span class="material-icons">chevron_right</span>
+                        </button>
                     </div>
                 </div>
 
@@ -222,7 +238,15 @@
                     <div class="section-header">
                         <h2 class="section-title">Relacionado a tus busquedas</h2>
                     </div>
-                    <div id="related-history-grid" class="results-grid">
+                    <div class="carousel-container">
+                        <button class="carousel-btn prev-btn navigable" id="related-prev-btn" aria-label="Anterior" tabindex="0">
+                            <span class="material-icons">chevron_left</span>
+                        </button>
+                        <div id="related-history-grid" class="carousel-track">
+                        </div>
+                        <button class="carousel-btn next-btn navigable" id="related-next-btn" aria-label="Siguiente" tabindex="0">
+                            <span class="material-icons">chevron_right</span>
+                        </button>
                     </div>
                 </div>
 
@@ -774,6 +798,174 @@
             }
         }
 
+        /** Load 10 more trending movies into carousel */
+        let isLoadingMoreTrending = false;
+        async function loadMoreTrendingMovies() {
+            if (isLoadingMoreTrending) return;
+            isLoadingMoreTrending = true;
+
+            const btn = document.getElementById('load-more-movies-btn');
+            if (btn) {
+                btn.innerHTML = `<div class="load-more-content"><span class="material-icons spinning load-more-icon">sync</span><span class="load-more-text">Cargando...</span></div>`;
+            }
+
+            const currentList = trendingCache['movies'] || [];
+            const targetCount = currentList.length + 10;
+            let validContent = [...currentList];
+            let page = Math.floor(currentList.length / 3) + 1;
+
+            try {
+                while (validContent.length < targetCount && page <= 25) {
+                    let params = { language: 'es-MX', page };
+                    const sixtyDaysAgo = new Date();
+                    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+                    params['primary_release_date.gte'] = sixtyDaysAgo.toISOString().split('T')[0];
+                    params.with_release_type = '4';
+
+                    let data = await window.tmdb.fetch('/discover/movie', params);
+                    let results = data.results || [];
+
+                    if (results.length === 0) {
+                        data = await window.tmdb.fetch('/movie/popular', { language: 'es-MX', page: Math.floor(page / 2) + 1 });
+                        results = data.results || [];
+                        if (results.length === 0) break;
+                    }
+
+                    results = results.filter(item => item.poster_path && item.vote_average > 0);
+
+                    for (let i = 0; i < results.length && validContent.length < targetCount; i += 5) {
+                        const batch = results.slice(i, i + 5);
+                        const batchResults = await Promise.all(batch.map(async (item) => {
+                            const details = await window.tmdb.getExternalIds(item.id, 'movie');
+                            const id = details.imdbId || item.id;
+                            const validation = await validarPeliculaFinal(id, 'movie');
+
+                            if (validation.disponible) {
+                                return {
+                                    id, tmdbId: item.id,
+                                    l: item.title || item.name,
+                                    disponible: true,
+                                    resolution: validation.resolution, source: validation.source,
+                                    file_name: validation.file_name || validation.filename || '',
+                                    y: item.release_date?.substring(0, 4) || '',
+                                    releaseDate: item.release_date || '',
+                                    digitalReleaseDate: details.digitalReleaseDate || '',
+                                    qid: 'movie',
+                                    i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
+                                    rating: item.vote_average?.toFixed(1) || 'N/A',
+                                    genre_ids: item.genre_ids || []
+                                };
+                            }
+                            return null;
+                        }));
+
+                        for (const res of batchResults) {
+                            if (res && validContent.length < targetCount && !validContent.some(v => v.id === res.id)) {
+                                validContent.push(res);
+                            }
+                        }
+                    }
+                    page++;
+                }
+
+                trendingCache['movies'] = validContent;
+                try {
+                    localStorage.setItem('trendingMoviesCache_v1', JSON.stringify(validContent));
+                    localStorage.setItem('trendingMoviesCache_v1Time', Date.now().toString());
+                } catch (e) {
+                    console.warn('Storage error', e);
+                }
+
+                renderToGrid(validContent, moviesGrid, 0, true);
+            } catch (error) {
+                console.error('Error loading more movies:', error);
+                if (btn) {
+                    btn.innerHTML = `<div class="load-more-content"><span class="material-icons load-more-icon">error_outline</span><span class="load-more-text">Error</span></div>`;
+                }
+            } finally {
+                isLoadingMoreTrending = false;
+            }
+        }
+
+        /** Load 10 more trending series into carousel */
+        let isLoadingMoreSeries = false;
+        async function loadMoreTrendingSeries() {
+            if (isLoadingMoreSeries) return;
+            isLoadingMoreSeries = true;
+
+            const btn = document.getElementById('load-more-series-btn');
+            if (btn) {
+                btn.innerHTML = `<div class="load-more-content"><span class="material-icons spinning load-more-icon">sync</span><span class="load-more-text">Cargando...</span></div>`;
+            }
+
+            const currentList = trendingCache['series'] || [];
+            const targetCount = currentList.length + 10;
+            let validContent = [...currentList];
+            let page = Math.floor(currentList.length / 3) + 1;
+
+            try {
+                while (validContent.length < targetCount && page <= 25) {
+                    let params = { language: 'es-MX', page };
+                    let data = await window.tmdb.fetch('/tv/popular', params);
+                    let results = data.results || [];
+                    if (results.length === 0) break;
+
+                    results = results.filter(item => item.poster_path && item.vote_average > 0);
+
+                    for (let i = 0; i < results.length && validContent.length < targetCount; i += 5) {
+                        const batch = results.slice(i, i + 5);
+                        const batchResults = await Promise.all(batch.map(async (item) => {
+                            const details = await window.tmdb.getExternalIds(item.id, 'tv');
+                            const id = details.imdbId || item.id;
+                            const validation = await validarPeliculaFinal(id, 'tv');
+
+                            if (validation.disponible) {
+                                return {
+                                    id, tmdbId: item.id,
+                                    l: item.title || item.name,
+                                    disponible: true,
+                                    resolution: validation.resolution, source: validation.source,
+                                    file_name: validation.file_name || validation.filename || '',
+                                    y: item.first_air_date?.substring(0, 4) || '',
+                                    releaseDate: item.first_air_date || '',
+                                    digitalReleaseDate: details.digitalReleaseDate || '',
+                                    qid: 'tvSeries',
+                                    i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
+                                    rating: item.vote_average?.toFixed(1) || 'N/A',
+                                    genre_ids: item.genre_ids || []
+                                };
+                            }
+                            return null;
+                        }));
+
+                        for (const res of batchResults) {
+                            if (res && validContent.length < targetCount && !validContent.some(v => v.id === res.id)) {
+                                validContent.push(res);
+                            }
+                        }
+                    }
+                    page++;
+                }
+
+                trendingCache['series'] = validContent;
+                try {
+                    localStorage.setItem('trendingSeriesCache_v1', JSON.stringify(validContent));
+                    localStorage.setItem('trendingSeriesCache_v1Time', Date.now().toString());
+                } catch (e) {
+                    console.warn('Storage error', e);
+                }
+
+                renderToGrid(validContent, seriesGrid, 0, true);
+            } catch (error) {
+                console.error('Error loading more series:', error);
+                if (btn) {
+                    btn.innerHTML = `<div class="load-more-content"><span class="material-icons load-more-icon">error_outline</span><span class="load-more-text">Error</span></div>`;
+                }
+            } finally {
+                isLoadingMoreSeries = false;
+            }
+        }
+
         // ========== FAVORITES ==========
         /** Load and display favorites from mauritv_config localStorage */
         function loadFavorites() {
@@ -868,7 +1060,8 @@
                     }));
 
                     trendingCache.related = batchResults;
-                    renderToGrid(batchResults, relatedHistoryGrid, 110);
+                    trendingCache.relatedPage = 1;
+                    renderToGrid(batchResults, relatedHistoryGrid, 110, true);
                     triggerHeroBannerBuild();
                 } else {
                     relatedHistorySection.classList.add('hidden');
@@ -879,6 +1072,84 @@
             } catch (error) {
                 console.error('Error loading related history:', error);
                 relatedHistorySection.classList.add('hidden');
+            }
+        }
+
+        /** Load 10 more related history items into carousel */
+        let isLoadingMoreRelated = false;
+        async function loadMoreRelatedHistory() {
+            if (isLoadingMoreRelated) return;
+            isLoadingMoreRelated = true;
+
+            const btn = document.getElementById('load-more-related-btn');
+            if (btn) {
+                btn.innerHTML = `<div class="load-more-content"><span class="material-icons spinning load-more-icon">sync</span><span class="load-more-text">Cargando...</span></div>`;
+            }
+
+            const history = typeof obtenerRecientes === 'function'
+                ? obtenerRecientes()
+                : JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+            if (history.length === 0) {
+                isLoadingMoreRelated = false;
+                return;
+            }
+
+            const lastItem = history[0];
+            const type = (lastItem.qid === 'tvSeries' || lastItem.type === 'tv' || lastItem.qid === 'tv') ? 'tv' : 'movie';
+            const id = lastItem.tmdbId || lastItem.id;
+            if (!id) {
+                isLoadingMoreRelated = false;
+                return;
+            }
+
+            const currentList = trendingCache.related || [];
+            const targetCount = currentList.length + 10;
+            let validContent = [...currentList];
+            let page = (trendingCache.relatedPage || 1) + 1;
+
+            try {
+                while (validContent.length < targetCount && page <= 10) {
+                    const endpoint = `/${type}/${id}/recommendations`;
+                    const data = await window.tmdb.fetch(endpoint, { language: 'es-MX', page });
+                    let results = data && data.results ? data.results.filter(item => item.poster_path) : [];
+                    if (results.length === 0) break;
+
+                    const batchResults = await Promise.all(results.map(async (item) => {
+                        const itemType = type === 'tv' ? 'tv' : 'movie';
+                        const details = await window.tmdb.getExternalIds(item.id, itemType);
+
+                        return {
+                            id: details.imdbId || item.id,
+                            tmdbId: item.id,
+                            l: item.title || item.name,
+                            y: item.release_date?.substring(0, 4) || item.first_air_date?.substring(0, 4) || '',
+                            releaseDate: item.release_date || item.first_air_date || '',
+                            digitalReleaseDate: details.digitalReleaseDate || '',
+                            qid: type === 'tv' ? 'tvSeries' : 'movie',
+                            i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
+                            rating: item.vote_average?.toFixed(1) || 'N/A',
+                            genre_ids: item.genre_ids || []
+                        };
+                    }));
+
+                    for (const res of batchResults) {
+                        if (res && validContent.length < targetCount && !validContent.some(v => v.id === res.id)) {
+                            validContent.push(res);
+                        }
+                    }
+                    page++;
+                }
+
+                trendingCache.relatedPage = page - 1;
+                trendingCache.related = validContent;
+                renderToGrid(validContent, relatedHistoryGrid, 110, true);
+            } catch (error) {
+                console.error('Error loading more related history:', error);
+                if (btn) {
+                    btn.innerHTML = `<div class="load-more-content"><span class="material-icons load-more-icon">error_outline</span><span class="load-more-text">Error</span></div>`;
+                }
+            } finally {
+                isLoadingMoreRelated = false;
             }
         }
 
@@ -1080,7 +1351,7 @@
         const renderResults = (results) => renderToGrid(results, resultsGrid, 0);
 
         /** Render movies/series to grid */
-        function renderToGrid(results, gridElement, tabindexOffset) {
+        function renderToGrid(results, gridElement, tabindexOffset, showLoadMore = false) {
             if (BLOCK_LOW_RES) {
                 const cfg = window.CONFIG || {};
                 const HIDDEN_RESOLUTIONS = cfg.HIDDEN_RESOLUTIONS || ['CAM', 'TS', 'TC'];
@@ -1102,7 +1373,7 @@
                 return;
             }
 
-            gridElement.innerHTML = results.map((movie, index) => {
+            let cardsHtml = results.map((movie, index) => {
                 //console.log(movie);
                 const imageUrl = movie.i?.imageUrl || 'https://via.placeholder.com/300x450?text=No+Image';
                 const title = movie.l || 'Sin título';
@@ -1140,6 +1411,28 @@
             <span class="movie-rating">★ ${movie.rating || 'N/A'}</span>
         </div>`;
             }).join('');
+
+            if (showLoadMore || [moviesGrid, seriesGrid, relatedHistoryGrid].includes(gridElement)) {
+                let btnId = 'load-more-movies-btn';
+                let onClickFn = 'loadMoreTrendingMovies()';
+
+                if (gridElement === seriesGrid) {
+                    btnId = 'load-more-series-btn';
+                    onClickFn = 'loadMoreTrendingSeries()';
+                } else if (gridElement === relatedHistoryGrid) {
+                    btnId = 'load-more-related-btn';
+                    onClickFn = 'loadMoreRelatedHistory()';
+                }
+
+                cardsHtml += `<div class="movie-card load-more-card navigable" tabindex="${results.length + 3 + tabindexOffset}" id="${btnId}" role="button" aria-label="Cargar 10 elementos más" onclick="${onClickFn}">
+            <div class="load-more-content">
+                <span class="material-icons load-more-icon">add</span>
+                <span class="load-more-text">Cargar más</span>
+            </div>
+        </div>`;
+            }
+
+            gridElement.innerHTML = cardsHtml;
         }
 
 
@@ -1325,7 +1618,9 @@
             // Movie card or Logo selection
             if ((active.classList.contains('movie-card') || active.id === 'logo-nav-wrapper') && (e.key === 'Enter' || e.key === 'Select' || e.keyCode === 23)) {
                 e.preventDefault();
-                if (active.id === 'logo-nav-wrapper') {
+                if (active.classList.contains('load-more-card')) {
+                    active.click();
+                } else if (active.id === 'logo-nav-wrapper') {
                     active.click();
                 } else {
                     openContentPage(JSON.parse(active.dataset.movieObj));
@@ -1387,9 +1682,72 @@
             }
         });
 
+        // ========== CAROUSEL LOGIC ==========
+        function setupCarousel(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (!section) return;
+            const track = section.querySelector('.carousel-track');
+            const prevBtn = section.querySelector('.prev-btn');
+            const nextBtn = section.querySelector('.next-btn');
+
+            if (!track || !prevBtn || !nextBtn) return;
+
+            function updateArrows() {
+                const maxScroll = track.scrollWidth - track.clientWidth;
+                if (maxScroll <= 10) {
+                    prevBtn.classList.add('disabled');
+                    prevBtn.disabled = true;
+                    nextBtn.classList.add('disabled');
+                    nextBtn.disabled = true;
+                    return;
+                }
+
+                if (track.scrollLeft <= 10) {
+                    prevBtn.classList.add('disabled');
+                    prevBtn.disabled = true;
+                } else {
+                    prevBtn.classList.remove('disabled');
+                    prevBtn.disabled = false;
+                }
+
+                if (track.scrollLeft >= maxScroll - 10) {
+                    nextBtn.classList.add('disabled');
+                    nextBtn.disabled = true;
+                } else {
+                    nextBtn.classList.remove('disabled');
+                    nextBtn.disabled = false;
+                }
+            }
+
+            prevBtn.addEventListener('click', () => {
+                track.scrollBy({ left: -track.clientWidth, behavior: 'smooth' });
+            });
+
+            nextBtn.addEventListener('click', () => {
+                track.scrollBy({ left: track.clientWidth, behavior: 'smooth' });
+            });
+
+            track.addEventListener('scroll', () => {
+                requestAnimationFrame(updateArrows);
+            });
+
+            window.addEventListener('resize', updateArrows);
+
+            const observer = new MutationObserver(() => {
+                updateArrows();
+            });
+            observer.observe(track, { childList: true, subtree: true });
+
+            setTimeout(updateArrows, 300);
+        }
+
         // ========== INITIALIZATION ==========
         /** Initialize page based on URL params or default state */
         window.onload = () => {
+            setupCarousel('movies-section');
+            setupCarousel('series-section');
+            setupCarousel('related-history-section');
+
             const params = new URLSearchParams(window.location.search);
             const personId = params.get('person_id');
             const personName = params.get('person_name');
