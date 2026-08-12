@@ -49,6 +49,167 @@
         let ytPlayer = null;
         let currentTrailerKey = null;
         let ytApiReady = false;
+        let currentContentId = null;
+        let currentContentType = null;
+        let currentRelatedPage = 1;
+        let isLoadingMoreRelated = false;
+
+        function setupCarousel(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (!section) return;
+            const track = section.querySelector('.carousel-track');
+            const prevBtn = section.querySelector('.prev-btn');
+            const nextBtn = section.querySelector('.next-btn');
+
+            if (!track || !prevBtn || !nextBtn) return;
+
+            function updateArrows() {
+                const maxScroll = track.scrollWidth - track.clientWidth;
+                if (maxScroll <= 10) {
+                    prevBtn.classList.add('disabled');
+                    prevBtn.disabled = true;
+                    nextBtn.classList.add('disabled');
+                    nextBtn.disabled = true;
+                    return;
+                }
+
+                if (track.scrollLeft <= 10) {
+                    prevBtn.classList.add('disabled');
+                    prevBtn.disabled = true;
+                } else {
+                    prevBtn.classList.remove('disabled');
+                    prevBtn.disabled = false;
+                }
+
+                if (track.scrollLeft >= maxScroll - 10) {
+                    nextBtn.classList.add('disabled');
+                    nextBtn.disabled = true;
+                } else {
+                    nextBtn.classList.remove('disabled');
+                    nextBtn.disabled = false;
+                }
+            }
+
+            prevBtn.addEventListener('click', () => {
+                track.scrollBy({ left: -track.clientWidth, behavior: 'smooth' });
+            });
+
+            nextBtn.addEventListener('click', () => {
+                track.scrollBy({ left: track.clientWidth, behavior: 'smooth' });
+            });
+
+            track.addEventListener('scroll', () => {
+                requestAnimationFrame(updateArrows);
+            });
+
+            window.addEventListener('resize', updateArrows);
+
+            const observer = new MutationObserver(() => {
+                updateArrows();
+            });
+            observer.observe(track, { childList: true, subtree: true });
+
+            setTimeout(updateArrows, 300);
+        }
+
+        async function loadMoreRelatedContent() {
+            if (isLoadingMoreRelated || !currentContentId || !currentContentType) return;
+            isLoadingMoreRelated = true;
+
+            const btn = document.getElementById('load-more-related-btn');
+            if (btn) {
+                btn.innerHTML = `<div class="load-more-content"><span class="material-icons spinning load-more-icon">sync</span><span class="load-more-text">Cargando...</span></div>`;
+            }
+
+            currentRelatedPage++;
+            try {
+                const endpoint = `/${currentContentType}/${currentContentId}/recommendations`;
+                const data = await window.tmdb.fetch(endpoint, { language: 'es-MX', page: currentRelatedPage });
+                let results = data && data.results ? data.results.filter(item => item.poster_path) : [];
+                
+                if (results.length === 0) {
+                    if (btn) btn.style.display = 'none';
+                    isLoadingMoreRelated = false;
+                    return;
+                }
+
+                const batchResults = await Promise.all(results.map(async (item) => {
+                    let imdbId = item.id;
+                    try {
+                        const extData = await window.tmdb.getExternalIds(item.id, currentContentType);
+                        if (extData.imdbId) imdbId = extData.imdbId;
+                    } catch (e) { }
+                    const validation = await validarPeliculaFinal(imdbId, currentContentType);
+                    if (BLOCK_LOW_RES) {
+                        const badgeText = window.vaPlayer
+                            ? window.vaPlayer.getQualityBadgeText(validation.file_name, validation.resolution, validation.source).toUpperCase()
+                            : [(validation.source || '').toUpperCase(), validation.resolution].filter(Boolean).join(' ').toUpperCase();
+                        if (HIDDEN_RESOLUTIONS.some(res => badgeText.includes(res))) return null;
+                    }
+                    return { ...item, validation, imdbId };
+                }));
+
+                const validSimilares = batchResults.filter(Boolean);
+                if (validSimilares.length > 0) {
+                    const htmlItems = validSimilares.map((item, index) => {
+                        const itemTitle = item.title || item.name || 'Sin título';
+                        const imageUrl = item.poster_path ? `https://image.tmdb.org/t/p/w200${item.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Image';
+                        const year = item.release_date ? item.release_date.substring(0, 4) : (item.first_air_date ? item.first_air_date.substring(0, 4) : '');
+                        const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
+                        const typeDisplay = currentContentType === 'movie' ? 'PELÍCULA' : 'SERIE';
+                        const val = item.validation;
+                        const unavailableClass = val.disponible === false ? ' unavailable' : '';
+                        const disponibleBadge = val.disponible === false ? '<div class="availability-badge unavailable">No disponible</div>' : '';
+                        const cBadgeText = window.vaPlayer ? window.vaPlayer.getQualityBadgeText(val.file_name, val.resolution, val.source, false) : (val.source || '').toUpperCase();
+                        const extraBadges = val.disponible !== false && cBadgeText ? `<div class="info-badge">${cBadgeText}</div>` : '';
+                        let verifiedIndicator = '';
+                        if (val.disponible !== false && !VERIFY_DISPONIBILIDAD) {
+                            verifiedIndicator = `<div class="not-verified-badge" title="Disponibilidad Sin Verificar"><span class="material-icons" style="font-size: 11px;">help_outline</span> Sin Verificar</div>`;
+                        }
+                        const TMDB_GENRES_C = {
+                            28: 'Acción', 12: 'Aventura', 16: 'Animación', 35: 'Comedia', 80: 'Crimen', 99: 'Documental', 18: 'Drama', 10751: 'Familia',
+                            14: 'Fantasía', 36: 'Historia', 27: 'Terror', 10402: 'Música', 9648: 'Misterio', 10749: 'Romance', 878: 'Ciencia Ficción',
+                            10770: 'Película de TV', 53: 'Suspenso', 10752: 'Bélica', 37: 'Western', 10759: 'Acción', 10762: 'Niños', 10764: 'Reality',
+                            10765: 'Sci-Fi', 10766: 'Telenovela', 10768: 'Política'
+                        };
+                        const firstGenreId = (item.genre_ids || [])[0];
+                        const genreBadge = firstGenreId && TMDB_GENRES_C[firstGenreId] ? `<div class="genre-badge">${TMDB_GENRES_C[firstGenreId]}</div>` : '';
+                        let url = `content.html?id=${item.id}&type=${currentContentType}`;
+                        if (val.file_name) url += `&file_name=${encodeURIComponent(val.file_name)}`;
+                        if (val.resolution) url += `&res=${encodeURIComponent(val.resolution)}`;
+                        if (val.source) url += `&src=${encodeURIComponent(val.source)}`;
+                        
+                        return `<div class="movie-card navigable${unavailableClass}" tabindex="0" onclick="window.location.href='${url}'" onkeydown="if(event.key==='Enter') this.click()" aria-label="${itemTitle}">
+                            <div class="type-badge">${typeDisplay}</div>
+                            ${extraBadges}
+                            ${verifiedIndicator}
+                            ${genreBadge}
+                            ${disponibleBadge}
+                            <img src="${imageUrl}" class="movie-poster" alt="${itemTitle}" loading="lazy">
+                            <div class="movie-info">
+                                <div class="movie-meta">
+                                    <span class="movie-year">${year}</span>
+                                </div>
+                                <h3 class="movie-title">${itemTitle}</h3>
+                            </div>
+                            <span class="movie-rating">★ ${rating}</span>
+                        </div>`;
+                    }).join('');
+
+                    if (btn) {
+                        btn.insertAdjacentHTML('beforebegin', htmlItems);
+                        btn.innerHTML = `<div class="load-more-content"><span class="material-icons load-more-icon">add</span><span class="load-more-text">Cargar más</span></div>`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading more related:', error);
+                if (btn) {
+                    btn.innerHTML = `<div class="load-more-content"><span class="material-icons load-more-icon">error_outline</span><span class="load-more-text">Error</span></div>`;
+                }
+            } finally {
+                isLoadingMoreRelated = false;
+            }
+        }
 
 
         /* ========== YOUTUBE API ========== */
@@ -434,7 +595,9 @@
                 const similarTitle = document.getElementById('similarTitle');
                 similarTitle.textContent = type === 'movie' ? 'Películas Recomendadas' : 'Series Recomendadas';
                 const carousel = document.getElementById('carousel');
-                const similares = data.recommendations?.results?.slice(0, 5) || [];
+                currentContentId = id;
+                currentContentType = type;
+                const similares = data.recommendations?.results?.slice(0, 10) || [];
 
                 if (similares.length > 0) {
                     const batchResults = await Promise.all(similares.map(async (item) => {
@@ -459,7 +622,7 @@
                     }));
                     const validSimilares = batchResults.filter(Boolean);
                     if (validSimilares.length > 0) {
-                        carousel.innerHTML = validSimilares.map((item, index) => {
+                        let htmlContent = validSimilares.map((item, index) => {
                             const itemTitle = item.title || item.name || 'Sin título';
                             const imageUrl = item.poster_path ? `https://image.tmdb.org/t/p/w200${item.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Image';
                             const year = item.release_date ? item.release_date.substring(0, 4) : (item.first_air_date ? item.first_air_date.substring(0, 4) : '');
@@ -508,6 +671,14 @@
                                 <span class="movie-rating">★ ${rating}</span>
                             </div>`;
                         }).join('');
+                        
+                        htmlContent += `<div class="movie-card load-more-card navigable" tabindex="0" id="load-more-related-btn" role="button" aria-label="Cargar más elementos" onclick="loadMoreRelatedContent()">
+                            <div class="load-more-content">
+                                <span class="material-icons load-more-icon">add</span>
+                                <span class="load-more-text">Cargar más</span>
+                            </div>
+                        </div>`;
+                        carousel.innerHTML = htmlContent;
                     } else {
                         carousel.innerHTML = '<div style="color:#888; text-align:center; padding:40px; grid-column: 1 / -1;">No hay contenido relacionado disponible</div>';
                     }
@@ -516,6 +687,7 @@
                 }
 
                 carousel.setAttribute('aria-label', type === 'movie' ? 'Películas relacionadas' : 'Series relacionadas');
+                setupCarousel('related-section');
 
                 const seasonSelect = document.getElementById('season-select');
                 const episodeSelect = document.getElementById('episode-select');
@@ -760,9 +932,17 @@
             </div>
         </section>
 
-        <section class="content-section">
+        <section class="content-section" id="related-section">
             <h2 class="section-title" id="similarTitle">Relacionados</h2>
-            <div class="results-grid" id="carousel"></div>
+            <div class="carousel-container">
+                <button class="carousel-btn prev-btn navigable" id="related-prev-btn" aria-label="Anterior" tabindex="0">
+                    <span class="material-icons">chevron_left</span>
+                </button>
+                <div class="carousel-track" id="carousel"></div>
+                <button class="carousel-btn next-btn navigable" id="related-next-btn" aria-label="Siguiente" tabindex="0">
+                    <span class="material-icons">chevron_right</span>
+                </button>
+            </div>
         </section>
     </main>
 
