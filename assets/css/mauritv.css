@@ -689,6 +689,60 @@ button#clear-btn.hidden {
     animation: spin 1s infinite linear;
 }
 
+/* ========== SEARCH LOAD MORE BUTTON ========== */
+.search-load-more-container {
+    display: flex;
+    justify-content: center;
+    margin: 1.5rem 0 2rem;
+}
+
+.search-load-more-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 2.5rem;
+    background: rgba(30, 30, 35, 0.7);
+    border: 1.5px solid rgba(229, 9, 20, 0.5);
+    border-radius: 999px;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    box-shadow: 0 2px 16px rgba(229, 9, 20, 0.12);
+}
+
+.search-load-more-btn:hover:not(:disabled),
+.search-load-more-btn:focus:not(:disabled) {
+    background: rgba(229, 9, 20, 0.18);
+    border-color: var(--accent-color, #e50914);
+    box-shadow: 0 0 24px rgba(229, 9, 20, 0.45);
+    transform: translateY(-2px) scale(1.04);
+    outline: none;
+}
+
+.search-load-more-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.search-load-more-btn .material-icons {
+    font-size: 1.25rem;
+    color: var(--accent-color, #e50914);
+    transition: transform 0.35s ease;
+}
+
+.search-load-more-btn:hover:not(:disabled) .material-icons {
+    transform: translateY(3px);
+}
+
+.material-icons.spin {
+    animation: spin 1s infinite linear;
+}
+
 @media (max-width: 600px) {
     .carousel-track {
         gap: 0.8rem;

@@ -188,6 +188,12 @@
                         <p>Buscando...</p>
                     </div>
                 </div>
+                <div id="search-load-more-container" class="search-load-more-container hidden">
+                    <button id="search-load-more-btn" class="search-load-more-btn navigable" tabindex="0" onclick="loadMoreSearchResults()">
+                        <span class="material-icons">expand_more</span>
+                        <span>Mostrar más</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Home Content -->
@@ -344,6 +350,17 @@
         let heroItems = [];
         let currentHeroIndex = 0;
         let heroInterval;
+
+        // Search pagination state
+        let currentSearchQuery = '';
+        let currentSearchPage = 1;
+        let currentSearchTotalPages = 1;
+        let currentPersonAllResults = [];
+        let currentPersonOffset = 0;
+        let currentSearchMode = 'query'; // 'query' | 'person'
+        const SEARCH_PAGE_SIZE = 15;
+        const PERSON_PAGE_SIZE = 20;
+        const searchLoadMoreContainer = document.getElementById('search-load-more-container');
 
 
         // Tab navigation removed - Sequential layout
@@ -621,11 +638,77 @@
                     return scoreB - scoreA;
                 });
 
-                currentResults = await mapTMDBResults(unique.slice(0, 20));
+                // Store all results for local pagination
+                currentPersonAllResults = unique;
+                currentPersonOffset = 0;
+                currentSearchMode = 'person';
+                if (searchLoadMoreContainer) searchLoadMoreContainer.classList.add('hidden');
+
+                const firstBatch = unique.slice(0, PERSON_PAGE_SIZE);
+                currentPersonOffset = firstBatch.length;
+                currentResults = await mapTMDBResults(firstBatch);
                 renderResults(currentResults);
+
+                // Show "Mostrar más" if more remain
+                if (currentPersonOffset < currentPersonAllResults.length && searchLoadMoreContainer) {
+                    searchLoadMoreContainer.classList.remove('hidden');
+                }
             } catch (error) {
                 console.error('Error searching by person:', error);
                 resultsGrid.innerHTML = '<div class="empty-state"><p>Error al buscar contenido de esta persona.</p></div>';
+            }
+        }
+
+        /** Load more results for search (query or person) */
+        async function loadMoreSearchResults() {
+            if (!searchLoadMoreContainer) return;
+            const btn = document.getElementById('search-load-more-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-icons spin">autorenew</span><span>Cargando...</span>';
+            }
+
+            try {
+                if (currentSearchMode === 'query') {
+                    // Fetch next TMDB page
+                    currentSearchPage++;
+                    const data = await window.tmdb.fetch('/search/multi', {
+                        query: currentSearchQuery, language: 'es-MX',
+                        page: currentSearchPage, include_adult: false
+                    });
+                    let results = (data.results || []).filter(item =>
+                        ['movie', 'tv'].includes(item.media_type) && item.poster_path && item.vote_average > 0
+                    );
+                    if (results.length > 0) {
+                        const newMapped = await mapTMDBResults(results.slice(0, SEARCH_PAGE_SIZE));
+                        renderResults(newMapped, true);
+                        currentResults = currentResults.concat(newMapped);
+                    }
+                    // Hide button if no more pages
+                    if (currentSearchPage >= currentSearchTotalPages || results.length === 0) {
+                        searchLoadMoreContainer.classList.add('hidden');
+                    }
+                } else if (currentSearchMode === 'person') {
+                    // Local pagination of person credits
+                    const nextBatch = currentPersonAllResults.slice(currentPersonOffset, currentPersonOffset + PERSON_PAGE_SIZE);
+                    currentPersonOffset += nextBatch.length;
+                    if (nextBatch.length > 0) {
+                        const newMapped = await mapTMDBResults(nextBatch);
+                        renderResults(newMapped, true);
+                        currentResults = currentResults.concat(newMapped);
+                    }
+                    // Hide button if no more results
+                    if (currentPersonOffset >= currentPersonAllResults.length || nextBatch.length === 0) {
+                        searchLoadMoreContainer.classList.add('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading more results:', error);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-icons">expand_more</span><span>Mostrar más</span>';
+                }
             }
         }
 
@@ -633,6 +716,15 @@
         async function searchMovies(query) {
             hideLogo();
             showLoading();
+            // Reset search pagination state
+            currentSearchQuery = query;
+            currentSearchPage = 1;
+            currentSearchTotalPages = 1;
+            currentSearchMode = 'query';
+            currentPersonAllResults = [];
+            currentPersonOffset = 0;
+            if (searchLoadMoreContainer) searchLoadMoreContainer.classList.add('hidden');
+
             if (homeContent && searchSection) {
                 homeContent.classList.add('hidden');
                 searchSection.classList.remove('hidden');
@@ -649,6 +741,7 @@
             try {
                 let data = await window.tmdb.fetch('/search/multi', { query, language: 'es-MX', page: 1, include_adult: false });
                 let results = data.results || [];
+                currentSearchTotalPages = data.total_pages || 1;
 
                 // If first result is person with high popularity, show their content
                 if (results.length > 0 && results[0].media_type === 'person' && results[0].popularity > 5) {
@@ -660,6 +753,7 @@
                 if (results.length === 0) {
                     data = await window.tmdb.fetch('/search/multi', { query, language: 'en-US', page: 1, include_adult: false });
                     results = data.results || [];
+                    currentSearchTotalPages = data.total_pages || 1;
                 }
 
                 // Filter movies and series with poster and rating
@@ -668,8 +762,12 @@
                 );
 
                 if (results.length > 0) {
-                    currentResults = await mapTMDBResults(results.slice(0, 15));
+                    currentResults = await mapTMDBResults(results.slice(0, SEARCH_PAGE_SIZE));
                     renderResults(currentResults);
+                    // Show "Mostrar más" if there are more pages
+                    if (currentSearchTotalPages > 1 && searchLoadMoreContainer) {
+                        searchLoadMoreContainer.classList.remove('hidden');
+                    }
                 } else {
                     resultsGrid.innerHTML = '<div class="empty-state"><p>No se encontraron resultados para esta búsqueda.</p></div>';
                     showLogo();
@@ -1348,7 +1446,19 @@
         };
 
         /** Render results to grid */
-        const renderResults = (results) => renderToGrid(results, resultsGrid, 0);
+        const renderResults = (results, append = false) => {
+            if (append) {
+                // Append new cards to the existing grid
+                const tempDiv = document.createElement('div');
+                renderToGrid(results, tempDiv, currentResults.length);
+                // Move all children (cards) from tempDiv to resultsGrid
+                while (tempDiv.firstChild) {
+                    resultsGrid.appendChild(tempDiv.firstChild);
+                }
+            } else {
+                renderToGrid(results, resultsGrid, 0);
+            }
+        };
 
         /** Render movies/series to grid */
         function renderToGrid(results, gridElement, tabindexOffset, showLoadMore = false) {
