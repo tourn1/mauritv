@@ -810,11 +810,87 @@
                         }
                     });
                 }
+
+                // Configurar el botón de Compartir
+                const shareBtn = document.getElementById('shareBtn');
+                if (shareBtn) {
+                    let resetShareTimer = null;
+                    const handleShare = async () => {
+                        const shareUrl = window.location.href;
+                        const copied = await copyToClipboard(shareUrl);
+                        if (copied) {
+                            shareBtn.innerHTML = '<span class="material-icons">check</span> ¡Enlace copiado!';
+                            shareBtn.classList.add('copied');
+                            showToast('¡Enlace copiado al portapapeles!');
+                        } else {
+                            showToast('No se pudo copiar el enlace');
+                        }
+
+                        if (resetShareTimer) clearTimeout(resetShareTimer);
+                        resetShareTimer = setTimeout(() => {
+                            shareBtn.innerHTML = '<span class="material-icons">share</span> Compartir';
+                            shareBtn.classList.remove('copied');
+                        }, 2200);
+                    };
+
+                    shareBtn.onclick = () => handleShare();
+
+                    shareBtn.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                        }
+                    });
+                }
             } catch (err) {
                 console.error('Error loading content:', err);
                 document.getElementById('title').textContent = 'Error loading content';
                 mostrarErrorTrailer();
             }
+        }
+
+        // Helper para copiar al portapapeles
+        async function copyToClipboard(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } catch (e) {
+                    console.warn('navigator.clipboard falló, intentando fallback', e);
+                }
+            }
+            try {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-999999px';
+                textarea.style.top = '-999999px';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                const res = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                return res;
+            } catch (e) {
+                console.error('Fallback copy falló', e);
+                return false;
+            }
+        }
+
+        let _toastTimer = null;
+        function showToast(message) {
+            let toast = document.getElementById('toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'toast';
+                toast.className = 'toast';
+                document.body.appendChild(toast);
+            }
+            toast.innerHTML = `<span class="material-icons">check_circle</span> ${message}`;
+            toast.classList.add('show');
+            if (_toastTimer) clearTimeout(_toastTimer);
+            _toastTimer = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
         }
 
         // validarPeliculaFinal removida, ahora provista por verify.js
@@ -876,14 +952,14 @@
 
             // GESTIÓN DE FOCO CON MOUSE
             document.addEventListener('mouseover', (e) => {
-                const navigable = e.target.closest('.movie-card, .load-more-card, .navigable, button, select, .person-photo-link, .trailer-placeholder, .back-button, .play-button, .favorite-button');
+                const navigable = e.target.closest('.movie-card, .load-more-card, .navigable, button, select, .person-photo-link, .trailer-placeholder, .back-button, .play-button, .favorite-button, .share-button');
                 if (navigable && document.activeElement && document.activeElement !== navigable) {
                     navigable.focus({ preventScroll: true });
                 }
             }, { passive: true });
 
             document.addEventListener('pointerdown', (e) => {
-                const navigable = e.target.closest('.movie-card, .load-more-card, .navigable, button, select, input, .person-photo-link, .trailer-placeholder, .back-button, .play-button, .favorite-button');
+                const navigable = e.target.closest('.movie-card, .load-more-card, .navigable, button, select, input, .person-photo-link, .trailer-placeholder, .back-button, .play-button, .favorite-button, .share-button');
                 if (navigable) {
                     if (document.activeElement && document.activeElement !== navigable) {
                         document.activeElement.blur();
@@ -898,7 +974,7 @@
         loadContent();
         setupKeyboardNavigation();
     </script>
-    <link rel="stylesheet" href="assets/css/mauritv.css?v=5">
+    <link rel="stylesheet" href="assets/css/mauritv.css?v=6">
 </head>
 
 <body>
@@ -940,6 +1016,10 @@
                             <button class="favorite-button navigable" id="favoriteBtn" style="display: none;">
                                 <span class="material-icons">add</span>
                                 Agregar a favorito
+                            </button>
+                            <button class="share-button navigable" id="shareBtn" title="Copiar enlace de este contenido">
+                                <span class="material-icons">share</span>
+                                Compartir
                             </button>
                         </div>
                     </div>
@@ -992,6 +1072,7 @@
             console.warn("Google Drive Sync and Authentication are disabled when running via file:// protocol.");
         }
     </script>
+    <div id="toast" class="toast" role="alert" aria-live="polite"></div>
 </body>
 
 </html>
