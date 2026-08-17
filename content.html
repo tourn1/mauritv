@@ -126,7 +126,7 @@
                 const endpoint = `/${currentContentType}/${currentContentId}/recommendations`;
                 const data = await window.tmdb.fetch(endpoint, { language: 'es-MX', page: currentRelatedPage });
                 let results = data && data.results ? data.results.filter(item => item.poster_path) : [];
-                
+
                 if (results.length === 0) {
                     if (btn) btn.style.display = 'none';
                     isLoadingMoreRelated = false;
@@ -178,7 +178,7 @@
                         if (val.file_name) url += `&file_name=${encodeURIComponent(val.file_name)}`;
                         if (val.resolution) url += `&res=${encodeURIComponent(val.resolution)}`;
                         if (val.source) url += `&src=${encodeURIComponent(val.source)}`;
-                        
+
                         return `<div class="movie-card navigable${unavailableClass}" tabindex="0" onclick="window.location.href='${url}'" onkeydown="if(event.key==='Enter') this.click()" aria-label="${itemTitle}">
                             <div class="type-badge">${typeDisplay}</div>
                             ${extraBadges}
@@ -671,7 +671,7 @@
                                 <span class="movie-rating">★ ${rating}</span>
                             </div>`;
                         }).join('');
-                        
+
                         htmlContent += `<div class="movie-card load-more-card navigable" tabindex="0" id="load-more-related-btn" role="button" aria-label="Cargar más elementos" onclick="loadMoreRelatedContent()">
                             <div class="load-more-content">
                                 <span class="material-icons load-more-icon">add</span>
@@ -878,7 +878,7 @@
         loadContent();
         setupKeyboardNavigation();
     </script>
-    <link rel="stylesheet" href="assets/css/mauritv.css?v=1">
+    <link rel="stylesheet" href="assets/css/mauritv.css?v=5">
 </head>
 
 <body>
@@ -935,11 +935,13 @@
         <section class="content-section" id="related-section">
             <h2 class="section-title" id="similarTitle">Relacionados</h2>
             <div class="carousel-container">
-                <button class="carousel-btn prev-btn navigable" id="related-prev-btn" aria-label="Anterior" tabindex="0">
+                <button class="carousel-btn prev-btn navigable" id="related-prev-btn" aria-label="Anterior"
+                    tabindex="0">
                     <span class="material-icons">chevron_left</span>
                 </button>
                 <div class="carousel-track" id="carousel"></div>
-                <button class="carousel-btn next-btn navigable" id="related-next-btn" aria-label="Siguiente" tabindex="0">
+                <button class="carousel-btn next-btn navigable" id="related-next-btn" aria-label="Siguiente"
+                    tabindex="0">
                     <span class="material-icons">chevron_right</span>
                 </button>
             </div>

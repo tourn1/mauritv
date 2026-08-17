@@ -399,11 +399,25 @@ button#mic-btn:focus,
     transform: scale(1.1);
 }
 
-/* Excluir botones de nav de fondo rojo en focus */
+/* Excluir botones de nav y selects del escalado y fondo rojo en focus */
 button#mic-btn:focus,
 button#profile-btn:focus,
 button#settings-btn:focus,
-.logo-nav-wrapper:focus {
+.logo-nav-wrapper:focus,
+.person-photo-link:focus,
+.tv-select:focus,
+select:focus,
+#sub-select:focus,
+#season-select:focus,
+#episode-select:focus {
+    transform: none !important;
+}
+
+button#mic-btn:focus,
+button#profile-btn:focus,
+button#settings-btn:focus,
+.logo-nav-wrapper:focus,
+.person-photo-link:focus {
     background: transparent !important;
     color: var(--text-primary) !important;
 }
@@ -1529,6 +1543,13 @@ iframe:focus {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 15px rgba(255, 255, 255, 0.3) !important;
 }
 
+.person-photo-link:focus {
+    outline: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
 .search-bar:focus-within {
     outline: none !important;
     border-color: #ffffff !important;
@@ -2108,13 +2129,19 @@ main {
 
 .person-photo-link {
     display: inline-block;
+    outline: none;
+}
+
+.person-photo-link:focus,
+.person-photo-link:hover,
+.person-photo-link.focused {
+    outline: none;
 }
 
 .person-photo-link:focus .person-photo,
 .person-photo-link:hover .person-photo,
 .person-photo-link.focused .person-photo {
     border-color: #ffffff;
-    box-shadow: 0 0 0 2px #ffffff;
 }
 
 .person-name {
@@ -2215,7 +2242,7 @@ main {
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 10px;
     padding: 10px 12px;
-    font-size: 0.95rem;
+    font-size: 1rem; /* ≥16px evita el zoom automático de iOS al enfocar */
     font-family: 'Inter', sans-serif;
     outline: none;
     cursor: pointer;
@@ -2223,6 +2250,7 @@ main {
     transition: 0.25s;
     width: 100%;
     max-width: 100%;
+    touch-action: manipulation; /* deshabilita el zoom por doble-tap/pinch en móvil */
 }
 
 /* Márgenes pequeños seguros para controles en el hero
@@ -2242,16 +2270,29 @@ main {
     margin: 6px;
 }
 
+.tv-select:focus,
+.tv-select:hover,
+.tv-select:active,
+.tv-select.selected,
+#sub-select:focus,
+#sub-select:hover,
+#sub-select:active,
+#sub-select.selected {
+    transform: none !important;
+}
+
 .tv-select:focus {
     background: rgba(255, 255, 255, 0.25);
     border-color: #ffffff;
     box-shadow: 0 0 0 3px #ffffff;
     z-index: 10;
+    transform: none !important;
 }
 
 .tv-select:hover {
     background: rgba(255, 255, 255, 0.2);
     border-color: rgba(255, 255, 255, 0.4);
+    transform: none !important;
 }
 
 .tv-select option {
@@ -2716,6 +2757,7 @@ main {
     #sub-select {
         width: auto;
         min-width: 240px;
+        font-size: 1rem; /* ≥16px evita el zoom automático de iOS */
     }
 
     .results-grid {
