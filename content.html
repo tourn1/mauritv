@@ -873,6 +873,26 @@
                     if (closest) { closest.focus(); closest.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
                 }
             });
+
+            // GESTIÓN DE FOCO CON MOUSE
+            document.addEventListener('mouseover', (e) => {
+                const navigable = e.target.closest('.movie-card, .load-more-card, .navigable, button, select, .person-photo-link, .trailer-placeholder, .back-button, .play-button, .favorite-button');
+                if (navigable && document.activeElement && document.activeElement !== navigable) {
+                    navigable.focus({ preventScroll: true });
+                }
+            }, { passive: true });
+
+            document.addEventListener('pointerdown', (e) => {
+                const navigable = e.target.closest('.movie-card, .load-more-card, .navigable, button, select, input, .person-photo-link, .trailer-placeholder, .back-button, .play-button, .favorite-button');
+                if (navigable) {
+                    if (document.activeElement && document.activeElement !== navigable) {
+                        document.activeElement.blur();
+                        navigable.focus({ preventScroll: true });
+                    }
+                } else if (document.activeElement && document.activeElement !== document.body) {
+                    document.activeElement.blur();
+                }
+            }, { passive: true });
         }
 
         loadContent();

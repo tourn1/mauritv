@@ -1621,6 +1621,27 @@
             }
         });
 
+        // ========== GESTIÓN DE FOCO CON MOUSE ==========
+        // Evita que coexistan múltiples tarjetas seleccionadas (focus previo + hover nuevo)
+        document.addEventListener('mouseover', (e) => {
+            const navigable = e.target.closest('.movie-card, .load-more-card, .navigable, button, select, .tab-btn, .autocomplete-item, .person-photo-link, .trailer-placeholder, #mic-btn, #clear-btn, #profile-btn, #settings-btn, #logo-nav-wrapper');
+            if (navigable && document.activeElement && document.activeElement !== navigable) {
+                navigable.focus({ preventScroll: true });
+            }
+        }, { passive: true });
+
+        document.addEventListener('pointerdown', (e) => {
+            const navigable = e.target.closest('.movie-card, .load-more-card, .navigable, button, select, input, .tab-btn, .autocomplete-item, .person-photo-link, .trailer-placeholder, #mic-btn, #clear-btn, #profile-btn, #settings-btn, #logo-nav-wrapper');
+            if (navigable) {
+                if (document.activeElement && document.activeElement !== navigable) {
+                    document.activeElement.blur();
+                    navigable.focus({ preventScroll: true });
+                }
+            } else if (document.activeElement && document.activeElement !== document.body) {
+                document.activeElement.blur();
+            }
+        }, { passive: true });
+
         // ========== VOICE INPUT ==========
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 

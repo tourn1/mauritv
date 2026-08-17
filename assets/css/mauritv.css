@@ -11,7 +11,10 @@
     --accent-gradient: linear-gradient(180deg, #e50914 0%, #b20710 100%);
     --text-primary: #ffffff;
     --text-secondary: #e5e5e5;
-    --focus-border: 4px solid #ffffff;
+    --focus-border-width: 1.5px;
+    --focus-border: 1.5px solid #ffffff;
+    --focus-glow: 0 0 12px rgba(255, 255, 255, 0.75), 0 0 24px rgba(255, 255, 255, 0.35);
+    --focus-shadow: 0 0 0 1.5px #ffffff, 0 0 12px rgba(255, 255, 255, 0.75), 0 0 24px rgba(255, 255, 255, 0.35);
     --transition-speed: 0.3s;
     --netflix-font: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
@@ -180,11 +183,12 @@ body {
 }
 
 .hero-play-btn:hover,
-.hero-play-btn:focus {
+.hero-play-btn:focus,
+.hero-play-btn.selected {
     background-color: var(--accent-hover);
     transform: scale(1.05);
-    outline: none;
-    box-shadow: 0 6px 20px rgba(229, 9, 20, 0.6);
+    outline: none !important;
+    box-shadow: var(--focus-shadow) !important;
 }
 
 .hero-pagination {
@@ -214,9 +218,11 @@ body {
     transform: scale(1.2);
 }
 
+.hero-dot:hover,
 .hero-dot:focus {
-    outline: 2px solid var(--accent-color);
-    outline-offset: 2px;
+    background-color: white;
+    outline: none !important;
+    box-shadow: var(--focus-shadow) !important;
 }
 
 #home-content {
@@ -260,12 +266,13 @@ body {
     /* Redondo perfecto */
 }
 
-.logo-nav-wrapper:focus {
+.logo-nav-wrapper:hover,
+.logo-nav-wrapper:focus,
+.logo-nav-wrapper.selected {
     background: transparent !important;
     transform: scale(1.05);
-    outline: var(--focus-border) !important;
-    outline-offset: 2px !important;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3) !important;
+    outline: none !important;
+    box-shadow: var(--focus-shadow) !important;
 }
 
 .logo-nav-wrapper:focus .app-logo {
@@ -332,10 +339,13 @@ header {
 }
 
 .icon-btn:hover,
-.icon-btn:focus {
-    color: var(--accent-color);
-    background: rgba(255, 255, 255, 0.1);
+.icon-btn:focus,
+.icon-btn.selected {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.15);
     transform: scale(1.1);
+    outline: none !important;
+    box-shadow: var(--focus-shadow) !important;
 }
 
 .search-bar {
@@ -344,15 +354,17 @@ header {
     background: var(--card-bg);
     border-radius: 50px;
     padding: 0.5rem 1.5rem;
-    border: 2px solid transparent;
+    border: 1.5px solid transparent;
     transition: all var(--transition-speed);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
+.search-bar:hover,
 .search-bar:focus-within {
-    border-color: var(--accent-color);
-    box-shadow: 0 0 15px rgba(229, 9, 20, 0.2);
+    border-color: #ffffff !important;
+    box-shadow: var(--focus-glow) !important;
     background: #2b2b2b;
+    outline: none !important;
 }
 
 .search-icon {
@@ -392,15 +404,17 @@ button#mic-btn {
     flex-shrink: 0;
 }
 
+button#mic-btn:hover,
 button#mic-btn:focus,
-.navigable:focus {
-    background: var(--accent-color);
-    color: black;
+button#mic-btn.selected {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: var(--text-primary) !important;
     transform: scale(1.1);
+    outline: none !important;
+    box-shadow: var(--focus-shadow) !important;
 }
 
-/* Excluir botones de nav y selects del escalado y fondo rojo en focus */
-button#mic-btn:focus,
+/* Excluir botones de nav y selects del escalado en focus */
 button#profile-btn:focus,
 button#settings-btn:focus,
 .logo-nav-wrapper:focus,
@@ -413,11 +427,14 @@ select:focus,
     transform: none !important;
 }
 
-button#mic-btn:focus,
 button#profile-btn:focus,
+button#profile-btn:hover,
 button#settings-btn:focus,
+button#settings-btn:hover,
 .logo-nav-wrapper:focus,
-.person-photo-link:focus {
+.logo-nav-wrapper:hover,
+.person-photo-link:focus,
+.person-photo-link:hover {
     background: transparent !important;
     color: var(--text-primary) !important;
 }
@@ -438,9 +455,14 @@ button#clear-btn {
     flex-shrink: 0;
 }
 
-button#clear-btn:hover {
-    color: var(--accent-color);
+button#clear-btn:hover,
+button#clear-btn:focus,
+button#clear-btn.selected {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.15);
     transform: scale(1.1);
+    outline: none !important;
+    box-shadow: var(--focus-shadow) !important;
 }
 
 button#clear-btn.hidden {
@@ -497,9 +519,12 @@ button#clear-btn.hidden {
 .autocomplete-item:hover,
 .autocomplete-item:focus,
 .autocomplete-item.selected {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15);
     color: var(--text-primary);
     transform: translateX(5px);
+    border: 1.5px solid #ffffff;
+    box-shadow: var(--focus-glow) !important;
+    outline: none !important;
 }
 
 .autocomplete-item .material-icons {
@@ -566,8 +591,9 @@ button#clear-btn.hidden {
     scroll-behavior: smooth;
     scroll-snap-type: x mandatory;
     gap: 1.5rem;
-    padding: 1.2rem 0.2rem;
-    width: 100%;
+    padding: 1.6rem 0.8rem;
+    margin: -0.4rem -0.8rem;
+    width: calc(100% + 1.6rem);
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
@@ -585,11 +611,19 @@ button#clear-btn.hidden {
     box-sizing: border-box;
 }
 
+.carousel-track .movie-card:first-child {
+    transform-origin: left center;
+}
+
+.carousel-track .movie-card:last-child {
+    transform-origin: right center;
+}
+
 .carousel-btn {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    z-index: 200;
+    z-index: 600;
     width: 57px;
     height: 57px;
     border-radius: 50%;
@@ -621,13 +655,14 @@ button#clear-btn.hidden {
 }
 
 .carousel-btn:hover,
-.carousel-btn:focus {
+.carousel-btn:focus,
+.carousel-btn.selected {
     background: var(--accent-color, #e50914);
-    border-color: var(--accent-color, #e50914);
+    border-color: #ffffff;
     color: #ffffff;
     transform: translateY(-50%) scale(1.15);
-    box-shadow: 0 0 15px rgba(229, 9, 20, 0.7);
-    outline: none;
+    box-shadow: var(--focus-glow) !important;
+    outline: none !important;
 }
 
 .carousel-btn.disabled,
@@ -643,20 +678,23 @@ button#clear-btn.hidden {
     align-items: center;
     justify-content: center;
     background: rgba(30, 30, 35, 0.6);
-    border: 2px dashed rgba(255, 255, 255, 0.25);
+    border: 1.5px dashed rgba(255, 255, 255, 0.25);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.25s ease, box-shadow 0.35s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.25s ease;
+    will-change: transform;
 }
 
 .load-more-card:hover,
-.load-more-card:focus {
-    background: rgba(229, 9, 20, 0.15);
-    border: 2px solid var(--accent-color, #e50914);
-    box-shadow: 0 0 20px rgba(229, 9, 20, 0.4);
-    transform: scale(1.05);
-    outline: none;
+.load-more-card:focus,
+.load-more-card.selected {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1.5px solid #ffffff !important;
+    box-shadow: var(--focus-glow) !important;
+    transform: scale(1.04);
+    z-index: 500 !important;
+    outline: none !important;
 }
 
 .load-more-content {
@@ -677,7 +715,8 @@ button#clear-btn.hidden {
 }
 
 .load-more-card:hover .load-more-icon,
-.load-more-card:focus .load-more-icon {
+.load-more-card:focus .load-more-icon,
+.load-more-card.selected .load-more-icon {
     transform: scale(1.2) rotate(90deg);
 }
 
@@ -716,7 +755,7 @@ button#clear-btn.hidden {
     gap: 0.5rem;
     padding: 0.75rem 2.5rem;
     background: rgba(30, 30, 35, 0.7);
-    border: 1.5px solid rgba(229, 9, 20, 0.5);
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
     border-radius: 999px;
     color: #fff;
     font-size: 0.95rem;
@@ -726,16 +765,17 @@ button#clear-btn.hidden {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-    box-shadow: 0 2px 16px rgba(229, 9, 20, 0.12);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
 }
 
 .search-load-more-btn:hover:not(:disabled),
-.search-load-more-btn:focus:not(:disabled) {
-    background: rgba(229, 9, 20, 0.18);
-    border-color: var(--accent-color, #e50914);
-    box-shadow: 0 0 24px rgba(229, 9, 20, 0.45);
+.search-load-more-btn:focus:not(:disabled),
+.search-load-more-btn.selected:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #ffffff !important;
+    box-shadow: var(--focus-glow) !important;
     transform: translateY(-2px) scale(1.04);
-    outline: none;
+    outline: none !important;
 }
 
 .search-load-more-btn:disabled {
@@ -828,25 +868,30 @@ button#clear-btn.hidden {
     background: var(--card-bg);
     border-radius: 12px;
     overflow: hidden;
-    transition: all var(--transition-speed);
+    transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.25s ease, box-shadow 0.35s cubic-bezier(0.25, 1, 0.5, 1);
     cursor: pointer;
     position: relative;
-    border: 3px solid transparent;
+    border: 1.5px solid transparent;
     outline: none;
     aspect-ratio: 2/3;
+    will-change: transform;
 }
 
-.movie-card:focus {
-    border-color: #ffffff;
-    transform: scale(1.1);
-    z-index: 100;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+.movie-card:focus,
+.movie-card.selected {
+    border-color: #ffffff !important;
+    transform: scale(1.04);
+    z-index: 500 !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), var(--focus-glow) !important;
+    outline: none !important;
 }
 
 .movie-card:hover {
-    transform: scale(1.08);
-    z-index: 90;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    border-color: #ffffff !important;
+    transform: scale(1.04);
+    z-index: 500 !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), var(--focus-glow) !important;
+    outline: none !important;
 }
 
 .movie-poster {
@@ -1045,14 +1090,16 @@ button#clear-btn.hidden {
     text-decoration: none;
     font-weight: 600;
     transition: all 0.2s ease;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
     width: fit-content;
 }
 
 .back-btn:hover,
-.back-btn:focus {
+.back-btn:focus,
+.back-btn.selected {
     background: rgba(255, 255, 255, 0.2);
-    border-color: #ffffff;
+    border-color: #ffffff !important;
+    box-shadow: var(--focus-glow) !important;
     outline: none !important;
 }
 
@@ -1413,12 +1460,13 @@ button#clear-btn.hidden {
 }
 
 .close-btn:hover,
-.close-btn:focus {
-    background: var(--accent-color);
-    border-color: var(--accent-color);
+.close-btn:focus,
+.close-btn.selected {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: #ffffff !important;
     transform: scale(1.05);
-    outline: none;
-    box-shadow: 0 0 20px rgba(229, 9, 20, 0.4);
+    outline: none !important;
+    box-shadow: var(--focus-glow) !important;
 }
 
 .player-container {
@@ -1484,7 +1532,7 @@ button#clear-btn.hidden {
 
 .server-btn {
     background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
     color: #ccc;
     padding: 8px 15px;
     border-radius: 8px;
@@ -1497,13 +1545,18 @@ button#clear-btn.hidden {
 .server-btn.active {
     background: #ff3d00;
     color: white;
-    border-color: #ff3d00;
-    box-shadow: 0 0 15px rgba(255, 61, 0, 0.4);
+    border-color: #ffffff !important;
+    box-shadow: var(--focus-glow) !important;
 }
 
-.server-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+.server-btn:hover,
+.server-btn:focus,
+.server-btn.selected {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: #ffffff !important;
     color: white;
+    box-shadow: var(--focus-glow) !important;
+    outline: none !important;
 }
 
 .player-loader {
@@ -1526,50 +1579,100 @@ button#clear-btn.hidden {
     margin: 0 auto 15px;
 }
 
-/* --- Resaltado Global de Foco (Estilo Netflix) --- */
+/* --- Resaltado Global Unificado de Foco, Hover y Selección --- */
 .navigable:focus,
+.navigable:hover,
+.navigable.selected,
 [tabindex]:focus,
+[tabindex]:hover,
 button:focus,
-iframe:focus {
-    outline: var(--focus-border) !important;
-    outline-offset: 2px !important;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3) !important;
+button:hover,
+button.selected,
+select:focus,
+select:hover,
+select.selected,
+input:focus,
+input:hover {
+    outline: none !important;
+    box-shadow: var(--focus-shadow) !important;
 }
 
-/* Excepciones para mantener bordes redondeados y diseño original */
-.movie-card:focus {
+/* Transiciones suaves en controles interactivos */
+button,
+select,
+.tv-select,
+.settings-input,
+.settings-btn,
+.back-btn,
+.back-button,
+.close-btn,
+.server-btn,
+.search-bar,
+.movie-card,
+.load-more-card,
+.trailer-placeholder,
+.trailer-container {
+    transition: border-color var(--transition-speed), box-shadow var(--transition-speed), transform var(--transition-speed), background-color var(--transition-speed);
+}
+
+.movie-card:focus,
+.movie-card:hover,
+.movie-card.selected {
     outline: none !important;
     border-color: #ffffff !important;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 15px rgba(255, 255, 255, 0.3) !important;
+    transform: scale(1.04);
+    z-index: 500 !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), var(--focus-glow) !important;
 }
 
-.person-photo-link:focus {
+.person-photo-link:focus,
+.person-photo-link:hover,
+.person-photo-link.focused,
+.person-photo-link.selected {
     outline: none !important;
     background: transparent !important;
     box-shadow: none !important;
     transform: none !important;
 }
 
-.search-bar:focus-within {
-    outline: none !important;
+.person-photo-link:focus .person-photo,
+.person-photo-link:hover .person-photo,
+.person-photo-link.focused .person-photo,
+.person-photo-link.selected .person-photo {
     border-color: #ffffff !important;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3) !important;
+    box-shadow: var(--focus-glow) !important;
 }
 
-input#movie-input:focus {
+.search-bar:focus-within,
+.search-bar:hover {
+    outline: none !important;
+    border-color: #ffffff !important;
+    box-shadow: var(--focus-glow) !important;
+}
+
+input#movie-input:focus,
+input#movie-input:hover {
     outline: none !important;
     box-shadow: none !important;
 }
 
 button#mic-btn:focus,
+button#mic-btn:hover,
+button#mic-btn.selected,
 button#clear-btn:focus,
-.close-btn:focus {
-    outline: var(--focus-border) !important;
-    outline-offset: 4px !important;
+button#clear-btn:hover,
+button#clear-btn.selected,
+.close-btn:focus,
+.close-btn:hover,
+.close-btn.selected {
+    outline: none !important;
+    box-shadow: var(--focus-shadow) !important;
 }
 
 #player-iframe:focus {
-    outline-offset: -4px !important;
+    outline: var(--focus-border) !important;
+    outline-offset: -2px !important;
+    box-shadow: var(--focus-glow) !important;
 }
 
 /* --- Tabs --- */
@@ -1599,8 +1702,14 @@ button#clear-btn:focus,
     position: relative;
 }
 
-.tab-btn:hover {
+.tab-btn:hover,
+.tab-btn:focus,
+.tab-btn.navigable:focus,
+.tab-btn.selected {
     color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.15);
+    outline: none !important;
+    box-shadow: var(--focus-shadow) !important;
 }
 
 .tab-btn.active {
@@ -1616,14 +1725,6 @@ button#clear-btn:focus,
     height: 4px;
     background: var(--accent-color);
     border-radius: 2px;
-}
-
-.tab-btn:focus,
-.tab-btn.navigable:focus {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.1);
-    outline: var(--focus-border) !important;
-    outline-offset: 2px !important;
 }
 
 /* Cursor Virtual (Eliminado - Ahora manejado por Android Nativo) */
@@ -1685,21 +1786,23 @@ button#clear-btn:focus,
     width: 100%;
     padding: 0.8rem;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
     background: rgba(0, 0, 0, 0.5);
     color: var(--text-primary);
     font-family: inherit;
     font-size: 0.9rem;
     outline: none;
-    transition: border-color var(--transition-speed);
+    transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
 }
 
-.settings-input:focus {
+.settings-input:focus,
+.settings-input:hover {
     border-color: #ffffff !important;
     background: rgba(0, 0, 0, 0.5) !important;
     color: var(--text-primary) !important;
     transform: none !important;
     outline: none !important;
+    box-shadow: var(--focus-glow) !important;
 }
 
 .settings-actions {
@@ -1712,39 +1815,53 @@ button#clear-btn:focus,
 .settings-btn {
     background: var(--accent-color);
     color: white;
-    border: none;
+    border: 1.5px solid transparent;
     padding: 0.6rem 1.5rem;
     border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
     font-size: 0.9rem;
-    transition: background var(--transition-speed);
+    transition: all var(--transition-speed);
     outline: none;
 }
 
 .settings-btn:hover,
-.settings-btn:focus {
+.settings-btn:focus,
+.settings-btn.selected {
     background: var(--accent-hover);
+    border-color: #ffffff !important;
+    outline: none !important;
+    box-shadow: var(--focus-shadow) !important;
 }
 
 .settings-btn-secondary {
     background: rgba(255, 255, 255, 0.1);
     color: var(--text-primary);
+    border: 1.5px solid transparent;
 }
 
 .settings-btn-secondary:hover,
-.settings-btn-secondary:focus {
+.settings-btn-secondary:focus,
+.settings-btn-secondary.selected {
     background: rgba(255, 255, 255, 0.2);
+    border-color: #ffffff !important;
+    outline: none !important;
+    box-shadow: var(--focus-shadow) !important;
 }
 
 .settings-btn-danger {
     background: #e50914;
     color: white;
+    border: 1.5px solid transparent;
 }
 
 .settings-btn-danger:hover,
-.settings-btn-danger:focus {
+.settings-btn-danger:focus,
+.settings-btn-danger.selected {
     background: #cc0812;
+    border-color: #ffffff !important;
+    outline: none !important;
+    box-shadow: var(--focus-shadow) !important;
 }
 
 /* Toggle Switch */
@@ -1774,6 +1891,7 @@ button#clear-btn:focus,
     bottom: 0;
     background-color: #555;
     transition: .4s;
+    border-radius: 24px;
 }
 
 .slider:before {
@@ -1785,6 +1903,7 @@ button#clear-btn:focus,
     bottom: 4px;
     background-color: white;
     transition: .4s;
+    border-radius: 50%;
 }
 
 .switch input:focus {
@@ -1795,8 +1914,9 @@ input:checked+.slider {
     background-color: var(--accent-color);
 }
 
-input:focus+.slider {
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+input:focus+.slider,
+input:hover+.slider {
+    box-shadow: var(--focus-shadow) !important;
 }
 
 input:checked+.slider:before {
@@ -2134,14 +2254,17 @@ main {
 
 .person-photo-link:focus,
 .person-photo-link:hover,
-.person-photo-link.focused {
-    outline: none;
+.person-photo-link.focused,
+.person-photo-link.selected {
+    outline: none !important;
 }
 
 .person-photo-link:focus .person-photo,
 .person-photo-link:hover .person-photo,
-.person-photo-link.focused .person-photo {
-    border-color: #ffffff;
+.person-photo-link.focused .person-photo,
+.person-photo-link.selected .person-photo {
+    border-color: #ffffff !important;
+    box-shadow: var(--focus-glow) !important;
 }
 
 .person-name {
@@ -2175,7 +2298,7 @@ main {
 }
 
 .play-button {
-    border: none;
+    border: 1.5px solid transparent;
     border-radius: 8px;
     padding: 12px 14px;
     display: flex;
@@ -2197,12 +2320,13 @@ main {
 .play-button.selected,
 .play-button:focus {
     background: var(--accent-hover);
-    box-shadow: 0 0 0 3px #ffffff;
-    outline: none;
+    border-color: #ffffff !important;
+    box-shadow: var(--focus-shadow) !important;
+    outline: none !important;
 }
 
 .favorite-button {
-    border: none;
+    border: 1.5px solid transparent;
     border-radius: 8px;
     padding: 6px 14px;
     /* 50% height of play-button roughly */
@@ -2225,8 +2349,9 @@ main {
 .favorite-button.selected,
 .favorite-button:focus {
     background: #5c5c5c;
-    box-shadow: 0 0 0 3px #ffffff;
-    outline: none;
+    border-color: #ffffff !important;
+    box-shadow: var(--focus-shadow) !important;
+    outline: none !important;
 }
 
 .play-button-wrapper {
@@ -2239,7 +2364,7 @@ main {
 .tv-select {
     background: rgba(255, 255, 255, 0.1);
     color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
     border-radius: 10px;
     padding: 10px 12px;
     font-size: 1rem; /* ≥16px evita el zoom automático de iOS al enfocar */
@@ -2281,17 +2406,24 @@ main {
     transform: none !important;
 }
 
-.tv-select:focus {
+.tv-select:focus,
+.tv-select.selected,
+#sub-select:focus,
+#sub-select.selected {
     background: rgba(255, 255, 255, 0.25);
-    border-color: #ffffff;
-    box-shadow: 0 0 0 3px #ffffff;
+    border-color: #ffffff !important;
+    box-shadow: var(--focus-glow) !important;
+    outline: none !important;
     z-index: 10;
     transform: none !important;
 }
 
-.tv-select:hover {
+.tv-select:hover,
+#sub-select:hover {
     background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.4);
+    border-color: #ffffff !important;
+    box-shadow: var(--focus-glow) !important;
+    outline: none !important;
     transform: none !important;
 }
 
@@ -2353,8 +2485,10 @@ main {
     aspect-ratio: 16 / 9;
 }
 
-.trailer-container:focus {
-    box-shadow: 0 0 0 3px #ffffff;
+.trailer-container:focus,
+.trailer-container:hover {
+    box-shadow: var(--focus-shadow) !important;
+    outline: none !important;
 }
 
 #youtube-player {
@@ -2379,8 +2513,12 @@ main {
     gap: 20px;
 }
 
-.trailer-placeholder:hover {
+.trailer-placeholder:hover,
+.trailer-placeholder:focus,
+.trailer-placeholder.selected {
     background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+    box-shadow: var(--focus-shadow) !important;
+    outline: none !important;
 }
 
 .trailer-placeholder .material-icons {
@@ -2426,10 +2564,16 @@ main {
     background: rgba(229, 9, 20, 0.2);
     border-radius: 8px;
     transition: 0.25s;
+    border: 1.5px solid transparent;
 }
 
-.trailer-error a:hover {
+.trailer-error a:hover,
+.trailer-error a:focus,
+.trailer-error a.selected {
     background: rgba(229, 9, 20, 0.4);
+    border-color: #ffffff !important;
+    box-shadow: var(--focus-shadow) !important;
+    outline: none !important;
 }
 
 .results-grid {
@@ -2443,24 +2587,30 @@ main {
     background: var(--card-bg);
     border-radius: 12px;
     overflow: hidden;
-    transition: all var(--transition-speed);
+    transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.25s ease, box-shadow 0.35s cubic-bezier(0.25, 1, 0.5, 1);
     cursor: pointer;
     position: relative;
-    border: 3px solid transparent;
+    border: 1.5px solid transparent;
     outline: none;
     aspect-ratio: 2/3;
+    will-change: transform;
 }
 
-.movie-card:focus {
-    border-color: #ffffff;
-    z-index: 100;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+.movie-card:focus,
+.movie-card.selected {
+    border-color: #ffffff !important;
+    transform: scale(1.04);
+    z-index: 500 !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), var(--focus-glow) !important;
+    outline: none !important;
 }
 
 .movie-card:hover {
-    transform: scale(1.03);
-    z-index: 90;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    border-color: #ffffff !important;
+    transform: scale(1.04);
+    z-index: 500 !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), var(--focus-glow) !important;
+    outline: none !important;
 }
 
 .movie-poster {
@@ -2846,17 +2996,26 @@ main {
 
     /* Reducir la extensión del foco para que no se salga del viewport y evitar zoom */
     .play-button:focus,
+    .play-button:hover,
     .play-button.selected,
+    .favorite-button:focus,
+    .favorite-button:hover,
+    .favorite-button.selected,
     .tv-select:focus,
+    .tv-select:hover,
     .tv-select.selected,
     select:focus,
+    select:hover,
     select.selected,
     .ver-mas-btn:focus,
+    .ver-mas-btn:hover,
     .ver-mas-btn.selected,
     .hero-buttons>*:focus,
+    .hero-buttons>*:hover,
     .hero-buttons>*.selected {
-        box-shadow: 0 0 0 3px #ffffff;
+        box-shadow: var(--focus-shadow) !important;
         transform: none !important;
+        outline: none !important;
     }
 
     #media-selectors,
@@ -2966,11 +3125,18 @@ main {
     }
 
     .movie-card:hover {
-        transform: scale(1.08);
+        transform: scale(1.04);
+        border-color: #ffffff !important;
+        z-index: 500 !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), var(--focus-glow) !important;
     }
 
-    .movie-card:focus {
-        transform: none;
+    .movie-card:focus,
+    .movie-card.selected {
+        transform: scale(1.04);
+        border-color: #ffffff !important;
+        z-index: 500 !important;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), var(--focus-glow) !important;
     }
 }
 
@@ -2979,9 +3145,12 @@ main {
            (Refuerzo para móviles estrechos)
         ================================================================ */
 @media (max-width: 520px) {
-    .play-button:focus {
-        box-shadow: 0 0 0 3px #ffffff;
+    .play-button:focus,
+    .play-button:hover,
+    .play-button.selected {
+        box-shadow: var(--focus-shadow) !important;
         transform: none;
+        outline: none !important;
     }
 
     .hero-buttons .play-button {
@@ -3001,24 +3170,36 @@ main {
 #status-refresh-btn {
     background: #e50914;
     color: white;
+    border: 1.5px solid transparent;
 }
 
 #settings-save-btn:hover,
 #settings-save-btn:focus,
+#settings-save-btn.selected,
 #status-refresh-btn:hover,
-#status-refresh-btn:focus {
+#status-refresh-btn:focus,
+#status-refresh-btn.selected {
     background: #cc0812;
+    border-color: #ffffff !important;
+    box-shadow: var(--focus-shadow) !important;
+    outline: none !important;
 }
 
 #status-close-btn,
 #settings-cancel-btn {
     background: #303030;
     color: white;
+    border: 1.5px solid transparent;
 }
 
 #status-close-btn:hover,
 #status-close-btn:focus,
+#status-close-btn.selected,
 #settings-cancel-btn:hover,
-#settings-cancel-btn:focus {
+#settings-cancel-btn:focus,
+#settings-cancel-btn.selected {
     background: #404040;
+    border-color: #ffffff !important;
+    box-shadow: var(--focus-shadow) !important;
+    outline: none !important;
 }
