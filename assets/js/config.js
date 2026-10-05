@@ -19,7 +19,20 @@ const CONFIG = {
     // App configurations
     HISTORY_KEY: 'movie_history_v1',
     HIDDEN_RESOLUTIONS: ['CAM', 'TS', 'TC', 'TELESYNC', 'Telesync'],
-    ONE_DAY_MS: 24 * 60 * 60 * 1000
+    DEFAULT_EXCLUDED_GENRES: 'Talk Show, Documental',
+    DEFAULT_EXCLUDED_COUNTRIES: 'India,Hong Kong, Thailand',
+    ONE_DAY_MS: 24 * 60 * 60 * 1000,
+
+    // Diccionario canónico de géneros TMDb (ID -> Nombre en español e inglés común)
+    TMDB_GENRES: {
+        28: 'Acción', 12: 'Aventura', 16: 'Animación', 35: 'Comedia',
+        80: 'Crimen', 99: 'Documental', 18: 'Drama', 10751: 'Familia',
+        14: 'Fantasía', 36: 'Historia', 27: 'Terror', 10402: 'Música',
+        9648: 'Misterio', 10749: 'Romance', 878: 'Ciencia Ficción',
+        10770: 'Película de TV', 53: 'Suspenso', 10752: 'Bélica', 37: 'Western',
+        10759: 'Acción', 10762: 'Niños', 10763: 'Noticias', 10764: 'Reality',
+        10765: 'Sci-Fi', 10766: 'Telenovela', 10767: 'Talk Show', 10768: 'Política'
+    }
 };
 
 // Exponer en window

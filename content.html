@@ -146,7 +146,14 @@
                             : [(validation.source || '').toUpperCase(), validation.resolution].filter(Boolean).join(' ').toUpperCase();
                         if (HIDDEN_RESOLUTIONS.some(res => badgeText.includes(res))) return null;
                     }
-                    return { ...item, validation, imdbId };
+                    if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function' && window.tmdb.isGenreExcluded(item)) {
+                        return null;
+                    }
+                    let extData = null;
+                    try {
+                        extData = await window.tmdb.getExternalIds(item.id, currentContentType);
+                    } catch (e) {}
+                    return { ...item, validation, imdbId, extData: extData || {} };
                 }));
 
                 const validSimilares = batchResults.filter(Boolean);
@@ -174,6 +181,8 @@
                         };
                         const firstGenreId = (item.genre_ids || [])[0];
                         const genreBadge = firstGenreId && TMDB_GENRES_C[firstGenreId] ? `<div class="genre-badge">${TMDB_GENRES_C[firstGenreId]}</div>` : '';
+                        const platformClass = (item.extData?.platform && window.tmdb?.getPlatformClass) ? window.tmdb.getPlatformClass(item.extData.platform) : '';
+                        const platformBadge = item.extData && item.extData.platform ? `<div class="platform-badge ${platformClass}">${item.extData.platform}</div>` : '';
                         let url = `content.html?id=${item.id}&type=${currentContentType}`;
                         if (val.file_name) url += `&file_name=${encodeURIComponent(val.file_name)}`;
                         if (val.resolution) url += `&res=${encodeURIComponent(val.resolution)}`;
@@ -184,6 +193,7 @@
                             ${extraBadges}
                             ${verifiedIndicator}
                             ${genreBadge}
+                            ${platformBadge}
                             ${disponibleBadge}
                             <img src="${imageUrl}" class="movie-poster" alt="${itemTitle}" loading="lazy">
                             <div class="movie-info">
@@ -403,7 +413,17 @@
             const src = params.get('src') || '';
 
             try {
-                const data = await window.tmdb.getDetails(id, type, 'recommendations,external_ids,credits', 'es-MX');
+                const data = await window.tmdb.getDetails(id, type, 'recommendations,external_ids,credits,watch/providers', 'es-MX');
+
+                let platform = null;
+                if (type === 'tv' && data.networks && data.networks.length > 0) {
+                    platform = data.networks[0].name;
+                } else if (data['watch/providers']?.results) {
+                    const providers = data['watch/providers'].results['MX'] || data['watch/providers'].results['US'] || data['watch/providers'].results['ES'] || Object.values(data['watch/providers'].results)[0];
+                    if (providers && providers.flatrate && providers.flatrate.length > 0) {
+                        platform = providers.flatrate[0].provider_name;
+                    }
+                }
 
                 const title = data.title || data.name || 'Sin título';
                 document.title = `${title} - MauriTV`;
@@ -512,7 +532,11 @@
                 const countryHtml = data.production_countries && data.production_countries.length > 0
                     ? `<span id="countryBadge">${data.production_countries[0].name}</span>`
                     : '';
+                const platformClass = (platform && window.tmdb?.getPlatformClass) ? window.tmdb.getPlatformClass(platform) : '';
+                const platformBadgeHtml = platform ? `<span id="platformBadge" class="platform-badge ${platformClass}">${platform}</span>` : '';
+
                 document.getElementById('meta').innerHTML = `
+                    ${platformBadgeHtml}
                     ${imdbBadgeHtml}
                     ${badgeHtml}
                     ${genresHtml}
@@ -602,9 +626,10 @@
                 if (similares.length > 0) {
                     const batchResults = await Promise.all(similares.map(async (item) => {
                         let imdbId = item.id;
+                        let extData = null;
                         try {
-                            const extData = await window.tmdb.getExternalIds(item.id, type);
-                            if (extData.imdbId) imdbId = extData.imdbId;
+                            extData = await window.tmdb.getExternalIds(item.id, type);
+                            if (extData && extData.imdbId) imdbId = extData.imdbId;
                         } catch (e) { }
                         const validation = await validarPeliculaFinal(imdbId, type);
                         if (BLOCK_LOW_RES) {
@@ -618,7 +643,10 @@
                                 return null;
                             }
                         }
-                        return { ...item, validation, imdbId };
+                        if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function' && window.tmdb.isGenreExcluded(item)) {
+                            return null;
+                        }
+                        return { ...item, validation, imdbId, extData: extData || {} };
                     }));
                     const validSimilares = batchResults.filter(Boolean);
                     if (validSimilares.length > 0) {
@@ -651,6 +679,9 @@
                             const firstGenreId = (item.genre_ids || [])[0];
                             const genreBadge = firstGenreId && TMDB_GENRES_C[firstGenreId]
                                 ? `<div class="genre-badge">${TMDB_GENRES_C[firstGenreId]}</div>` : '';
+                            const platformClass = (item.extData?.platform && window.tmdb?.getPlatformClass) ? window.tmdb.getPlatformClass(item.extData.platform) : '';
+                            const platformBadge = item.extData && item.extData.platform ? `<div class="platform-badge ${platformClass}">${item.extData.platform}</div>` : '';
+
                             let url = `content.html?id=${item.id}&type=${type}`;
                             if (val.file_name) url += `&file_name=${encodeURIComponent(val.file_name)}`;
                             if (val.resolution) url += `&res=${encodeURIComponent(val.resolution)}`;
@@ -660,6 +691,7 @@
                                 ${extraBadges}
                                 ${verifiedIndicator}
                                 ${genreBadge}
+                                ${platformBadge}
                                 ${disponibleBadge}
                                 <img src="${imageUrl}" class="movie-poster" alt="${itemTitle}" loading="lazy">
                                 <div class="movie-info">

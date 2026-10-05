@@ -35,6 +35,7 @@
             <div class="hero-vignette"></div>
         </div>
         <div class="hero-content">
+            <div id="hero-platform" class="platform-badge" style="display:none; margin-bottom: 10px; width: fit-content;"></div>
             <h1 id="hero-title"></h1>
             <p id="hero-desc"></p>
             <button id="hero-play-btn" class="navigable hero-play-btn" tabindex="0">Ver</button>
@@ -128,6 +129,14 @@
                     <input type="checkbox" id="block-low-res-toggle" class="navigable" tabindex="0">
                     <span class="slider round"></span>
                 </label>
+            </div>
+            <div class="settings-option url-option">
+                <span class="settings-label">Géneros Excluidos (separados por coma)</span>
+                <input type="text" id="excluded-genres-input" class="settings-input navigable" tabindex="0" placeholder="Ej: Talk Show, Documental, Noticias">
+            </div>
+            <div class="settings-option url-option">
+                <span class="settings-label">Países de Origen Excluidos (separados por coma)</span>
+                <input type="text" id="excluded-countries-input" class="settings-input navigable" tabindex="0" placeholder="Ej: India, Turquía, Corea del Sur">
             </div>
             <div class="settings-actions">
                 <button id="settings-clear-cache-btn" class="settings-btn settings-btn-secondary navigable"
@@ -328,6 +337,7 @@
         const heroImg = document.getElementById('hero-img');
         const heroSpinner = document.getElementById('hero-spinner');
         const heroTitle = document.getElementById('hero-title');
+        const heroPlatform = document.getElementById('hero-platform');
         const heroDesc = document.getElementById('hero-desc');
         const heroPagination = document.getElementById('hero-pagination');
         const heroPlayBtn = document.getElementById('hero-play-btn');
@@ -453,7 +463,16 @@
         async function fetchAutocomplete(query) {
             try {
                 const data = await window.tmdb.fetch('/search/multi', { query, language: 'es-MX', page: 1, include_adult: false });
-                const results = (data.results || []).filter(item => ['movie', 'tv', 'person'].includes(item.media_type)).slice(0, 8);
+                const results = (data.results || []).filter(item => {
+                    if (!['movie', 'tv', 'person'].includes(item.media_type)) return false;
+                    if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function' && window.tmdb.isGenreExcluded(item)) {
+                        return false;
+                    }
+                    if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function' && window.tmdb.isCountryExcluded(item)) {
+                        return false;
+                    }
+                    return true;
+                }).slice(0, 8);
                 renderAutocomplete(results);
             } catch (error) {
                 console.error('Error fetching autocomplete:', error);
@@ -577,6 +596,13 @@
                     }
                 }
 
+                if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function' && window.tmdb.isGenreExcluded(item)) {
+                    return null; // Omitir géneros excluidos
+                }
+                if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function' && window.tmdb.isCountryExcluded(item)) {
+                    return null; // Omitir países excluidos
+                }
+
                 return {
                     id, tmdbId: item.id,
                     l: item.title || item.name,
@@ -586,6 +612,7 @@
                     y: item.release_date?.substring(0, 4) || item.first_air_date?.substring(0, 4) || '',
                     releaseDate: item.release_date || item.first_air_date || '',
                     digitalReleaseDate: details.digitalReleaseDate || '',
+                    platform: details.platform || '',
                     qid: type,
                     i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
                     rating: item.vote_average?.toFixed(1) || 'N/A',
@@ -621,12 +648,16 @@
                     const isMovieOrTV = ['movie', 'tv'].includes(item.media_type);
                     const hasPoster = !!item.poster_path;
                     const hasRating = item.vote_average > 0;
-                    const genres = item.genre_ids || [];
-                    const isIrrelevantGenre = genres.includes(10767) || genres.includes(10763);
+                    const isExcludedGenre = window.tmdb && typeof window.tmdb.isGenreExcluded === 'function'
+                        ? window.tmdb.isGenreExcluded(item)
+                        : (item.genre_ids || []).some(id => [10767, 10763].includes(id));
+                    const isExcludedCountry = window.tmdb && typeof window.tmdb.isCountryExcluded === 'function'
+                        ? window.tmdb.isCountryExcluded(item)
+                        : false;
                     const character = (item.character || '').toLowerCase();
                     const isHimself = character.includes('himself') || character.includes('herself') || character.includes('self');
 
-                    return isMovieOrTV && hasPoster && hasRating && !isIrrelevantGenre && !isHimself;
+                    return isMovieOrTV && hasPoster && hasRating && !isExcludedGenre && !isExcludedCountry && !isHimself;
                 });
 
                 // Remove duplicates and sort by relevance
@@ -788,7 +819,7 @@
 
             loadHistory();
 
-            const cacheKey = `trending${type.charAt(0).toUpperCase() + type.slice(1)}Cache_v1`;
+            const cacheKey = `trending${type.charAt(0).toUpperCase() + type.slice(1)}Cache_v2`;
             const cacheTimeKey = `${cacheKey}Time`;
 
             // Check cache
@@ -836,7 +867,16 @@
 
                     if (results.length === 0) break;
 
-                    results = results.filter(item => item.poster_path && item.vote_average > 0);
+                    results = results.filter(item => {
+                        if (!item.poster_path || item.vote_average <= 0) return false;
+                        if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function' && window.tmdb.isGenreExcluded(item)) {
+                            return false;
+                        }
+                        if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function' && window.tmdb.isCountryExcluded(item)) {
+                            return false;
+                        }
+                        return true;
+                    });
 
                     for (let i = 0; i < results.length && validContent.length < 10; i += 5) {
                         const batch = results.slice(i, i + 5);
@@ -856,6 +896,7 @@
                                     y: item.release_date?.substring(0, 4) || item.first_air_date?.substring(0, 4) || '',
                                     releaseDate: item.release_date || item.first_air_date || '',
                                     digitalReleaseDate: details.digitalReleaseDate || '',
+                                    platform: details.platform || '',
                                     qid: type === 'movies' ? 'movie' : 'tvSeries',
                                     i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
                                     rating: item.vote_average?.toFixed(1) || 'N/A',
@@ -929,7 +970,16 @@
                         if (results.length === 0) break;
                     }
 
-                    results = results.filter(item => item.poster_path && item.vote_average > 0);
+                    results = results.filter(item => {
+                        if (!item.poster_path || item.vote_average <= 0) return false;
+                        if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function' && window.tmdb.isGenreExcluded(item)) {
+                            return false;
+                        }
+                        if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function' && window.tmdb.isCountryExcluded(item)) {
+                            return false;
+                        }
+                        return true;
+                    });
 
                     for (let i = 0; i < results.length && validContent.length < targetCount; i += 5) {
                         const batch = results.slice(i, i + 5);
@@ -948,6 +998,7 @@
                                     y: item.release_date?.substring(0, 4) || '',
                                     releaseDate: item.release_date || '',
                                     digitalReleaseDate: details.digitalReleaseDate || '',
+                                    platform: details.platform || '',
                                     qid: 'movie',
                                     i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
                                     rating: item.vote_average?.toFixed(1) || 'N/A',
@@ -968,8 +1019,8 @@
 
                 trendingCache['movies'] = validContent;
                 try {
-                    localStorage.setItem('trendingMoviesCache_v1', JSON.stringify(validContent));
-                    localStorage.setItem('trendingMoviesCache_v1Time', Date.now().toString());
+                    localStorage.setItem('trendingMoviesCache_v2', JSON.stringify(validContent));
+                    localStorage.setItem('trendingMoviesCache_v2Time', Date.now().toString());
                 } catch (e) {
                     console.warn('Storage error', e);
                 }
@@ -1008,7 +1059,16 @@
                     let results = data.results || [];
                     if (results.length === 0) break;
 
-                    results = results.filter(item => item.poster_path && item.vote_average > 0);
+                    results = results.filter(item => {
+                        if (!item.poster_path || item.vote_average <= 0) return false;
+                        if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function' && window.tmdb.isGenreExcluded(item)) {
+                            return false;
+                        }
+                        if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function' && window.tmdb.isCountryExcluded(item)) {
+                            return false;
+                        }
+                        return true;
+                    });
 
                     for (let i = 0; i < results.length && validContent.length < targetCount; i += 5) {
                         const batch = results.slice(i, i + 5);
@@ -1027,6 +1087,7 @@
                                     y: item.first_air_date?.substring(0, 4) || '',
                                     releaseDate: item.first_air_date || '',
                                     digitalReleaseDate: details.digitalReleaseDate || '',
+                                    platform: details.platform || '',
                                     qid: 'tvSeries',
                                     i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
                                     rating: item.vote_average?.toFixed(1) || 'N/A',
@@ -1047,8 +1108,8 @@
 
                 trendingCache['series'] = validContent;
                 try {
-                    localStorage.setItem('trendingSeriesCache_v1', JSON.stringify(validContent));
-                    localStorage.setItem('trendingSeriesCache_v1Time', Date.now().toString());
+                    localStorage.setItem('trendingSeriesCache_v2', JSON.stringify(validContent));
+                    localStorage.setItem('trendingSeriesCache_v2Time', Date.now().toString());
                 } catch (e) {
                     console.warn('Storage error', e);
                 }
@@ -1137,7 +1198,16 @@
 
                 if (data && data.results && data.results.length > 0) {
                     relatedHistorySection.classList.remove('hidden');
-                    let results = data.results.filter(item => item.poster_path).slice(0, 10);
+                    let results = data.results.filter(item => {
+                        if (!item.poster_path) return false;
+                        if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function' && window.tmdb.isGenreExcluded(item)) {
+                            return false;
+                        }
+                        if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function' && window.tmdb.isCountryExcluded(item)) {
+                            return false;
+                        }
+                        return true;
+                    }).slice(0, 10);
 
                     const batchResults = await Promise.all(results.map(async (item) => {
                         const itemType = type === 'tv' ? 'tv' : 'movie';
@@ -1150,6 +1220,7 @@
                             y: item.release_date?.substring(0, 4) || item.first_air_date?.substring(0, 4) || '',
                             releaseDate: item.release_date || item.first_air_date || '',
                             digitalReleaseDate: details.digitalReleaseDate || '',
+                            platform: details.platform || '',
                             qid: type === 'tv' ? 'tvSeries' : 'movie',
                             i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
                             rating: item.vote_average?.toFixed(1) || 'N/A',
@@ -1209,7 +1280,16 @@
                 while (validContent.length < targetCount && page <= 10) {
                     const endpoint = `/${type}/${id}/recommendations`;
                     const data = await window.tmdb.fetch(endpoint, { language: 'es-MX', page });
-                    let results = data && data.results ? data.results.filter(item => item.poster_path) : [];
+                    let results = data && data.results ? data.results.filter(item => {
+                        if (!item.poster_path) return false;
+                        if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function' && window.tmdb.isGenreExcluded(item)) {
+                            return false;
+                        }
+                        if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function' && window.tmdb.isCountryExcluded(item)) {
+                            return false;
+                        }
+                        return true;
+                    }) : [];
                     if (results.length === 0) break;
 
                     const batchResults = await Promise.all(results.map(async (item) => {
@@ -1223,6 +1303,7 @@
                             y: item.release_date?.substring(0, 4) || item.first_air_date?.substring(0, 4) || '',
                             releaseDate: item.release_date || item.first_air_date || '',
                             digitalReleaseDate: details.digitalReleaseDate || '',
+                            platform: details.platform || '',
                             qid: type === 'tv' ? 'tvSeries' : 'movie',
                             i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
                             rating: item.vote_average?.toFixed(1) || 'N/A',
@@ -1287,6 +1368,16 @@
                     const isHidden = HIDDEN_RESOLUTIONS.some(res => badgeText.includes(res));
                     return !isHidden;
                 });
+            }
+
+            // Excluir géneros no deseados en Hero Banner
+            if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function') {
+                candidates = candidates.filter(item => !window.tmdb.isGenreExcluded(item));
+            }
+
+            // Excluir países no deseados en Hero Banner
+            if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function') {
+                candidates = candidates.filter(item => !window.tmdb.isCountryExcluded(item));
             }
 
             if (candidates.length === 0) return;
@@ -1366,6 +1457,15 @@
 
             heroTitle.textContent = item.bannerTitle;
             heroDesc.textContent = item.overview;
+            
+            if (item.platform) {
+                heroPlatform.textContent = item.platform;
+                const platformClass = window.tmdb?.getPlatformClass ? window.tmdb.getPlatformClass(item.platform) : '';
+                heroPlatform.className = `platform-badge ${platformClass}`.trim();
+                heroPlatform.style.display = 'inline-flex';
+            } else {
+                heroPlatform.style.display = 'none';
+            }
 
             heroPlayBtn.onclick = () => {
                 openContentPage(item);
@@ -1475,6 +1575,16 @@
                 });
             }
 
+            // Filtrar géneros excluidos (definidos en Configuración)
+            if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function') {
+                results = results.filter(movie => !window.tmdb.isGenreExcluded(movie));
+            }
+
+            // Filtrar países excluidos (definidos en Configuración)
+            if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function') {
+                results = results.filter(movie => !window.tmdb.isCountryExcluded(movie));
+            }
+
             if (results.length === 0) {
                 if (gridElement === resultsGrid) {
                     gridElement.innerHTML = '<div class="empty-state"><p>No se encontraron resultados.</p></div>';
@@ -1504,12 +1614,15 @@
                 const firstGenreId = (movie.genre_ids || [])[0];
                 const genreBadge = firstGenreId && TMDB_GENRES[firstGenreId]
                     ? `<div class="genre-badge">${TMDB_GENRES[firstGenreId]}</div>` : '';
+                const platformClass = (movie.platform && window.tmdb?.getPlatformClass) ? window.tmdb.getPlatformClass(movie.platform) : '';
+                const platformBadge = movie.platform ? `<div class="platform-badge ${platformClass}">${movie.platform}</div>` : '';
 
                 return `<div class="movie-card navigable${unavailableClass}" tabindex="${index + 3 + tabindexOffset}" data-index="${index}" data-id="${movie.id}" data-type="${type}" data-year="${year}" data-release-date="${movie.releaseDate || ''}" data-release-digital="${movie.digitalReleaseDate || ''}" data-file-name="${movie.file_name || ''}" data-movie-obj='${JSON.stringify(movie).replace(/'/g, "&apos;")}'>
             <div class="type-badge">${typeDisplay}</div>
             ${extraBadges}
             ${verifiedIndicator}
             ${genreBadge}
+            ${platformBadge}
             ${disponibleBadge}
             <img src="${imageUrl}" class="movie-poster" alt="${title}" loading="lazy">
             <div class="movie-info">
@@ -1923,14 +2036,26 @@
         const blockLowResToggle = document.getElementById('block-low-res-toggle');
         const verifyUrlInput = document.getElementById('verify-url-input');
         const playerUrlInput = document.getElementById('player-url-input');
+        const excludedGenresInput = document.getElementById('excluded-genres-input');
+        const excludedCountriesInput = document.getElementById('excluded-countries-input');
         const settingsSaveBtn = document.getElementById('settings-save-btn');
 
         if (settingsBtn && settingsPanel && verifyToggle && blockLowResToggle && verifyUrlInput && playerUrlInput && settingsSaveBtn) {
             // Set initial state
+            const defaultGenres = (window.CONFIG && window.CONFIG.DEFAULT_EXCLUDED_GENRES) || 'Talk Show, Documental';
+            const defaultCountries = (window.CONFIG && window.CONFIG.DEFAULT_EXCLUDED_COUNTRIES) || 'India';
             verifyToggle.checked = VERIFY_DISPONIBILIDAD;
             blockLowResToggle.checked = BLOCK_LOW_RES;
             verifyUrlInput.value = VERIFY_API_URL;
             playerUrlInput.value = PLAYER_URL;
+            if (excludedGenresInput) {
+                const savedGenres = localStorage.getItem('excluded_genres');
+                excludedGenresInput.value = savedGenres !== null ? savedGenres : defaultGenres;
+            }
+            if (excludedCountriesInput) {
+                const savedCountries = localStorage.getItem('excluded_countries');
+                excludedCountriesInput.value = savedCountries !== null ? savedCountries : defaultCountries;
+            }
 
             // Toggle panel visibility
             settingsBtn.addEventListener('click', () => {
@@ -1940,6 +2065,14 @@
                     blockLowResToggle.checked = BLOCK_LOW_RES;
                     verifyUrlInput.value = VERIFY_API_URL;
                     playerUrlInput.value = PLAYER_URL;
+                    if (excludedGenresInput) {
+                        const savedGenres = localStorage.getItem('excluded_genres');
+                        excludedGenresInput.value = savedGenres !== null ? savedGenres : defaultGenres;
+                    }
+                    if (excludedCountriesInput) {
+                        const savedCountries = localStorage.getItem('excluded_countries');
+                        excludedCountriesInput.value = savedCountries !== null ? savedCountries : defaultCountries;
+                    }
                 }
                 settingsPanel.classList.toggle('hidden');
                 if (wasHidden) {
@@ -1987,10 +2120,10 @@
             const settingsClearCacheBtn = document.getElementById('settings-clear-cache-btn');
             if (settingsClearCacheBtn) {
                 settingsClearCacheBtn.addEventListener('click', () => {
-                    localStorage.removeItem('trendingMoviesCache_v1');
-                    localStorage.removeItem('trendingMoviesCache_v1Time');
-                    localStorage.removeItem('trendingSeriesCache_v1');
-                    localStorage.removeItem('trendingSeriesCache_v1Time');
+                    localStorage.removeItem('trendingMoviesCache_v2');
+                    localStorage.removeItem('trendingMoviesCache_v2Time');
+                    localStorage.removeItem('trendingSeriesCache_v2');
+                    localStorage.removeItem('trendingSeriesCache_v2Time');
                     clearHistory();
                     movieInput.focus();
                     window.location.href = window.location.pathname;
@@ -2005,6 +2138,14 @@
                     blockLowResToggle.checked = BLOCK_LOW_RES;
                     verifyUrlInput.value = VERIFY_API_URL;
                     playerUrlInput.value = PLAYER_URL;
+                    if (excludedGenresInput) {
+                        const savedGenres = localStorage.getItem('excluded_genres');
+                        excludedGenresInput.value = savedGenres !== null ? savedGenres : defaultGenres;
+                    }
+                    if (excludedCountriesInput) {
+                        const savedCountries = localStorage.getItem('excluded_countries');
+                        excludedCountriesInput.value = savedCountries !== null ? savedCountries : defaultCountries;
+                    }
                     settingsPanel.classList.add('hidden');
                 });
             }
@@ -2014,10 +2155,14 @@
                 const cfg = window.CONFIG || {};
                 const newVerifyUrl = verifyUrlInput.value.trim() || cfg.DEFAULT_VERIFY_API_URL || 'https://streamdata.vaplayer.ru/api.php';
                 const newPlayerUrl = playerUrlInput.value.trim().replace(/\/$/, '') || cfg.DEFAULT_PLAYER_URL || 'https://vaplayer.ru';
+                const newExcludedGenres = excludedGenresInput ? excludedGenresInput.value.trim() : (cfg.DEFAULT_EXCLUDED_GENRES || 'Talk Show, Documental');
+                const newExcludedCountries = excludedCountriesInput ? excludedCountriesInput.value.trim() : (cfg.DEFAULT_EXCLUDED_COUNTRIES || 'India');
                 localStorage.setItem('verify_api_url', newVerifyUrl);
                 localStorage.setItem('player_url', newPlayerUrl);
                 localStorage.setItem('verify_disponibilidad', verifyToggle.checked ? 'true' : 'false');
                 localStorage.setItem('block_low_res', blockLowResToggle.checked ? 'true' : 'false');
+                localStorage.setItem('excluded_genres', newExcludedGenres);
+                localStorage.setItem('excluded_countries', newExcludedCountries);
 
                 VERIFY_API_URL = newVerifyUrl;
                 PLAYER_URL = newPlayerUrl;
@@ -2032,10 +2177,13 @@
                 showLoading();
 
                 // Clear trending caches
-                localStorage.removeItem('trendingMoviesCache_v1');
-                localStorage.removeItem('trendingMoviesCache_v1Time');
-                localStorage.removeItem('trendingSeriesCache_v1');
-                localStorage.removeItem('trendingSeriesCache_v1Time');
+                localStorage.removeItem('trendingMoviesCache_v2');
+                localStorage.removeItem('trendingMoviesCache_v2Time');
+                localStorage.removeItem('trendingSeriesCache_v2');
+                localStorage.removeItem('trendingSeriesCache_v2Time');
+                trendingCache.movies = null;
+                trendingCache.series = null;
+                trendingCache.related = null;
 
                 // Re-validate history
                 let history = typeof obtenerRecientes === 'function'
