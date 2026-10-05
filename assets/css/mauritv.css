@@ -1389,6 +1389,54 @@ button#clear-btn.hidden {
     margin-right: 0;
 }
 
+/* Tarjetas Rectangulares de Plataformas (Carousel Home) */
+.platform-card {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    flex: 0 0 190px !important;
+    min-width: 190px !important;
+    height: 85px !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    padding: 0 16px !important;
+    font-size: 1.05rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.8px !important;
+    text-transform: none !important;
+    scroll-snap-align: start !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+    transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.25s ease, border-color 0.25s ease !important;
+    user-select: none !important;
+}
+
+.platform-card .platform-card-icon {
+    font-size: 1.6rem;
+    opacity: 0.9;
+}
+
+.platform-card .platform-card-name {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.platform-card:hover,
+.platform-card:focus,
+.platform-card.selected,
+.platform-card.focused {
+    transform: scale(1.08) translateY(-4px) !important;
+    outline: none !important;
+    border-color: #ffffff !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6), var(--focus-shadow) !important;
+    z-index: 10 !important;
+}
+
 /* Badge Tipo Hero (Película / Serie) */
 .hero-type-badge {
     position: static;

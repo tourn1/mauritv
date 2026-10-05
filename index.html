@@ -196,6 +196,20 @@
 
             <!-- Home Content -->
             <div id="home-content">
+                <div id="platforms-section" style="margin-bottom: 2.5rem;">
+                    <h2 class="section-title">Plataformas</h2>
+                    <div class="carousel-container">
+                        <button class="carousel-btn prev-btn navigable" id="platforms-prev-btn" aria-label="Anterior" tabindex="0">
+                            <span class="material-icons">chevron_left</span>
+                        </button>
+                        <div id="platforms-grid" class="carousel-track platforms-track">
+                        </div>
+                        <button class="carousel-btn next-btn navigable" id="platforms-next-btn" aria-label="Siguiente" tabindex="0">
+                            <span class="material-icons">chevron_right</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div id="movies-section" style="margin-bottom: 2.5rem;">
                     <h2 class="section-title">Top 10 Películas</h2>
                     <div class="carousel-container">
@@ -1728,9 +1742,47 @@
             setTimeout(updateArrows, 300);
         }
 
+        // ========== PLATFORMS CAROUSEL ==========
+        const PLATFORMS_DATA = [
+            { id: '8', networkId: '213', name: 'Netflix', class: 'platform-netflix', icon: 'smart_display' },
+            { id: '337', networkId: '2739', name: 'Disney+', class: 'platform-disney', icon: 'movie_filter' },
+            { id: '1899', networkId: '49', name: 'Max', class: 'platform-max', icon: 'tv' },
+            { id: '119', networkId: '1024', name: 'Prime Video', class: 'platform-prime', icon: 'play_circle' },
+            { id: '15', networkId: '453', name: 'Hulu', class: 'platform-hulu', icon: 'subscriptions' },
+            { id: '350', networkId: '2552', name: 'Apple TV+', class: 'platform-apple', icon: 'desktop_windows' },
+            { id: '531', networkId: '4330', name: 'Paramount+', class: 'platform-paramount', icon: 'star' },
+            { id: '619', networkId: '1709', name: 'Star+', class: 'platform-star', icon: 'auto_awesome' },
+            { id: '386', networkId: '3353', name: 'Peacock', class: 'platform-peacock', icon: 'live_tv' },
+            { id: '283', networkId: '1112', name: 'Crunchyroll', class: 'platform-crunchyroll', icon: 'animation' }
+        ];
+
+        function renderPlatforms() {
+            const grid = document.getElementById('platforms-grid');
+            if (!grid) return;
+
+            grid.innerHTML = PLATFORMS_DATA.map((platform, index) => {
+                return `<div class="platform-card navigable platform-badge ${platform.class}" tabindex="${index + 10}" data-platform-id="${platform.id}" data-platform-name="${platform.name}" role="button" aria-label="${platform.name}">
+                    <span class="material-icons platform-card-icon">${platform.icon}</span>
+                    <span class="platform-card-name">${platform.name}</span>
+                </div>`;
+            }).join('');
+
+            grid.addEventListener('click', (e) => {
+                const card = e.target.closest('.platform-card');
+                if (card) {
+                    const id = card.dataset.platformId;
+                    const name = card.dataset.platformName;
+                    window.location.href = `list.html?platform_id=${encodeURIComponent(id)}&platform_name=${encodeURIComponent(name)}`;
+                }
+            });
+
+            setupCarousel('platforms-section');
+        }
+
         // ========== INITIALIZATION ==========
-        /** Initialize page — si hay parámetros de búsqueda/persona, redirigir a list.html */
+        /** Initialize page — si hay parámetros de búsqueda/persona/plataforma, redirigir a list.html */
         window.onload = () => {
+            renderPlatforms();
             setupCarousel('movies-section');
             setupCarousel('series-section');
             setupCarousel('related-history-section');
@@ -1738,10 +1790,16 @@
             const params = new URLSearchParams(window.location.search);
             const personId = params.get('person_id');
             const personName = params.get('person_name');
+            const platformId = params.get('platform_id');
+            const platformName = params.get('platform_name') || params.get('platform');
             const q = params.get('q');
 
             if (personId && personName) {
                 window.location.href = `list.html?person_id=${encodeURIComponent(personId)}&person_name=${encodeURIComponent(personName)}`;
+                return;
+            }
+            if (platformId || platformName) {
+                window.location.href = `list.html?platform_id=${encodeURIComponent(platformId || '')}&platform_name=${encodeURIComponent(platformName || '')}`;
                 return;
             }
             if (q) {

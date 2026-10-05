@@ -173,6 +173,66 @@ class TMDb {
         return this.fetch(`/person/${personId}/combined_credits`, { language });
     }
 
+    // ========== PLATAFORMAS ==========
+
+    /**
+     * Obtiene el contenido (películas y series) filtrado por plataforma / proveedor.
+     * @param {string|number} platformId  ID de proveedor en TMDB (watch_provider)
+     * @param {string|number} networkId   ID de cadena/red en TMDB (network)
+     * @param {number} page
+     * @param {string} language
+     * @returns {Promise<{movies: Array, tv: Array}>}
+     */
+    async getPlatformContent(platformId, networkId = null, page = 1, language = 'es-MX') {
+        const fetchMovies = async () => {
+            if (!platformId) return [];
+            const paramsWithRegion = { language, page, sort_by: 'primary_release_date.desc', include_adult: false, with_watch_providers: platformId, watch_region: 'MX' };
+            const resWithRegion = await this.fetch('/discover/movie', paramsWithRegion).catch(() => ({ results: [] }));
+            if (resWithRegion.results && resWithRegion.results.length > 0) {
+                return resWithRegion.results;
+            }
+            const paramsNoRegion = { language, page, sort_by: 'primary_release_date.desc', include_adult: false, with_watch_providers: platformId };
+            const resNoRegion = await this.fetch('/discover/movie', paramsNoRegion).catch(() => ({ results: [] }));
+            return resNoRegion.results || [];
+        };
+
+        const fetchTv = async () => {
+            let results = [];
+            if (networkId) {
+                const paramsNet = { language, page, sort_by: 'first_air_date.desc', include_adult: false, with_networks: networkId };
+                const resNet = await this.fetch('/discover/tv', paramsNet).catch(() => ({ results: [] }));
+                results = resNet.results || [];
+            }
+            if (results.length === 0 && platformId) {
+                const paramsProvRegion = { language, page, sort_by: 'first_air_date.desc', include_adult: false, with_watch_providers: platformId, watch_region: 'MX' };
+                const resProvRegion = await this.fetch('/discover/tv', paramsProvRegion).catch(() => ({ results: [] }));
+                if (resProvRegion.results && resProvRegion.results.length > 0) {
+                    results = resProvRegion.results;
+                } else {
+                    const paramsProvNoRegion = { language, page, sort_by: 'first_air_date.desc', include_adult: false, with_watch_providers: platformId };
+                    const resProvNoRegion = await this.fetch('/discover/tv', paramsProvNoRegion).catch(() => ({ results: [] }));
+                    results = resProvNoRegion.results || [];
+                }
+            }
+            return results;
+        };
+
+        const [movies, tv] = await Promise.all([fetchMovies(), fetchTv()]);
+
+        return {
+            movies: movies.map(item => ({ ...item, media_type: 'movie' })),
+            tv: tv.map(item => ({ ...item, media_type: 'tv' }))
+        };
+    }
+
+    /**
+     * Busca películas y series de una plataforma específica.
+     * Alias de getPlatformContent.
+     */
+    async findByPlatform(platformId, networkId = null, page = 1, language = 'es-MX') {
+        return this.getPlatformContent(platformId, networkId, page, language);
+    }
+
     // ========== HELPERS DE IMÁGENES ==========
 
     /**

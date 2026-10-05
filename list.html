@@ -191,9 +191,57 @@
         let currentSearchTotalPages = 1;
         let currentPersonAllResults = [];
         let currentPersonOffset = 0;
-        let currentSearchMode = 'query'; // 'query' | 'person'
+        let currentPlatformAllResults = [];
+        let currentPlatformOffset = 0;
+        let currentPlatformId = null;
+        let currentNetworkId = null;
+        let currentPlatformPage = 1;
+        let currentSearchMode = 'query'; // 'query' | 'person' | 'platform'
         const SEARCH_PAGE_SIZE = 15;
         const PERSON_PAGE_SIZE = 20;
+
+        // ========== PLATFORM MAP ==========
+        const PLATFORM_MAP = {
+            '8': { id: '8', networkId: '213', name: 'Netflix' },
+            '213': { id: '8', networkId: '213', name: 'Netflix' },
+            'netflix': { id: '8', networkId: '213', name: 'Netflix' },
+            '337': { id: '337', networkId: '2739', name: 'Disney+' },
+            '2739': { id: '337', networkId: '2739', name: 'Disney+' },
+            'disney': { id: '337', networkId: '2739', name: 'Disney+' },
+            'disney+': { id: '337', networkId: '2739', name: 'Disney+' },
+            '1899': { id: '1899', networkId: '49', name: 'Max' },
+            '49': { id: '1899', networkId: '49', name: 'Max' },
+            'max': { id: '1899', networkId: '49', name: 'Max' },
+            'hbo': { id: '1899', networkId: '49', name: 'Max' },
+            'hbo max': { id: '1899', networkId: '49', name: 'Max' },
+            '119': { id: '119', networkId: '1024', name: 'Prime Video' },
+            '1024': { id: '119', networkId: '1024', name: 'Prime Video' },
+            'prime': { id: '119', networkId: '1024', name: 'Prime Video' },
+            'prime video': { id: '119', networkId: '1024', name: 'Prime Video' },
+            'amazon prime': { id: '119', networkId: '1024', name: 'Prime Video' },
+            '15': { id: '15', networkId: '453', name: 'Hulu' },
+            '453': { id: '15', networkId: '453', name: 'Hulu' },
+            'hulu': { id: '15', networkId: '453', name: 'Hulu' },
+            '350': { id: '350', networkId: '2552', name: 'Apple TV+' },
+            '2552': { id: '350', networkId: '2552', name: 'Apple TV+' },
+            'apple': { id: '350', networkId: '2552', name: 'Apple TV+' },
+            'apple tv': { id: '350', networkId: '2552', name: 'Apple TV+' },
+            'apple tv+': { id: '350', networkId: '2552', name: 'Apple TV+' },
+            '531': { id: '531', networkId: '4330', name: 'Paramount+' },
+            '4330': { id: '531', networkId: '4330', name: 'Paramount+' },
+            'paramount': { id: '531', networkId: '4330', name: 'Paramount+' },
+            'paramount+': { id: '531', networkId: '4330', name: 'Paramount+' },
+            '619': { id: '619', networkId: '1709', name: 'Star+' },
+            '1709': { id: '619', networkId: '1709', name: 'Star+' },
+            'star': { id: '619', networkId: '1709', name: 'Star+' },
+            'star+': { id: '619', networkId: '1709', name: 'Star+' },
+            '386': { id: '386', networkId: '3353', name: 'Peacock' },
+            '3353': { id: '386', networkId: '3353', name: 'Peacock' },
+            'peacock': { id: '386', networkId: '3353', name: 'Peacock' },
+            '283': { id: '283', networkId: '1112', name: 'Crunchyroll' },
+            '1112': { id: '283', networkId: '1112', name: 'Crunchyroll' },
+            'crunchyroll': { id: '283', networkId: '1112', name: 'Crunchyroll' }
+        };
 
         // ========== GENRE MAP ==========
         const TMDB_GENRES = {
@@ -449,6 +497,86 @@
             }
         }
 
+        // ========== SEARCH BY PLATFORM ==========
+        async function searchByPlatform(platformId, platformName) {
+            showLoading();
+            currentSearchMode = 'platform';
+            currentPlatformAllResults = [];
+            currentPlatformOffset = 0;
+            currentPlatformPage = 1;
+            if (searchLoadMoreContainer) searchLoadMoreContainer.classList.add('hidden');
+
+            const key = String(platformId || platformName || '').toLowerCase().trim();
+            const matched = PLATFORM_MAP[key] || { id: platformId, networkId: null, name: platformName || platformId };
+
+            const displayName = matched.name || platformName || 'Plataforma';
+            currentPlatformId = matched.id;
+            currentNetworkId = matched.networkId;
+
+            if (sectionTitle) {
+                sectionTitle.textContent = `Contenido en ${displayName}`;
+                sectionTitle.style.display = '';
+            }
+
+            try {
+                const [p1, p2] = await Promise.all([
+                    window.tmdb.findByPlatform(currentPlatformId, currentNetworkId, 1),
+                    window.tmdb.findByPlatform(currentPlatformId, currentNetworkId, 2)
+                ]);
+
+                let items = [...(p1.movies || []), ...(p1.tv || []), ...(p2.movies || []), ...(p2.tv || [])];
+
+                items = items.filter(item => {
+                    const isMovieOrTV = ['movie', 'tv'].includes(item.media_type);
+                    const hasPoster = !!item.poster_path;
+                    const hasRating = item.vote_average > 0;
+                    const isExcludedGenre = window.tmdb && typeof window.tmdb.isGenreExcluded === 'function'
+                        ? window.tmdb.isGenreExcluded(item)
+                        : (item.genre_ids || []).some(id => [10767, 10763].includes(id));
+                    const isExcludedCountry = window.tmdb && typeof window.tmdb.isCountryExcluded === 'function'
+                        ? window.tmdb.isCountryExcluded(item)
+                        : false;
+                    return isMovieOrTV && hasPoster && hasRating && !isExcludedGenre && !isExcludedCountry;
+                });
+
+                const seen = new Set();
+                const unique = items.filter(item => {
+                    const itemKey = `${item.media_type}-${item.id}`;
+                    if (seen.has(itemKey)) return false;
+                    seen.add(itemKey);
+                    return true;
+                });
+
+                unique.sort((a, b) => {
+                    const dateA = a.release_date || a.first_air_date || a.primary_release_date || '';
+                    const dateB = b.release_date || b.first_air_date || b.primary_release_date || '';
+                    if (!dateA && !dateB) return 0;
+                    if (!dateA) return 1;
+                    if (!dateB) return -1;
+                    return dateB.localeCompare(dateA);
+                });
+
+                currentPlatformAllResults = unique;
+                currentPlatformOffset = 0;
+                currentPlatformPage = 2;
+
+                const firstBatch = unique.slice(0, PERSON_PAGE_SIZE);
+                currentPlatformOffset = firstBatch.length;
+                currentResults = await mapTMDBResults(firstBatch);
+                renderToGrid(currentResults, resultsGrid, 0);
+
+                if ((currentPlatformOffset < currentPlatformAllResults.length || currentPlatformPage < 10) && searchLoadMoreContainer) {
+                    searchLoadMoreContainer.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error al buscar por plataforma:', error);
+                resultsGrid.innerHTML = '<div class="empty-state"><p>Error al buscar contenido de esta plataforma.</p></div>';
+            }
+        }
+
+        // Alias para findByPlatform
+        const findByPlatform = searchByPlatform;
+
         // ========== LOAD MORE ==========
         async function loadMoreResults() {
             if (!searchLoadMoreContainer) return;
@@ -484,6 +612,37 @@
                         currentResults = currentResults.concat(newMapped);
                     }
                     if (currentPersonOffset >= currentPersonAllResults.length || nextBatch.length === 0) {
+                        searchLoadMoreContainer.classList.add('hidden');
+                    }
+                } else if (currentSearchMode === 'platform') {
+                    if (currentPlatformOffset >= currentPlatformAllResults.length && currentPlatformPage < 10) {
+                        currentPlatformPage++;
+                        const nextData = await window.tmdb.findByPlatform(currentPlatformId, currentNetworkId, currentPlatformPage);
+                        let newItems = [...(nextData.movies || []), ...(nextData.tv || [])].filter(item => {
+                            const isMovieOrTV = ['movie', 'tv'].includes(item.media_type);
+                            const hasPoster = !!item.poster_path;
+                            const hasRating = item.vote_average > 0;
+                            const isExcludedGenre = window.tmdb && typeof window.tmdb.isGenreExcluded === 'function'
+                                ? window.tmdb.isGenreExcluded(item)
+                                : false;
+                            const isExcludedCountry = window.tmdb && typeof window.tmdb.isCountryExcluded === 'function'
+                                ? window.tmdb.isCountryExcluded(item)
+                                : false;
+                            return isMovieOrTV && hasPoster && hasRating && !isExcludedGenre && !isExcludedCountry;
+                        });
+                        const existingKeys = new Set(currentPlatformAllResults.map(i => `${i.media_type}-${i.id}`));
+                        const uniqueNew = newItems.filter(i => !existingKeys.has(`${i.media_type}-${i.id}`));
+                        currentPlatformAllResults = currentPlatformAllResults.concat(uniqueNew);
+                    }
+
+                    const nextBatch = currentPlatformAllResults.slice(currentPlatformOffset, currentPlatformOffset + PERSON_PAGE_SIZE);
+                    currentPlatformOffset += nextBatch.length;
+                    if (nextBatch.length > 0) {
+                        const newMapped = await mapTMDBResults(nextBatch);
+                        appendToGrid(newMapped);
+                        currentResults = currentResults.concat(newMapped);
+                    }
+                    if (currentPlatformOffset >= currentPlatformAllResults.length && currentPlatformPage >= 10 && searchLoadMoreContainer) {
                         searchLoadMoreContainer.classList.add('hidden');
                     }
                 }
@@ -896,7 +1055,10 @@
                     const q = params.get('q');
                     const personId = params.get('person_id');
                     const personName = params.get('person_name');
+                    const platformId = params.get('platform_id');
+                    const platformName = params.get('platform_name') || params.get('platform');
                     if (personId && personName) searchByPerson(personId, personName);
+                    else if (platformId || platformName) searchByPlatform(platformId, platformName);
                     else if (q) searchMovies(q);
                 });
             }
@@ -908,11 +1070,17 @@
             const q = params.get('q');
             const personId = params.get('person_id');
             const personName = params.get('person_name');
+            const platformId = params.get('platform_id');
+            const platformName = params.get('platform_name') || params.get('platform');
 
             if (personId && personName) {
                 movieInput.value = personName;
                 clearBtn.classList.remove('hidden');
                 searchByPerson(personId, personName);
+            } else if (platformId || platformName) {
+                movieInput.value = platformName || platformId;
+                clearBtn.classList.remove('hidden');
+                searchByPlatform(platformId, platformName);
             } else if (q) {
                 movieInput.value = q;
                 clearBtn.classList.remove('hidden');
