@@ -55,7 +55,10 @@ body {
     pointer-events: none;
 }
 
-#search-section {
+#app>main>*,
+#search-section,
+#list-section,
+.results-grid {
     pointer-events: auto;
 }
 
@@ -224,6 +227,73 @@ body {
     outline: none !important;
     box-shadow: var(--focus-shadow) !important;
 }
+
+/* Hero Banner Nav Buttons */
+.hero-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    width: 57px;
+    height: 57px;
+    border-radius: 50%;
+    background: rgba(20, 20, 20, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-primary, #ffffff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+}
+
+.hero-btn.prev-btn {
+    left: 2rem;
+}
+
+.hero-btn.next-btn {
+    right: 2rem;
+}
+
+.hero-btn span.material-icons {
+    font-size: 36px;
+    line-height: 1;
+    user-select: none;
+}
+
+.hero-btn:hover,
+.hero-btn:focus,
+.hero-btn.selected {
+    background: var(--accent-color, #e50914);
+    border-color: #ffffff;
+    color: #ffffff;
+    transform: translateY(-50%) scale(1.15);
+    box-shadow: var(--focus-glow) !important;
+    outline: none !important;
+}
+
+@media (max-width: 768px) {
+    .hero-btn {
+        width: 44px;
+        height: 44px;
+    }
+
+    .hero-btn.prev-btn {
+        left: 0.8rem;
+    }
+
+    .hero-btn.next-btn {
+        right: 0.8rem;
+    }
+
+    .hero-btn span.material-icons {
+        font-size: 28px;
+    }
+}
+
 
 #home-content {
     margin-top: 75vh;

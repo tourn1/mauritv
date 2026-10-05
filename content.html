@@ -90,12 +90,14 @@
                 }
             }
 
-            prevBtn.addEventListener('click', () => {
+            prevBtn.addEventListener('click', (e) => {
                 track.scrollBy({ left: -track.clientWidth, behavior: 'smooth' });
+                e.currentTarget.blur();
             });
 
-            nextBtn.addEventListener('click', () => {
+            nextBtn.addEventListener('click', (e) => {
                 track.scrollBy({ left: track.clientWidth, behavior: 'smooth' });
+                e.currentTarget.blur();
             });
 
             track.addEventListener('scroll', () => {
@@ -458,7 +460,7 @@
                         directorSection += `
                             <div class="person-list">
                                 <div class="person-item">
-                                    <a href="index.html?person_id=${dirObj.id}&person_name=${encodeURIComponent(dirObj.name)}" class="person-link navigable person-photo-link" tabindex="0" aria-label="${dirObj.name}">
+                                    <a href="list.html?person_id=${dirObj.id}&person_name=${encodeURIComponent(dirObj.name)}" class="person-link navigable person-photo-link" tabindex="0" aria-label="${dirObj.name}">
                                         <img src="${img}" alt="${dirObj.name}" class="person-photo" loading="lazy" onerror="this.onerror=null;this.src=placeholderProfile;">
                                     </a>
                                     <div class="person-name">${dirObj.name}</div>
@@ -470,7 +472,7 @@
                             const img = c.profile_path ? `${profileBase}${c.profile_path}` : placeholderProfile;
                             return `
                                 <div class="person-item">
-                                    <a href="index.html?person_id=${c.id}&person_name=${encodeURIComponent(c.name)}" class="person-link navigable person-photo-link" tabindex="0" aria-label="${c.name}">
+                                    <a href="list.html?person_id=${c.id}&person_name=${encodeURIComponent(c.name)}" class="person-link navigable person-photo-link" tabindex="0" aria-label="${c.name}">
                                         <img src="${img}" alt="${c.name}" class="person-photo" loading="lazy" onerror="this.onerror=null;this.src=placeholderProfile;">
                                     </a>
                                     <div class="person-name">${c.name}</div>
@@ -489,7 +491,7 @@
                         const img = c.profile_path ? `${profileBase}${c.profile_path}` : placeholderProfile;
                         castSection += `
                             <div class="person-item">
-                                <a href="index.html?person_id=${c.id}&person_name=${encodeURIComponent(c.name)}" class="person-link navigable person-photo-link" tabindex="0" aria-label="${c.name}">
+                                <a href="list.html?person_id=${c.id}&person_name=${encodeURIComponent(c.name)}" class="person-link navigable person-photo-link" tabindex="0" aria-label="${c.name}">
                                     <img src="${img}" alt="${c.name}" class="person-photo" loading="lazy" onerror="this.onerror=null;this.src=placeholderProfile;">
                                 </a>
                                 <div class="person-name">${c.name}</div>

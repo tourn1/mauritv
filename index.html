@@ -34,6 +34,12 @@
             <div id="hero-spinner" class="hero-spinner hidden"></div>
             <div class="hero-vignette"></div>
         </div>
+        <button class="hero-btn prev-btn navigable" id="hero-prev-btn" aria-label="Anterior" tabindex="0">
+            <span class="material-icons">chevron_left</span>
+        </button>
+        <button class="hero-btn next-btn navigable" id="hero-next-btn" aria-label="Siguiente" tabindex="0">
+            <span class="material-icons">chevron_right</span>
+        </button>
         <div class="hero-content">
             <div id="hero-platform" class="platform-badge" style="display:none; margin-bottom: 10px; width: fit-content;"></div>
             <h1 id="hero-title"></h1>
@@ -184,26 +190,6 @@
         </div>
 
         <main>
-            <!-- Search Results Section -->
-            <div id="search-section" class="hidden">
-                <div style="margin-bottom: 1.5rem; text-align: left;">
-                    <a href="index.html" class="navigable back-btn" tabindex="0">
-                        <span class="material-icons">arrow_back</span> Atrás
-                    </a>
-                </div>
-                <h2 id="section-title" class="section-title" style="display:none;">Resultados de búsqueda</h2>
-                <div id="results-grid" class="results-grid">
-                    <div class="empty-state">
-                        <p>Buscando...</p>
-                    </div>
-                </div>
-                <div id="search-load-more-container" class="search-load-more-container hidden">
-                    <button id="search-load-more-btn" class="search-load-more-btn navigable" tabindex="0" onclick="loadMoreSearchResults()">
-                        <span class="material-icons">expand_more</span>
-                        <span>Mostrar más</span>
-                    </button>
-                </div>
-            </div>
 
             <!-- Home Content -->
             <div id="home-content">
@@ -314,20 +300,17 @@
         const movieInput = document.getElementById('movie-input');
         const micBtn = document.getElementById('mic-btn');
         const clearBtn = document.getElementById('clear-btn');
-        const resultsGrid = document.getElementById('results-grid');
         const voiceIndicator = document.getElementById('voice-indicator');
         const logoContainer = document.getElementById('logo-container');
         const logoNavWrapper = document.getElementById('logo-nav-wrapper');
         const statusPanel = document.getElementById('status-panel');
         const statusRefreshBtn = document.getElementById('status-refresh-btn');
         const statusCloseBtn = document.getElementById('status-close-btn');
-        const sectionTitle = document.getElementById('section-title');
         const historySection = document.getElementById('history-section');
         const historyGrid = document.getElementById('history-grid');
         const relatedHistorySection = document.getElementById('related-history-section');
         const relatedHistoryGrid = document.getElementById('related-history-grid');
         const autocompleteResults = document.getElementById('autocomplete-results');
-        const searchSection = document.getElementById('search-section');
         const homeContent = document.getElementById('home-content');
         const moviesGrid = document.getElementById('movies-grid');
         const seriesGrid = document.getElementById('series-grid');
@@ -341,6 +324,8 @@
         const heroDesc = document.getElementById('hero-desc');
         const heroPagination = document.getElementById('hero-pagination');
         const heroPlayBtn = document.getElementById('hero-play-btn');
+        const heroPrevBtn = document.getElementById('hero-prev-btn');
+        const heroNextBtn = document.getElementById('hero-next-btn');
 
         // ========== CONFIGURATION ==========
         const HISTORY_KEY = 'movie_history_v1';
@@ -355,22 +340,11 @@
         let PLAYER_URL = localStorage.getItem('player_url') || gCfg.DEFAULT_PLAYER_URL || 'https://vaplayer.ru';
 
         // ========== STATE ==========
-        let debounceTimer, autocompleteDebounceTimer, currentResults = [];
+        let debounceTimer, autocompleteDebounceTimer;
         let trendingCache = { movies: null, series: null, related: null };
         let heroItems = [];
         let currentHeroIndex = 0;
         let heroInterval;
-
-        // Search pagination state
-        let currentSearchQuery = '';
-        let currentSearchPage = 1;
-        let currentSearchTotalPages = 1;
-        let currentPersonAllResults = [];
-        let currentPersonOffset = 0;
-        let currentSearchMode = 'query'; // 'query' | 'person'
-        const SEARCH_PAGE_SIZE = 15;
-        const PERSON_PAGE_SIZE = 20;
-        const searchLoadMoreContainer = document.getElementById('search-load-more-container');
 
 
         // Tab navigation removed - Sequential layout
@@ -453,10 +427,6 @@
             });
         }
 
-        /** Display loading spinner */
-        const showLoading = () => {
-            resultsGrid.innerHTML = `<div class="spinner-container"><div class="spinner"></div><p class="loading-text">Buscando...</p></div>`;
-        };
 
         // ========== SEARCH AUTOCOMPLETE ==========
         /** Fetch autocomplete results from TMDB */
@@ -511,17 +481,18 @@
             });
         }
 
-        /** Handle autocomplete item selection */
+        /** Handle autocomplete item selection → redirige a list.html */
         async function selectAutocompleteItem(element) {
             const { type, id, title } = element.dataset;
             autocompleteResults.classList.add('hidden');
-            movieInput.value = title;
-            clearBtn.classList.remove('hidden');
-
-            type === 'person' ? searchByPerson(id, title) : searchMovies(title);
+            if (type === 'person') {
+                window.location.href = `list.html?person_id=${encodeURIComponent(id)}&person_name=${encodeURIComponent(title)}`;
+            } else {
+                window.location.href = `list.html?q=${encodeURIComponent(title)}`;
+            }
         }
 
-        // Input listener for search and autocomplete
+        // Input listener: muestra autocomplete y redirige a list.html al escribir
         movieInput.addEventListener('input', (e) => {
             clearTimeout(debounceTimer);
             clearTimeout(autocompleteDebounceTimer);
@@ -529,285 +500,41 @@
 
             if (query.length > 0) {
                 clearBtn.classList.remove('hidden');
-                hideLogo();
-                if (homeContent && searchSection) {
-                    homeContent.classList.add('hidden');
-                    searchSection.classList.remove('hidden');
-                }
             } else {
                 clearBtn.classList.add('hidden');
                 autocompleteResults.classList.add('hidden');
-                showLogo();
-                if (homeContent && searchSection) {
-                    homeContent.classList.remove('hidden');
-                    searchSection.classList.add('hidden');
-                }
             }
 
             if (query.length < 2) {
                 autocompleteResults.classList.add('hidden');
-                if (query.length === 0) {
-                    loadTrendingContent('movies');
-                    loadTrendingContent('series');
-                }
                 return;
             }
 
             autocompleteDebounceTimer = setTimeout(() => fetchAutocomplete(query), 300);
         });
 
-        // Clear button listener
+        // Enter en input → navegar a list.html
+        movieInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const q = movieInput.value.trim();
+                if (q.length > 0) {
+                    autocompleteResults.classList.add('hidden');
+                    window.location.href = `list.html?q=${encodeURIComponent(q)}`;
+                }
+            }
+        });
+
+        // Clear button → limpiar y volver al home
         clearBtn.addEventListener('click', () => {
             movieInput.value = '';
             clearBtn.classList.add('hidden');
-            const newUrl = window.location.pathname + window.location.hash;
-            window.history.replaceState(null, '', newUrl);
-            if (homeContent && searchSection) {
-                homeContent.classList.remove('hidden');
-                searchSection.classList.add('hidden');
-            }
-            loadTrendingContent('movies');
-            loadTrendingContent('series');
-            loadHistory();
+            autocompleteResults.classList.add('hidden');
             movieInput.focus();
         });
 
         // ========== TMDB API (provisto por tmdb.js — window.tmdb) ==========
-
-
-        // ========== SEARCH ==========
-        /** Helper to map TMDB results to app format */
-        async function mapTMDBResults(items) {
-            const results = await Promise.all(items.map(async (item) => {
-                const type = item.media_type === 'tv' || item.media_type === 'tvSeries' ? 'tvSeries' : 'movie';
-                const details = await window.tmdb.getExternalIds(item.id, type);
-                const id = details.imdbId || item.id;
-                const validation = await validarPeliculaFinal(id, type);
-
-                if (BLOCK_LOW_RES) {
-                    const badgeText = window.vaPlayer
-                        ? window.vaPlayer.getQualityBadgeText(validation.file_name, validation.resolution, validation.source).toUpperCase()
-                        : (validation.source || '').toUpperCase();
-
-                    const isHidden = HIDDEN_RESOLUTIONS.some(res => badgeText.includes(res));
-
-                    if (isHidden) {
-                        return null; // Omitir calidades/fuentes ocultas
-                    }
-                }
-
-                if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function' && window.tmdb.isGenreExcluded(item)) {
-                    return null; // Omitir géneros excluidos
-                }
-                if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function' && window.tmdb.isCountryExcluded(item)) {
-                    return null; // Omitir países excluidos
-                }
-
-                return {
-                    id, tmdbId: item.id,
-                    l: item.title || item.name,
-                    disponible: validation.disponible,
-                    resolution: validation.resolution, source: validation.source,
-                    file_name: validation.file_name || validation.filename || '',
-                    y: item.release_date?.substring(0, 4) || item.first_air_date?.substring(0, 4) || '',
-                    releaseDate: item.release_date || item.first_air_date || '',
-                    digitalReleaseDate: details.digitalReleaseDate || '',
-                    platform: details.platform || '',
-                    qid: type,
-                    i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
-                    rating: item.vote_average?.toFixed(1) || 'N/A',
-                    genre_ids: item.genre_ids || []
-                };
-            }));
-            return results.filter(item => item !== null);
-        }
-
-        /** Search for person and get their movies/series */
-        async function searchByPerson(personId, personName) {
-            hideLogo();
-            showLoading();
-            if (homeContent && searchSection) {
-                homeContent.classList.add('hidden');
-                searchSection.classList.remove('hidden');
-            }
-            if (heroBanner) {
-                heroBanner.classList.add('hidden');
-            }
-            if (sectionTitle) {
-                sectionTitle.textContent = `Películas y series con ${personName}`;
-                sectionTitle.classList.remove('hidden');
-                sectionTitle.style.display = '';
-            }
-
-            try {
-                const data = await window.tmdb.fetch(`/person/${personId}/combined_credits`, { language: 'es-MX' });
-                let results = (data.cast || []).concat(data.crew || []);
-
-                // Filter relevant content
-                results = results.filter(item => {
-                    const isMovieOrTV = ['movie', 'tv'].includes(item.media_type);
-                    const hasPoster = !!item.poster_path;
-                    const hasRating = item.vote_average > 0;
-                    const isExcludedGenre = window.tmdb && typeof window.tmdb.isGenreExcluded === 'function'
-                        ? window.tmdb.isGenreExcluded(item)
-                        : (item.genre_ids || []).some(id => [10767, 10763].includes(id));
-                    const isExcludedCountry = window.tmdb && typeof window.tmdb.isCountryExcluded === 'function'
-                        ? window.tmdb.isCountryExcluded(item)
-                        : false;
-                    const character = (item.character || '').toLowerCase();
-                    const isHimself = character.includes('himself') || character.includes('herself') || character.includes('self');
-
-                    return isMovieOrTV && hasPoster && hasRating && !isExcludedGenre && !isExcludedCountry && !isHimself;
-                });
-
-                // Remove duplicates and sort by relevance
-                const seen = new Set();
-                const unique = results.filter(item => !seen.has(item.id) && seen.add(item.id));
-                unique.sort((a, b) => {
-                    const scoreA = (a.popularity * 0.3) + (a.vote_count * 0.7) + (a.media_type === 'movie' ? 100 : 0);
-                    const scoreB = (b.popularity * 0.3) + (b.vote_count * 0.7) + (b.media_type === 'movie' ? 100 : 0);
-                    return scoreB - scoreA;
-                });
-
-                // Store all results for local pagination
-                currentPersonAllResults = unique;
-                currentPersonOffset = 0;
-                currentSearchMode = 'person';
-                if (searchLoadMoreContainer) searchLoadMoreContainer.classList.add('hidden');
-
-                const firstBatch = unique.slice(0, PERSON_PAGE_SIZE);
-                currentPersonOffset = firstBatch.length;
-                currentResults = await mapTMDBResults(firstBatch);
-                renderResults(currentResults);
-
-                // Show "Mostrar más" if more remain
-                if (currentPersonOffset < currentPersonAllResults.length && searchLoadMoreContainer) {
-                    searchLoadMoreContainer.classList.remove('hidden');
-                }
-            } catch (error) {
-                console.error('Error searching by person:', error);
-                resultsGrid.innerHTML = '<div class="empty-state"><p>Error al buscar contenido de esta persona.</p></div>';
-            }
-        }
-
-        /** Load more results for search (query or person) */
-        async function loadMoreSearchResults() {
-            if (!searchLoadMoreContainer) return;
-            const btn = document.getElementById('search-load-more-btn');
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<span class="material-icons spin">autorenew</span><span>Cargando...</span>';
-            }
-
-            try {
-                if (currentSearchMode === 'query') {
-                    // Fetch next TMDB page
-                    currentSearchPage++;
-                    const data = await window.tmdb.fetch('/search/multi', {
-                        query: currentSearchQuery, language: 'es-MX',
-                        page: currentSearchPage, include_adult: false
-                    });
-                    let results = (data.results || []).filter(item =>
-                        ['movie', 'tv'].includes(item.media_type) && item.poster_path && item.vote_average > 0
-                    );
-                    if (results.length > 0) {
-                        const newMapped = await mapTMDBResults(results.slice(0, SEARCH_PAGE_SIZE));
-                        renderResults(newMapped, true);
-                        currentResults = currentResults.concat(newMapped);
-                    }
-                    // Hide button if no more pages
-                    if (currentSearchPage >= currentSearchTotalPages || results.length === 0) {
-                        searchLoadMoreContainer.classList.add('hidden');
-                    }
-                } else if (currentSearchMode === 'person') {
-                    // Local pagination of person credits
-                    const nextBatch = currentPersonAllResults.slice(currentPersonOffset, currentPersonOffset + PERSON_PAGE_SIZE);
-                    currentPersonOffset += nextBatch.length;
-                    if (nextBatch.length > 0) {
-                        const newMapped = await mapTMDBResults(nextBatch);
-                        renderResults(newMapped, true);
-                        currentResults = currentResults.concat(newMapped);
-                    }
-                    // Hide button if no more results
-                    if (currentPersonOffset >= currentPersonAllResults.length || nextBatch.length === 0) {
-                        searchLoadMoreContainer.classList.add('hidden');
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading more results:', error);
-            } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = '<span class="material-icons">expand_more</span><span>Mostrar más</span>';
-                }
-            }
-        }
-
-        /** Search for movies/series */
-        async function searchMovies(query) {
-            hideLogo();
-            showLoading();
-            // Reset search pagination state
-            currentSearchQuery = query;
-            currentSearchPage = 1;
-            currentSearchTotalPages = 1;
-            currentSearchMode = 'query';
-            currentPersonAllResults = [];
-            currentPersonOffset = 0;
-            if (searchLoadMoreContainer) searchLoadMoreContainer.classList.add('hidden');
-
-            if (homeContent && searchSection) {
-                homeContent.classList.add('hidden');
-                searchSection.classList.remove('hidden');
-            }
-            if (heroBanner) {
-                heroBanner.classList.add('hidden');
-            }
-            if (sectionTitle) {
-                sectionTitle.textContent = 'Resultados de búsqueda';
-                sectionTitle.classList.remove('hidden');
-                sectionTitle.style.display = '';
-            }
-
-            try {
-                let data = await window.tmdb.fetch('/search/multi', { query, language: 'es-MX', page: 1, include_adult: false });
-                let results = data.results || [];
-                currentSearchTotalPages = data.total_pages || 1;
-
-                // If first result is person with high popularity, show their content
-                if (results.length > 0 && results[0].media_type === 'person' && results[0].popularity > 5) {
-                    searchByPerson(results[0].id, results[0].name);
-                    return;
-                }
-
-                // Fallback to English if no Spanish results
-                if (results.length === 0) {
-                    data = await window.tmdb.fetch('/search/multi', { query, language: 'en-US', page: 1, include_adult: false });
-                    results = data.results || [];
-                    currentSearchTotalPages = data.total_pages || 1;
-                }
-
-                // Filter movies and series with poster and rating
-                results = results.filter(item =>
-                    ['movie', 'tv'].includes(item.media_type) && item.poster_path && item.vote_average > 0
-                );
-
-                if (results.length > 0) {
-                    currentResults = await mapTMDBResults(results.slice(0, SEARCH_PAGE_SIZE));
-                    renderResults(currentResults);
-                    // Show "Mostrar más" if there are more pages
-                    if (currentSearchTotalPages > 1 && searchLoadMoreContainer) {
-                        searchLoadMoreContainer.classList.remove('hidden');
-                    }
-                } else {
-                    resultsGrid.innerHTML = '<div class="empty-state"><p>No se encontraron resultados para esta búsqueda.</p></div>';
-                    showLogo();
-                }
-            } catch (error) {
-                console.error('Error en búsqueda TMDb:', error);
-                resultsGrid.innerHTML = '<div class="empty-state"><p>Error de conexión o API Key inválida.</p></div>';
-            }
-        }
+        // La búsqueda (searchMovies, searchByPerson, mapTMDBResults, loadMoreSearchResults)
+        // fue movida a list.html
 
         // ========== TRENDING & HOME ==========
         /** Load trending movies or series */
@@ -1335,7 +1062,7 @@
         let heroDebounceTimer;
         function triggerHeroBannerBuild() {
             clearTimeout(heroDebounceTimer);
-            if (heroItems.length === 0 && heroBanner && (!searchSection || searchSection.classList.contains('hidden'))) {
+            if (heroItems.length === 0 && heroBanner) {
                 heroBanner.classList.remove('hidden');
                 if (homeContent) homeContent.classList.remove('no-hero');
                 if (heroSpinner) heroSpinner.classList.remove('hidden');
@@ -1413,15 +1140,13 @@
             heroItems = enrichedItems.filter(Boolean);
 
             if (heroItems.length > 0) {
-                if (searchSection && !searchSection.classList.contains('hidden')) {
-                    heroBanner.classList.add('hidden');
-                } else {
-                    heroBanner.classList.remove('hidden');
-                    homeContent.classList.remove('no-hero');
-                }
+                heroBanner.classList.remove('hidden');
+                homeContent.classList.remove('no-hero');
                 createHeroPagination();
                 updateHeroContent(0);
                 startHeroCarousel();
+                if (heroPrevBtn) heroPrevBtn.style.display = heroItems.length > 1 ? 'flex' : 'none';
+                if (heroNextBtn) heroNextBtn.style.display = heroItems.length > 1 ? 'flex' : 'none';
             } else {
                 heroBanner.classList.add('hidden');
                 homeContent.classList.add('no-hero');
@@ -1500,6 +1225,26 @@
             }, { passive: true });
         }
 
+        if (heroPrevBtn) {
+            heroPrevBtn.addEventListener('click', e => {
+                e.stopPropagation();
+                if (heroItems.length === 0) return;
+                let prevIndex = (currentHeroIndex - 1 + heroItems.length) % heroItems.length;
+                updateHeroContent(prevIndex);
+                e.currentTarget.blur();
+            });
+        }
+
+        if (heroNextBtn) {
+            heroNextBtn.addEventListener('click', e => {
+                e.stopPropagation();
+                if (heroItems.length === 0) return;
+                let nextIndex = (currentHeroIndex + 1) % heroItems.length;
+                updateHeroContent(nextIndex);
+                e.currentTarget.blur();
+            });
+        }
+
         function handleHeroSwipe() {
             const swipeThreshold = 50;
             if (heroTouchEndX < heroTouchStartX - swipeThreshold) {
@@ -1545,20 +1290,6 @@
             10765: 'Sci-Fi', 10766: 'Telenovela', 10767: 'Talk Show', 10768: 'Política'
         };
 
-        /** Render results to grid */
-        const renderResults = (results, append = false) => {
-            if (append) {
-                // Append new cards to the existing grid
-                const tempDiv = document.createElement('div');
-                renderToGrid(results, tempDiv, currentResults.length);
-                // Move all children (cards) from tempDiv to resultsGrid
-                while (tempDiv.firstChild) {
-                    resultsGrid.appendChild(tempDiv.firstChild);
-                }
-            } else {
-                renderToGrid(results, resultsGrid, 0);
-            }
-        };
 
         /** Render movies/series to grid */
         function renderToGrid(results, gridElement, tabindexOffset, showLoadMore = false) {
@@ -1586,10 +1317,6 @@
             }
 
             if (results.length === 0) {
-                if (gridElement === resultsGrid) {
-                    gridElement.innerHTML = '<div class="empty-state"><p>No se encontraron resultados.</p></div>';
-                    showLogo();
-                }
                 return;
             }
 
@@ -1725,7 +1452,7 @@
         }
 
         // Click handlers for grids
-        [resultsGrid, historyGrid, moviesGrid, seriesGrid, favoritesGrid, relatedHistoryGrid].forEach(grid => {
+        [historyGrid, moviesGrid, seriesGrid, favoritesGrid, relatedHistoryGrid].forEach(grid => {
             if (grid) {
                 grid.addEventListener('click', (e) => {
                     const card = e.target.closest('.movie-card');
@@ -1770,9 +1497,8 @@
 
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
-                movieInput.value = transcript;
-                searchMovies(transcript);
                 voiceIndicator.classList.add('hidden');
+                window.location.href = `list.html?q=${encodeURIComponent(transcript)}`;
             };
 
             recognition.onerror = () => voiceIndicator.classList.add('hidden');
@@ -1852,10 +1578,13 @@
                 }
             }
 
-            // Input search
+            // Input search → redirigir a list.html
             if (active === movieInput && e.key === 'Enter') {
-                searchMovies(movieInput.value);
-                autocompleteResults.classList.add('hidden');
+                const q = movieInput.value.trim();
+                if (q.length > 0) {
+                    autocompleteResults.classList.add('hidden');
+                    window.location.href = `list.html?q=${encodeURIComponent(q)}`;
+                }
                 return;
             }
 
@@ -1913,7 +1642,7 @@
 
                 if (direction === 'down' && active.closest('header') && !heroBanner.classList.contains('hidden')) {
                     closest = heroPlayBtn;
-                } else if (direction === 'up' && active === heroPlayBtn) {
+                } else if (direction === 'up' && (active === heroPlayBtn || active === heroPrevBtn || active === heroNextBtn)) {
                     closest = movieInput;
                 } else {
                     closest = findClosestNavigable(active.getBoundingClientRect(), navigables, direction);
@@ -1963,12 +1692,14 @@
                 }
             }
 
-            prevBtn.addEventListener('click', () => {
+            prevBtn.addEventListener('click', (e) => {
                 track.scrollBy({ left: -track.clientWidth, behavior: 'smooth' });
+                e.currentTarget.blur();
             });
 
-            nextBtn.addEventListener('click', () => {
+            nextBtn.addEventListener('click', (e) => {
                 track.scrollBy({ left: track.clientWidth, behavior: 'smooth' });
+                e.currentTarget.blur();
             });
 
             track.addEventListener('scroll', () => {
@@ -1986,7 +1717,7 @@
         }
 
         // ========== INITIALIZATION ==========
-        /** Initialize page based on URL params or default state */
+        /** Initialize page — si hay parámetros de búsqueda/persona, redirigir a list.html */
         window.onload = () => {
             setupCarousel('movies-section');
             setupCarousel('series-section');
@@ -1995,17 +1726,21 @@
             const params = new URLSearchParams(window.location.search);
             const personId = params.get('person_id');
             const personName = params.get('person_name');
+            const q = params.get('q');
 
             if (personId && personName) {
-                movieInput.value = personName;
-                clearBtn.classList.remove('hidden');
-                searchByPerson(personId, personName);
-            } else {
-                movieInput.focus();
-                loadTrendingContent('movies');
-                loadTrendingContent('series');
-                loadFavorites();
+                window.location.href = `list.html?person_id=${encodeURIComponent(personId)}&person_name=${encodeURIComponent(personName)}`;
+                return;
             }
+            if (q) {
+                window.location.href = `list.html?q=${encodeURIComponent(q)}`;
+                return;
+            }
+
+            movieInput.focus();
+            loadTrendingContent('movies');
+            loadTrendingContent('series');
+            loadFavorites();
         };
 
         // Update history and favorites on page visibility
@@ -2212,14 +1947,10 @@
                 }
 
                 // Reload appropriate content
-                if (movieInput.value.trim().length > 0) {
-                    searchMovies(movieInput.value.trim());
-                } else {
-                    loadTrendingContent('movies');
-                    loadTrendingContent('series');
-                    loadHistory();
-                    loadFavorites();
-                }
+                loadTrendingContent('movies');
+                loadTrendingContent('series');
+                loadHistory();
+                loadFavorites();
             });
         }
 
