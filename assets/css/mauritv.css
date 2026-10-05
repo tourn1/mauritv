@@ -132,7 +132,7 @@ body {
 .hero-banner .hero-content {
     position: absolute;
     bottom: 15%;
-    left: 5%;
+    left: 8%;
     width: 50%;
     z-index: 2;
     animation: fadeIn 1s ease;
@@ -898,7 +898,7 @@ button#clear-btn.hidden {
     }
 
     #hero-desc {
-        width: 100%;
+        width: 80%;
         -webkit-line-clamp: 4;
     }
 }
@@ -1367,10 +1367,11 @@ button#clear-btn.hidden {
     color: white;
     backdrop-filter: blur(4px);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-#hero-platform.platform-badge, #meta .platform-badge {
+#hero-platform.platform-badge,
+#meta .platform-badge {
     position: static;
     font-size: 0.95rem;
     padding: 10px 16px;
@@ -1497,10 +1498,11 @@ button#clear-btn.hidden {
 
 /* Mobile Adjustments */
 @media (max-width: 600px) {
+
     /* Sobrescribir el selector de mayor especificidad del hero banner */
     .hero-banner .hero-content {
         width: 90%;
-        left: 5%;
+        left: 8%;
         bottom: 12%;
     }
 
@@ -2581,7 +2583,8 @@ main {
     border: 1.5px solid rgba(255, 255, 255, 0.2);
     border-radius: 10px;
     padding: 10px 12px;
-    font-size: 1rem; /* ≥16px evita el zoom automático de iOS al enfocar */
+    font-size: 1rem;
+    /* ≥16px evita el zoom automático de iOS al enfocar */
     font-family: 'Inter', sans-serif;
     outline: none;
     cursor: pointer;
@@ -2589,7 +2592,8 @@ main {
     transition: 0.25s;
     width: 100%;
     max-width: 100%;
-    touch-action: manipulation; /* deshabilita el zoom por doble-tap/pinch en móvil */
+    touch-action: manipulation;
+    /* deshabilita el zoom por doble-tap/pinch en móvil */
 }
 
 /* Márgenes pequeños seguros para controles en el hero
@@ -3122,7 +3126,8 @@ main {
     #sub-select {
         width: auto;
         min-width: 240px;
-        font-size: 1rem; /* ≥16px evita el zoom automático de iOS */
+        font-size: 1rem;
+        /* ≥16px evita el zoom automático de iOS */
     }
 
     .results-grid {
@@ -3365,6 +3370,7 @@ main {
            (Refuerzo para móviles estrechos)
         ================================================================ */
 @media (max-width: 520px) {
+
     .play-button:focus,
     .play-button:hover,
     .play-button.selected {
