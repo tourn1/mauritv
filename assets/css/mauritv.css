@@ -1385,8 +1385,36 @@ button#clear-btn.hidden {
     padding: 4px 12px;
     font-size: 0.8rem;
     border-radius: 4px;
-    margin-right: 8px;
+    margin-right: 0;
 }
+
+/* Badge Tipo Hero (Película / Serie) */
+.hero-type-badge {
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(229, 9, 20, 0.85);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.hero-type-badge.tv {
+    background: rgba(0, 150, 214, 0.85);
+}
+
+.hero-type-badge.movie {
+    background: rgba(229, 9, 20, 0.85);
+}
+
 
 /* Colores específicos por plataforma */
 .platform-badge.platform-netflix {
@@ -1921,9 +1949,9 @@ button#clear-btn.selected,
     box-sizing: border-box;
     margin-left: auto;
     margin-right: auto;
-    transition: max-height 0.3s ease, padding 0.3s ease, margin 0.3s ease, opacity 0.3s ease;
-    overflow: hidden;
-    max-height: 400px;
+    transition: max-height 0.4s ease, padding 0.3s ease, margin 0.3s ease, opacity 0.3s ease;
+    overflow-y: auto;
+    max-height: 1000px;
     opacity: 1;
 }
 

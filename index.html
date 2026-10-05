@@ -41,7 +41,10 @@
             <span class="material-icons">chevron_right</span>
         </button>
         <div class="hero-content">
-            <div id="hero-platform" class="platform-badge" style="display:none; margin-bottom: 10px; width: fit-content;"></div>
+            <div class="hero-badges" style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap;">
+                <div id="hero-type" class="hero-type-badge" style="display:none;"></div>
+                <div id="hero-platform" class="platform-badge" style="display:none; margin-bottom: 0;"></div>
+            </div>
             <h1 id="hero-title"></h1>
             <p id="hero-desc"></p>
             <button id="hero-play-btn" class="navigable hero-play-btn" tabindex="0">Ver</button>
@@ -319,6 +322,7 @@
         const heroBanner = document.getElementById('hero-banner');
         const heroImg = document.getElementById('hero-img');
         const heroSpinner = document.getElementById('hero-spinner');
+        const heroType = document.getElementById('hero-type');
         const heroTitle = document.getElementById('hero-title');
         const heroPlatform = document.getElementById('hero-platform');
         const heroDesc = document.getElementById('hero-desc');
@@ -1126,6 +1130,7 @@
                     if (data.backdrop_path && data.overview) {
                         return {
                             ...item,
+                            mediaType: type,
                             backdrop_path: data.backdrop_path,
                             overview: data.overview,
                             bannerTitle: data.title || data.name || item.l
@@ -1183,6 +1188,13 @@
             heroTitle.textContent = item.bannerTitle;
             heroDesc.textContent = item.overview;
             
+            const mediaType = item.mediaType || (item.qid === 'tvSeries' || item.qid === 'tv' || item.type === 'tv' ? 'tv' : 'movie');
+            if (heroType) {
+                heroType.textContent = mediaType === 'tv' ? 'Serie' : 'Película';
+                heroType.className = `hero-type-badge ${mediaType}`;
+                heroType.style.display = 'inline-flex';
+            }
+
             if (item.platform) {
                 heroPlatform.textContent = item.platform;
                 const platformClass = window.tmdb?.getPlatformClass ? window.tmdb.getPlatformClass(item.platform) : '';
