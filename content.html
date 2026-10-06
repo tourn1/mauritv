@@ -148,13 +148,12 @@
                             : [(validation.source || '').toUpperCase(), validation.resolution].filter(Boolean).join(' ').toUpperCase();
                         if (HIDDEN_RESOLUTIONS.some(res => badgeText.includes(res))) return null;
                     }
-                    if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function' && window.tmdb.isGenreExcluded(item)) {
+                    if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function' && (window.tmdb.isGenreExcluded(item) || window.tmdb.isGenreExcluded(extData))) {
                         return null;
                     }
-                    let extData = null;
-                    try {
-                        extData = await window.tmdb.getExternalIds(item.id, currentContentType);
-                    } catch (e) {}
+                    if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function' && (window.tmdb.isCountryExcluded(item) || window.tmdb.isCountryExcluded(extData))) {
+                        return null;
+                    }
                     return { ...item, validation, imdbId, extData: extData || {} };
                 }));
 
@@ -645,7 +644,10 @@
                                 return null;
                             }
                         }
-                        if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function' && window.tmdb.isGenreExcluded(item)) {
+                        if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function' && (window.tmdb.isGenreExcluded(item) || window.tmdb.isGenreExcluded(extData))) {
+                            return null;
+                        }
+                        if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function' && (window.tmdb.isCountryExcluded(item) || window.tmdb.isCountryExcluded(extData))) {
                             return null;
                         }
                         return { ...item, validation, imdbId, extData: extData || {} };

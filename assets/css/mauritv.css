@@ -661,11 +661,12 @@ button#clear-btn.hidden {
     scroll-behavior: smooth;
     scroll-snap-type: x mandatory;
     gap: 1.5rem;
-    padding: 1.6rem 0.8rem;
-    margin: -0.4rem -0.8rem;
-    width: calc(100% + 1.6rem);
+    padding: 2rem 1rem;
+    margin: -0.8rem -1rem;
+    width: calc(100% + 2rem);
     scrollbar-width: none;
     -ms-overflow-style: none;
+    scroll-padding: 0 1.5rem;
 }
 
 .carousel-track::-webkit-scrollbar {
@@ -951,7 +952,7 @@ button#clear-btn.hidden {
 .movie-card.selected {
     border-color: #ffffff !important;
     transform: scale(1.04);
-    z-index: 500 !important;
+    z-index: 1000 !important;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), var(--focus-glow) !important;
     outline: none !important;
 }
@@ -959,7 +960,7 @@ button#clear-btn.hidden {
 .movie-card:hover {
     border-color: #ffffff !important;
     transform: scale(1.04);
-    z-index: 500 !important;
+    z-index: 1000 !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), var(--focus-glow) !important;
     outline: none !important;
 }
@@ -1434,7 +1435,36 @@ button#clear-btn.hidden {
     outline: none !important;
     border-color: #ffffff !important;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6), var(--focus-shadow) !important;
-    z-index: 10 !important;
+    z-index: 1000 !important;
+}
+
+/* Ancho del carrusel de plataformas al 90% manteniendo flechas en posición original */
+#platforms-section .carousel-container {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    z-index: 20 !important;
+}
+
+#platforms-section .platforms-track {
+    width: 95% !important;
+    max-width: 95% !important;
+    margin: -0.8rem auto !important;
+    padding: 2rem 2.6rem !important;
+    overflow-x: auto !important;
+    scroll-behavior: smooth !important;
+    scroll-snap-type: x mandatory !important;
+    scroll-padding: 0 2.6rem !important;
+    z-index: 25 !important;
+}
+
+#platforms-section .platform-card {
+    scroll-margin: 0 2.6rem !important;
 }
 
 /* Badge Tipo Hero (Película / Serie) */

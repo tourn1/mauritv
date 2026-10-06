@@ -73,8 +73,20 @@ class TMDb {
     async getExternalIds(id, type) {
         try {
             const normalizedType = (type === 'tvSeries') ? 'tv' : type;
+            let tmdbId = id;
+            if (String(id).startsWith('tt') && normalizedType === 'tv') {
+                try {
+                    const findData = await this.fetch(`/find/${id}`, { external_source: 'imdb_id' });
+                    if (findData.tv_results && findData.tv_results[0]) {
+                        tmdbId = findData.tv_results[0].id;
+                    }
+                } catch (fe) {
+                    console.warn('TMDb: Error buscando TV show por IMDb ID', id, fe);
+                }
+            }
+
             const append = normalizedType === 'tv' ? 'external_ids,watch/providers' : 'external_ids,release_dates,watch/providers';
-            const data = await this.fetch(`/${normalizedType}/${id}`, { append_to_response: append });
+            const data = await this.fetch(`/${normalizedType}/${tmdbId}`, { append_to_response: append });
 
             let digitalReleaseDate = null;
             if (data.release_dates?.results) {
@@ -100,11 +112,27 @@ class TMDb {
             return {
                 imdbId: data.external_ids?.imdb_id || null,
                 digitalReleaseDate,
-                platform
+                platform,
+                genres: data.genres || [],
+                genre_ids: Array.isArray(data.genres) ? data.genres.map(g => g.id) : (data.genre_ids || []),
+                origin_country: data.origin_country || [],
+                production_countries: data.production_countries || [],
+                original_language: data.original_language || '',
+                rawDetails: data
             };
         } catch (e) {
             console.warn('TMDb: Error obteniendo IDs externos para', id, e);
-            return { imdbId: null, digitalReleaseDate: null, platform: null };
+            return {
+                imdbId: null,
+                digitalReleaseDate: null,
+                platform: null,
+                genres: [],
+                genre_ids: [],
+                origin_country: [],
+                production_countries: [],
+                original_language: '',
+                rawDetails: null
+            };
         }
     }
 
@@ -404,17 +432,34 @@ class TMDb {
             if (excludedIds.has(Number(id))) return true;
         }
 
-        // Comprobar array de objetos genres [{id, name}]
+        // Comprobar array de objetos genres [{id, name}] o strings
         if (Array.isArray(item.genres)) {
             for (const g of item.genres) {
-                if (g.id && excludedIds.has(Number(g.id))) return true;
-                if (g.name) {
-                    const cleanName = g.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                if (typeof g === 'object' && g !== null) {
+                    if (g.id && excludedIds.has(Number(g.id))) return true;
+                    if (g.name) {
+                        const cleanName = g.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                        for (const exName of excludedNames) {
+                            const cleanEx = exName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                            if (cleanName === cleanEx || cleanName.includes(cleanEx) || cleanEx.includes(cleanName)) return true;
+                        }
+                    }
+                } else if (typeof g === 'string') {
+                    const cleanName = g.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                     for (const exName of excludedNames) {
                         const cleanEx = exName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                        if (cleanName === cleanEx || cleanName.includes(cleanEx)) return true;
+                        if (cleanName === cleanEx || cleanName.includes(cleanEx) || cleanEx.includes(cleanName)) return true;
                     }
                 }
+            }
+        }
+
+        // Comprobar si item tiene un campo string como genre
+        if (typeof item.genre === 'string') {
+            const cleanName = item.genre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            for (const exName of excludedNames) {
+                const cleanEx = exName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                if (cleanName === cleanEx || cleanName.includes(cleanEx) || cleanEx.includes(cleanName)) return true;
             }
         }
 
@@ -497,12 +542,12 @@ class TMDb {
             'ur': ['PK', 'IN'], // Urdu
             // Otros
             'tr': ['TR'],   // Turco
-            'ko': ['KR'],   // Coreano
-            'zh': ['CN', 'HK', 'TW'], // Chino
+            'ko': ['KR'], 'kr': ['KR'], // Coreano
+            'zh': ['CN', 'HK', 'TW'], 'cn': ['CN', 'HK', 'TW'], // Chino
             'yue': ['HK'],  // Cantonés
             'th': ['TH'],   // Tailandés
-            'ja': ['JP'],   // Japonés
-            'id': ['ID'],   // Indonesio
+            'ja': ['JP'], 'jp': ['JP'], // Japonés
+            'id': ['ID'],
             'vi': ['VN'],   // Vietnamita
             'ms': ['MY'],   // Malayo
             'tl': ['PH'],   // Filipino
@@ -534,31 +579,45 @@ class TMDb {
             }
         }
 
-        // 1. Comprobar origin_country (disponible en series TV de TMDB)
+        // 1. Comprobar origin_country (disponible en series TV y detalles de películas en TMDB)
         if (Array.isArray(item.origin_country)) {
             for (const code of item.origin_country) {
-                if (excludedIso.has(code.toUpperCase())) return true;
-                for (const name of excluded) {
-                    if (normalize(code) === normalize(name)) return true;
+                if (typeof code === 'string') {
+                    if (excludedIso.has(code.toUpperCase())) return true;
+                    for (const name of excluded) {
+                        if (normalize(code) === normalize(name)) return true;
+                    }
                 }
+            }
+        } else if (typeof item.origin_country === 'string' && item.origin_country.trim()) {
+            const code = item.origin_country.trim().toUpperCase();
+            if (excludedIso.has(code)) return true;
+            for (const name of excluded) {
+                if (normalize(code) === normalize(name)) return true;
             }
         }
 
         // 2. Comprobar production_countries (disponible en detalle de película)
         if (Array.isArray(item.production_countries)) {
             for (const pc of item.production_countries) {
-                if (pc.iso_3166_1 && excludedIso.has(pc.iso_3166_1.toUpperCase())) return true;
-                if (pc.name) {
+                if (typeof pc === 'string') {
+                    if (excludedIso.has(pc.toUpperCase())) return true;
+                    for (const name of excluded) {
+                        if (normalize(pc) === normalize(name)) return true;
+                    }
+                    continue;
+                }
+                if (pc && pc.iso_3166_1 && excludedIso.has(pc.iso_3166_1.toUpperCase())) return true;
+                if (pc && pc.name) {
                     const cleanPc = normalize(pc.name);
                     for (const name of excluded) {
-                        if (cleanPc === normalize(name) || cleanPc.includes(normalize(name))) return true;
+                        if (cleanPc === normalize(name) || cleanPc.includes(normalize(name)) || normalize(name).includes(cleanPc)) return true;
                     }
                 }
             }
         }
 
-        // 3. Fallback: usar original_language para películas (las listas TMDB no
-        //    incluyen origin_country en respuestas de movies/popular, trending, etc.)
+        // 3. Fallback: usar original_language para películas cuando faltan origin_country y production_countries
         if (item.original_language) {
             const lang = item.original_language.toLowerCase();
             const countriesForLang = langToCountries[lang] || [];

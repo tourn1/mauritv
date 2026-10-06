@@ -24,7 +24,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Outfit:wght@300;400;600;800&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/mauritv.css?v=1">
+    <link rel="stylesheet" href="assets/css/mauritv.css?v=4">
 </head>
 
 <body class="tv-mode">
@@ -41,7 +41,8 @@
             <span class="material-icons">chevron_right</span>
         </button>
         <div class="hero-content">
-            <div class="hero-badges" style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap;">
+            <div class="hero-badges"
+                style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap;">
                 <div id="hero-type" class="hero-type-badge" style="display:none;"></div>
                 <div id="hero-platform" class="platform-badge" style="display:none; margin-bottom: 0;"></div>
             </div>
@@ -141,11 +142,13 @@
             </div>
             <div class="settings-option url-option">
                 <span class="settings-label">Géneros Excluidos (separados por coma)</span>
-                <input type="text" id="excluded-genres-input" class="settings-input navigable" tabindex="0" placeholder="Ej: Talk Show, Documental, Noticias">
+                <input type="text" id="excluded-genres-input" class="settings-input navigable" tabindex="0"
+                    placeholder="Ej: Talk Show, Documental, Noticias">
             </div>
             <div class="settings-option url-option">
                 <span class="settings-label">Países de Origen Excluidos (separados por coma)</span>
-                <input type="text" id="excluded-countries-input" class="settings-input navigable" tabindex="0" placeholder="Ej: India, Turquía, Corea del Sur">
+                <input type="text" id="excluded-countries-input" class="settings-input navigable" tabindex="0"
+                    placeholder="Ej: India, Turquía, Corea del Sur">
             </div>
             <div class="settings-actions">
                 <button id="settings-clear-cache-btn" class="settings-btn settings-btn-secondary navigable"
@@ -199,12 +202,14 @@
                 <div id="platforms-section" style="margin-bottom: 2.5rem;">
                     <h2 class="section-title">Plataformas</h2>
                     <div class="carousel-container">
-                        <button class="carousel-btn prev-btn navigable" id="platforms-prev-btn" aria-label="Anterior" tabindex="0">
+                        <button class="carousel-btn prev-btn navigable" id="platforms-prev-btn" aria-label="Anterior"
+                            tabindex="0">
                             <span class="material-icons">chevron_left</span>
                         </button>
                         <div id="platforms-grid" class="carousel-track platforms-track">
                         </div>
-                        <button class="carousel-btn next-btn navigable" id="platforms-next-btn" aria-label="Siguiente" tabindex="0">
+                        <button class="carousel-btn next-btn navigable" id="platforms-next-btn" aria-label="Siguiente"
+                            tabindex="0">
                             <span class="material-icons">chevron_right</span>
                         </button>
                     </div>
@@ -213,7 +218,8 @@
                 <div id="movies-section" style="margin-bottom: 2.5rem;">
                     <h2 class="section-title">Top 10 Películas</h2>
                     <div class="carousel-container">
-                        <button class="carousel-btn prev-btn navigable" id="movies-prev-btn" aria-label="Anterior" tabindex="0">
+                        <button class="carousel-btn prev-btn navigable" id="movies-prev-btn" aria-label="Anterior"
+                            tabindex="0">
                             <span class="material-icons">chevron_left</span>
                         </button>
                         <div id="movies-grid" class="carousel-track">
@@ -221,7 +227,8 @@
                                 <p>Cargando...</p>
                             </div>
                         </div>
-                        <button class="carousel-btn next-btn navigable" id="movies-next-btn" aria-label="Siguiente" tabindex="0">
+                        <button class="carousel-btn next-btn navigable" id="movies-next-btn" aria-label="Siguiente"
+                            tabindex="0">
                             <span class="material-icons">chevron_right</span>
                         </button>
                     </div>
@@ -230,7 +237,8 @@
                 <div id="series-section" style="margin-bottom: 2.5rem;">
                     <h2 class="section-title">Top 10 Series</h2>
                     <div class="carousel-container">
-                        <button class="carousel-btn prev-btn navigable" id="series-prev-btn" aria-label="Anterior" tabindex="0">
+                        <button class="carousel-btn prev-btn navigable" id="series-prev-btn" aria-label="Anterior"
+                            tabindex="0">
                             <span class="material-icons">chevron_left</span>
                         </button>
                         <div id="series-grid" class="carousel-track">
@@ -238,7 +246,8 @@
                                 <p>Cargando...</p>
                             </div>
                         </div>
-                        <button class="carousel-btn next-btn navigable" id="series-next-btn" aria-label="Siguiente" tabindex="0">
+                        <button class="carousel-btn next-btn navigable" id="series-next-btn" aria-label="Siguiente"
+                            tabindex="0">
                             <span class="material-icons">chevron_right</span>
                         </button>
                     </div>
@@ -257,12 +266,14 @@
                         <h2 class="section-title">Relacionado a tus busquedas</h2>
                     </div>
                     <div class="carousel-container">
-                        <button class="carousel-btn prev-btn navigable" id="related-prev-btn" aria-label="Anterior" tabindex="0">
+                        <button class="carousel-btn prev-btn navigable" id="related-prev-btn" aria-label="Anterior"
+                            tabindex="0">
                             <span class="material-icons">chevron_left</span>
                         </button>
                         <div id="related-history-grid" class="carousel-track">
                         </div>
-                        <button class="carousel-btn next-btn navigable" id="related-next-btn" aria-label="Siguiente" tabindex="0">
+                        <button class="carousel-btn next-btn navigable" id="related-next-btn" aria-label="Siguiente"
+                            tabindex="0">
                             <span class="material-icons">chevron_right</span>
                         </button>
                     </div>
@@ -628,6 +639,23 @@
                         const batchResults = await Promise.all(batch.map(async (item) => {
                             const itemType = type === 'movies' ? 'movie' : 'tv';
                             const details = await window.tmdb.getExternalIds(item.id, itemType);
+
+                            const fullItem = {
+                                ...item,
+                                genres: (details.genres && details.genres.length > 0) ? details.genres : (item.genres || []),
+                                genre_ids: (details.genre_ids && details.genre_ids.length > 0) ? details.genre_ids : (item.genre_ids || []),
+                                origin_country: (details.origin_country && details.origin_country.length > 0) ? details.origin_country : (item.origin_country || []),
+                                production_countries: (details.production_countries && details.production_countries.length > 0) ? details.production_countries : (item.production_countries || []),
+                                original_language: details.original_language || item.original_language || ''
+                            };
+
+                            if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function') {
+                                if (window.tmdb.isGenreExcluded(fullItem) || window.tmdb.isGenreExcluded(details)) return null;
+                            }
+                            if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function') {
+                                if (window.tmdb.isCountryExcluded(fullItem) || window.tmdb.isCountryExcluded(details)) return null;
+                            }
+
                             const id = details.imdbId || item.id;
                             const validation = await validarPeliculaFinal(id, itemType);
 
@@ -645,7 +673,11 @@
                                     qid: type === 'movies' ? 'movie' : 'tvSeries',
                                     i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
                                     rating: item.vote_average?.toFixed(1) || 'N/A',
-                                    genre_ids: item.genre_ids || []
+                                    genres: fullItem.genres,
+                                    genre_ids: fullItem.genre_ids,
+                                    origin_country: fullItem.origin_country,
+                                    production_countries: fullItem.production_countries,
+                                    original_language: fullItem.original_language
                                 };
                             }
                             return null;
@@ -730,6 +762,23 @@
                         const batch = results.slice(i, i + 5);
                         const batchResults = await Promise.all(batch.map(async (item) => {
                             const details = await window.tmdb.getExternalIds(item.id, 'movie');
+
+                            const fullItem = {
+                                ...item,
+                                genres: (details.genres && details.genres.length > 0) ? details.genres : (item.genres || []),
+                                genre_ids: (details.genre_ids && details.genre_ids.length > 0) ? details.genre_ids : (item.genre_ids || []),
+                                origin_country: (details.origin_country && details.origin_country.length > 0) ? details.origin_country : (item.origin_country || []),
+                                production_countries: (details.production_countries && details.production_countries.length > 0) ? details.production_countries : (item.production_countries || []),
+                                original_language: details.original_language || item.original_language || ''
+                            };
+
+                            if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function') {
+                                if (window.tmdb.isGenreExcluded(fullItem) || window.tmdb.isGenreExcluded(details)) return null;
+                            }
+                            if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function') {
+                                if (window.tmdb.isCountryExcluded(fullItem) || window.tmdb.isCountryExcluded(details)) return null;
+                            }
+
                             const id = details.imdbId || item.id;
                             const validation = await validarPeliculaFinal(id, 'movie');
 
@@ -747,7 +796,11 @@
                                     qid: 'movie',
                                     i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
                                     rating: item.vote_average?.toFixed(1) || 'N/A',
-                                    genre_ids: item.genre_ids || []
+                                    genres: fullItem.genres,
+                                    genre_ids: fullItem.genre_ids,
+                                    origin_country: fullItem.origin_country,
+                                    production_countries: fullItem.production_countries,
+                                    original_language: fullItem.original_language
                                 };
                             }
                             return null;
@@ -819,6 +872,23 @@
                         const batch = results.slice(i, i + 5);
                         const batchResults = await Promise.all(batch.map(async (item) => {
                             const details = await window.tmdb.getExternalIds(item.id, 'tv');
+
+                            const fullItem = {
+                                ...item,
+                                genres: (details.genres && details.genres.length > 0) ? details.genres : (item.genres || []),
+                                genre_ids: (details.genre_ids && details.genre_ids.length > 0) ? details.genre_ids : (item.genre_ids || []),
+                                origin_country: (details.origin_country && details.origin_country.length > 0) ? details.origin_country : (item.origin_country || []),
+                                production_countries: (details.production_countries && details.production_countries.length > 0) ? details.production_countries : (item.production_countries || []),
+                                original_language: details.original_language || item.original_language || ''
+                            };
+
+                            if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function') {
+                                if (window.tmdb.isGenreExcluded(fullItem) || window.tmdb.isGenreExcluded(details)) return null;
+                            }
+                            if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function') {
+                                if (window.tmdb.isCountryExcluded(fullItem) || window.tmdb.isCountryExcluded(details)) return null;
+                            }
+
                             const id = details.imdbId || item.id;
                             const validation = await validarPeliculaFinal(id, 'tv');
 
@@ -836,7 +906,11 @@
                                     qid: 'tvSeries',
                                     i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
                                     rating: item.vote_average?.toFixed(1) || 'N/A',
-                                    genre_ids: item.genre_ids || []
+                                    genres: fullItem.genres,
+                                    genre_ids: fullItem.genre_ids,
+                                    origin_country: fullItem.origin_country,
+                                    production_countries: fullItem.production_countries,
+                                    original_language: fullItem.original_language
                                 };
                             }
                             return null;
@@ -920,7 +994,7 @@
             }
         }
 
-        /** Load related history items based on the last search */
+        /** Load related history items based on the last search / watched */
         async function loadRelatedHistory() {
             // Usar obtenerRecientes() si auth-drive.js está disponible
             const history = typeof obtenerRecientes === 'function'
@@ -931,19 +1005,56 @@
                 return;
             }
 
-            const lastItem = history[0];
-            const type = (lastItem.qid === 'tvSeries' || lastItem.type === 'tv' || lastItem.qid === 'tv') ? 'tv' : 'movie';
-            const id = lastItem.tmdbId || lastItem.id;
+            // Elegir el ítem más reciente del historial que no esté excluido por género o país
+            let lastItem = history.find(item => {
+                if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function' && window.tmdb.isGenreExcluded(item)) return false;
+                if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function' && window.tmdb.isCountryExcluded(item)) return false;
+                return true;
+            });
 
-            if (!id) return;
+            if (!lastItem) {
+                relatedHistorySection.classList.add('hidden');
+                trendingCache.related = [];
+                triggerHeroBannerBuild();
+                return;
+            }
+
+            const type = (lastItem.qid === 'tvSeries' || lastItem.type === 'tv' || lastItem.qid === 'tv') ? 'tv' : 'movie';
+            let id = lastItem.tmdbId || lastItem.id;
+
+            if (!id) {
+                relatedHistorySection.classList.add('hidden');
+                return;
+            }
+
+            // Si es un id de IMDb (tt...), resolverlo a TMDb id para que /recommendations no falle con 404
+            if (String(id).startsWith('tt')) {
+                try {
+                    const findData = await window.tmdb.fetch(`/find/${id}`, { external_source: 'imdb_id' });
+                    const match = (type === 'tv' ? findData.tv_results?.[0] : findData.movie_results?.[0]) || findData.movie_results?.[0] || findData.tv_results?.[0];
+                    if (match && match.id) {
+                        id = match.id;
+                    }
+                } catch (e) {
+                    console.warn('Error resolviendo IMDb ID para recomendaciones:', e);
+                }
+            }
+
+            const targetCount = 10;
+            let validContent = [];
+            let page = 1;
 
             try {
-                const endpoint = `/${type}/${id}/recommendations`;
-                const data = await window.tmdb.fetch(endpoint, { language: 'es-MX', page: 1 });
+                while (validContent.length < targetCount && page <= 5) {
+                    const endpoint = `/${type}/${id}/recommendations`;
+                    const data = await window.tmdb.fetch(endpoint, { language: 'es-MX', page });
 
-                if (data && data.results && data.results.length > 0) {
-                    relatedHistorySection.classList.remove('hidden');
-                    let results = data.results.filter(item => {
+                    if (!data || !data.results || data.results.length === 0) {
+                        break;
+                    }
+
+                    // 1. Filtrado previo con los datos disponibles en la respuesta de TMDb
+                    let preliminaryResults = data.results.filter(item => {
                         if (!item.poster_path) return false;
                         if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function' && window.tmdb.isGenreExcluded(item)) {
                             return false;
@@ -952,11 +1063,33 @@
                             return false;
                         }
                         return true;
-                    }).slice(0, 10);
+                    });
 
-                    const batchResults = await Promise.all(results.map(async (item) => {
+                    // 2. Resolver detalles completos para filtrar con precisión absoluta de país y género
+                    const batchResults = await Promise.all(preliminaryResults.map(async (item) => {
                         const itemType = type === 'tv' ? 'tv' : 'movie';
                         const details = await window.tmdb.getExternalIds(item.id, itemType);
+
+                        const fullItem = {
+                            ...item,
+                            genres: (details.genres && details.genres.length > 0) ? details.genres : (item.genres || []),
+                            genre_ids: (details.genre_ids && details.genre_ids.length > 0) ? details.genre_ids : (item.genre_ids || []),
+                            origin_country: (details.origin_country && details.origin_country.length > 0) ? details.origin_country : (item.origin_country || []),
+                            production_countries: (details.production_countries && details.production_countries.length > 0) ? details.production_countries : (item.production_countries || []),
+                            original_language: details.original_language || item.original_language || ''
+                        };
+
+                        // Filtrado estricto con los metadatos completos enriquecidos
+                        if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function') {
+                            if (window.tmdb.isGenreExcluded(fullItem) || window.tmdb.isGenreExcluded(details)) {
+                                return null;
+                            }
+                        }
+                        if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function') {
+                            if (window.tmdb.isCountryExcluded(fullItem) || window.tmdb.isCountryExcluded(details)) {
+                                return null;
+                            }
+                        }
 
                         return {
                             id: details.imdbId || item.id,
@@ -969,19 +1102,36 @@
                             qid: type === 'tv' ? 'tvSeries' : 'movie',
                             i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
                             rating: item.vote_average?.toFixed(1) || 'N/A',
-                            genre_ids: item.genre_ids || []
+                            genres: fullItem.genres,
+                            genre_ids: fullItem.genre_ids,
+                            origin_country: fullItem.origin_country,
+                            production_countries: fullItem.production_countries,
+                            original_language: fullItem.original_language
                         };
                     }));
 
-                    trendingCache.related = batchResults;
-                    trendingCache.relatedPage = 1;
-                    renderToGrid(batchResults, relatedHistoryGrid, 110, true);
+                    for (const res of batchResults) {
+                        if (res && validContent.length < targetCount && !validContent.some(v => v.id === res.id)) {
+                            validContent.push(res);
+                        }
+                    }
+
+                    if (page >= (data.total_pages || 1)) break;
+                    page++;
+                }
+
+                if (validContent.length > 0) {
+                    relatedHistorySection.classList.remove('hidden');
+                    trendingCache.related = validContent;
+                    trendingCache.relatedPage = page;
+                    trendingCache.relatedBaseId = id;
+                    trendingCache.relatedType = type;
+                    renderToGrid(validContent, relatedHistoryGrid, 110, true);
                     triggerHeroBannerBuild();
                 } else {
                     relatedHistorySection.classList.add('hidden');
                     trendingCache.related = [];
                     triggerHeroBannerBuild();
-                    relatedHistorySection.classList.add('hidden');
                 }
             } catch (error) {
                 console.error('Error loading related history:', error);
@@ -1008,12 +1158,27 @@
                 return;
             }
 
-            const lastItem = history[0];
-            const type = (lastItem.qid === 'tvSeries' || lastItem.type === 'tv' || lastItem.qid === 'tv') ? 'tv' : 'movie';
-            const id = lastItem.tmdbId || lastItem.id;
+            let lastItem = history.find(item => {
+                if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function' && window.tmdb.isGenreExcluded(item)) return false;
+                if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function' && window.tmdb.isCountryExcluded(item)) return false;
+                return true;
+            }) || history[0];
+
+            const type = trendingCache.relatedType || ((lastItem.qid === 'tvSeries' || lastItem.type === 'tv' || lastItem.qid === 'tv') ? 'tv' : 'movie');
+            let id = trendingCache.relatedBaseId || lastItem.tmdbId || lastItem.id;
             if (!id) {
                 isLoadingMoreRelated = false;
                 return;
+            }
+
+            if (String(id).startsWith('tt')) {
+                try {
+                    const findData = await window.tmdb.fetch(`/find/${id}`, { external_source: 'imdb_id' });
+                    const match = (type === 'tv' ? findData.tv_results?.[0] : findData.movie_results?.[0]) || findData.movie_results?.[0] || findData.tv_results?.[0];
+                    if (match && match.id) {
+                        id = match.id;
+                    }
+                } catch (e) { }
             }
 
             const currentList = trendingCache.related || [];
@@ -1025,7 +1190,9 @@
                 while (validContent.length < targetCount && page <= 10) {
                     const endpoint = `/${type}/${id}/recommendations`;
                     const data = await window.tmdb.fetch(endpoint, { language: 'es-MX', page });
-                    let results = data && data.results ? data.results.filter(item => {
+                    if (!data || !data.results || data.results.length === 0) break;
+
+                    const preliminaryResults = data.results.filter(item => {
                         if (!item.poster_path) return false;
                         if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function' && window.tmdb.isGenreExcluded(item)) {
                             return false;
@@ -1034,12 +1201,31 @@
                             return false;
                         }
                         return true;
-                    }) : [];
-                    if (results.length === 0) break;
+                    });
 
-                    const batchResults = await Promise.all(results.map(async (item) => {
+                    const batchResults = await Promise.all(preliminaryResults.map(async (item) => {
                         const itemType = type === 'tv' ? 'tv' : 'movie';
                         const details = await window.tmdb.getExternalIds(item.id, itemType);
+
+                        const fullItem = {
+                            ...item,
+                            genres: (details.genres && details.genres.length > 0) ? details.genres : (item.genres || []),
+                            genre_ids: (details.genre_ids && details.genre_ids.length > 0) ? details.genre_ids : (item.genre_ids || []),
+                            origin_country: (details.origin_country && details.origin_country.length > 0) ? details.origin_country : (item.origin_country || []),
+                            production_countries: (details.production_countries && details.production_countries.length > 0) ? details.production_countries : (item.production_countries || []),
+                            original_language: details.original_language || item.original_language || ''
+                        };
+
+                        if (window.tmdb && typeof window.tmdb.isGenreExcluded === 'function') {
+                            if (window.tmdb.isGenreExcluded(fullItem) || window.tmdb.isGenreExcluded(details)) {
+                                return null;
+                            }
+                        }
+                        if (window.tmdb && typeof window.tmdb.isCountryExcluded === 'function') {
+                            if (window.tmdb.isCountryExcluded(fullItem) || window.tmdb.isCountryExcluded(details)) {
+                                return null;
+                            }
+                        }
 
                         return {
                             id: details.imdbId || item.id,
@@ -1052,7 +1238,11 @@
                             qid: type === 'tv' ? 'tvSeries' : 'movie',
                             i: { imageUrl: `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` },
                             rating: item.vote_average?.toFixed(1) || 'N/A',
-                            genre_ids: item.genre_ids || []
+                            genres: fullItem.genres,
+                            genre_ids: fullItem.genre_ids,
+                            origin_country: fullItem.origin_country,
+                            production_countries: fullItem.production_countries,
+                            original_language: fullItem.original_language
                         };
                     }));
 
@@ -1061,10 +1251,12 @@
                             validContent.push(res);
                         }
                     }
+
+                    if (page >= (data.total_pages || 1)) break;
                     page++;
                 }
 
-                trendingCache.relatedPage = page - 1;
+                trendingCache.relatedPage = page;
                 trendingCache.related = validContent;
                 renderToGrid(validContent, relatedHistoryGrid, 110, true);
             } catch (error) {
@@ -1201,7 +1393,7 @@
 
             heroTitle.textContent = item.bannerTitle;
             heroDesc.textContent = item.overview;
-            
+
             const mediaType = item.mediaType || (item.qid === 'tvSeries' || item.qid === 'tv' || item.type === 'tv' ? 'tv' : 'movie');
             if (heroType) {
                 heroType.textContent = mediaType === 'tv' ? 'Serie' : 'Película';
@@ -1675,8 +1867,8 @@
                 }
 
                 if (closest) {
-                    closest.focus();
-                    closest.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    closest.focus({ preventScroll: true });
+                    closest.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
                 }
             }
         });
@@ -1746,11 +1938,11 @@
         const PLATFORMS_DATA = [
             { id: '8', networkId: '213', name: 'Netflix', class: 'platform-netflix', icon: 'smart_display' },
             { id: '337', networkId: '2739', name: 'Disney+', class: 'platform-disney', icon: 'movie_filter' },
-            { id: '1899', networkId: '49', name: 'Max', class: 'platform-max', icon: 'tv' },
-            { id: '119', networkId: '1024', name: 'Prime Video', class: 'platform-prime', icon: 'play_circle' },
-            { id: '15', networkId: '453', name: 'Hulu', class: 'platform-hulu', icon: 'subscriptions' },
             { id: '350', networkId: '2552', name: 'Apple TV+', class: 'platform-apple', icon: 'desktop_windows' },
+            { id: '119', networkId: '1024', name: 'Prime Video', class: 'platform-prime', icon: 'play_circle' },
+            { id: '1899', networkId: '49', name: 'HBO Max', class: 'platform-max', icon: 'tv' },
             { id: '531', networkId: '4330', name: 'Paramount+', class: 'platform-paramount', icon: 'star' },
+            { id: '15', networkId: '453', name: 'Hulu', class: 'platform-hulu', icon: 'subscriptions' },
             { id: '619', networkId: '1709', name: 'Star+', class: 'platform-star', icon: 'auto_awesome' },
             { id: '386', networkId: '3353', name: 'Peacock', class: 'platform-peacock', icon: 'live_tv' },
             { id: '283', networkId: '1112', name: 'Crunchyroll', class: 'platform-crunchyroll', icon: 'animation' }

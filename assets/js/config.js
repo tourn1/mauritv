@@ -19,8 +19,8 @@ const CONFIG = {
     // App configurations
     HISTORY_KEY: 'movie_history_v1',
     HIDDEN_RESOLUTIONS: ['CAM', 'TS', 'TC', 'TELESYNC', 'Telesync'],
-    DEFAULT_EXCLUDED_GENRES: 'Talk Show, Documental',
-    DEFAULT_EXCLUDED_COUNTRIES: 'India,Hong Kong, Thailand',
+    DEFAULT_EXCLUDED_GENRES: 'Talk Show, Documental, Reality, News, Política, Telenovela',
+    DEFAULT_EXCLUDED_COUNTRIES: 'India,Hong Kong, Thailand, South Korea, China',
     ONE_DAY_MS: 24 * 60 * 60 * 1000,
 
     // Diccionario canónico de géneros TMDb (ID -> Nombre en español e inglés común)
